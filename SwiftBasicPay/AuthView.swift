@@ -54,20 +54,12 @@ struct AuthView: View {
         }
     }
     
-    var divider: some View {
-        return Divider()
-    }
-    
-    var progressView: some View {
-        return ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .blue))
-    }
-    
     var signupView: some View {
         VStack {
             Text("Sign up now!").bold().font(.title)
-            divider
+            Utils.divider
             Text("Please provide a 6-digit pincode to sign up. This pincode will be used to encrypt the secret key for your Stellar address, before it is stored in your keychain. Your secret key to this address will be stored on your device. You will be the only one to ever have custody over this key.").italic().foregroundColor(.black)
-            divider
+            Utils.divider
             Text("Public key:").bold().font(.body).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10.0)
             HStack {
                 Text(newUserKeypair.address).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
@@ -88,7 +80,7 @@ struct AuthView: View {
                     }
                 }.padding(.vertical, 10.0)
             }
-            divider
+            Utils.divider
             SecureField("Enter a 6 digit pin code", text: $pin).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                 .padding(.vertical, 10.0).onChange(of: self.pin, { oldValue, value in
                     if value.count > 6 {
@@ -101,9 +93,9 @@ struct AuthView: View {
                         self.pinConfirmation = String(value.prefix(6))
                    }
                })
-            divider
+            Utils.divider
             if isSigningUp {
-                progressView
+                Utils.progressView
             } else {
                 Button("Signup", action:   {
                     Task {
@@ -120,9 +112,9 @@ struct AuthView: View {
     var loginView: some View {
         VStack {
             Text("Login now!").bold().font(.title)
-            divider
+            Utils.divider
             Text("Provide your 6-digit pincode to access the dashboard. To reiterate, this pincode never leaves your device, and your secret key is encrypted on your device and is never shared anywhere else.").italic().foregroundColor(.black)
-            divider
+            Utils.divider
             SecureField("Enter your pin", text: $pin).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                 .padding(.vertical, 10.0).onChange(of: self.pin, { oldValue, value in
                     if value.count > 6 {
@@ -130,7 +122,7 @@ struct AuthView: View {
                    }
                })
             if isLoggingIn {
-                progressView
+                Utils.progressView
             } else {
                 if let error = loginError {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
