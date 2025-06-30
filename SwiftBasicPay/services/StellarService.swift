@@ -33,9 +33,26 @@ public class StellarService {
         }
         return loadedAssets
     }
+    
+    /// A list of assets on the Stellar Test Network used to make
+    /// testing easier. (to be used with testanchor.stellar.org)
+    public static func testnetAssets() -> [IssuedAssetId] {
+        return [
+            try! IssuedAssetId(code: "SRT", issuer: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B"),
+            try! IssuedAssetId(code: "USDC", issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"),
+        ]
+    }
+    
+    public static func addAssetSupport(asset:IssuedAssetId, userKeyPair:SigningKeyPair) async throws -> Bool {
+        let stellar = wallet.stellar
+        let txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        let tx = try txBuilder.addAssetSupport(asset: asset).build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
+    }
 }
 
-public class AssetInfo {
+public class AssetInfo: Hashable {
     
     public var asset:AssetId
     public var balance:String
@@ -49,5 +66,34 @@ public class AssetInfo {
         get {
             asset.id
         }
+    }
+    
+    public var code:String {
+        get {
+            if let a = asset as? IssuedAssetId {
+                return a.code
+            } else if let _ = asset as? NativeAssetId {
+                return "XLM"
+            } else {
+                return id
+            }
+        }
+    }
+    
+    public var issuer:String? {
+        get {
+            if let a = asset as? IssuedAssetId {
+                return a.issuer
+            }
+            return nil
+        }
+    }
+    
+    public static func == (lhs: AssetInfo, rhs: AssetInfo) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
