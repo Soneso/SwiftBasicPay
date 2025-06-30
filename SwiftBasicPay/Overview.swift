@@ -125,7 +125,8 @@ struct Overview: View {
             } else {
                 List(assets, id: \.id) { asset in
                     let name = asset.id == "native" ? "XLM" : asset.id
-                    Text("\(asset.balance) \(name)").italic().foregroundColor(.black)
+                    let formattedBalance = Utils.removeTrailingZerosFormAmount(amount: asset.balance)
+                    Text("\(formattedBalance) \(name)").italic().foregroundColor(.black)
                 }.listStyle(.automatic).frame(height: CGFloat((assets.count * 65) + (assets.count < 4 ? 40 : 0)), alignment: .top)
             }
             if let error = balancesErrorMsg {
@@ -171,9 +172,6 @@ struct Overview: View {
                 accountFunded = false
             } else {
                 assets = try await StellarService.loadAssetsForAddress(address: userAddress)
-                for asset in assets {
-                    print ("asset: \(asset.id)")
-                }
             }
         } catch {
             viewErrorMsg = error.localizedDescription

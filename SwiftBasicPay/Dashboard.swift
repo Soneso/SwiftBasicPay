@@ -25,6 +25,7 @@ struct Dashboard: View {
             TransfersView().tabItem { Label("Transfers", systemImage: "paperplane") }
             KycView().tabItem { Label("KYC", systemImage: "shield.lefthalf.filled.badge.checkmark") }
             ContactsView().tabItem { Label("Contacts", systemImage: "person") }
+            SettingsView(logoutUser: logoutUser).tabItem { Label("Settings", systemImage: "gearshape") }
         }
     }
 }

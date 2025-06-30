@@ -30,6 +30,7 @@
 		8373980E2E0F2BD90032FDAA /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8373980D2E0F2BD90032FDAA /* ContactsView.swift */; };
 		837398122E1000D90032FDAA /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398112E1000D90032FDAA /* Utils.swift */; };
 		837398142E10047A0032FDAA /* StellarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398132E10047A0032FDAA /* StellarService.swift */; };
+		837398162E129CF20032FDAA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398152E129CF20032FDAA /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +54,7 @@
 		8373980D2E0F2BD90032FDAA /* ContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
 		837398112E1000D90032FDAA /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		837398132E10047A0032FDAA /* StellarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StellarService.swift; sourceTree = "<group>"; };
+		837398152E129CF20032FDAA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,6 +107,7 @@
 				837398092E0F2B2C0032FDAA /* TransfersView.swift */,
 				8373980B2E0F2B9B0032FDAA /* KycView.swift */,
 				8373980D2E0F2BD90032FDAA /* ContactsView.swift */,
+				837398152E129CF20032FDAA /* SettingsView.swift */,
 			);
 			path = SwiftBasicPay;
 			sourceTree = "<group>";
@@ -221,6 +224,7 @@
 				837398062E0F2A800032FDAA /* PaymentsView.swift in Sources */,
 				837398042E0F29E80032FDAA /* Overview.swift in Sources */,
 				837397FB2E0D90080032FDAA /* LabelledDivider.swift in Sources */,
+				837398162E129CF20032FDAA /* SettingsView.swift in Sources */,
 				8373980E2E0F2BD90032FDAA /* ContactsView.swift in Sources */,
 				837397D62E0D55E10032FDAA /* ContentView.swift in Sources */,
 				8373980C2E0F2B9B0032FDAA /* KycView.swift in Sources */,

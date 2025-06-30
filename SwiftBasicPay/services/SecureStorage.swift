@@ -23,7 +23,6 @@ public class SecureStorage {
     }
     
     public static func storeUserKeyPair(userSigningKeyPair: SigningKeyPair, pin:String) throws {
-        print("step 1")
         let key = try calculateEncryptionKey(pin: pin)
         
         /* Generate random IV value. IV is public value. */
@@ -69,6 +68,12 @@ public class SecureStorage {
             return try SigningKeyPair(secretKey: String(decoding: Data(decrypted), as: UTF8.self))
         } catch {
             throw SecureStorageError.invalidPin
+        }
+    }
+    
+    public static func deleteAll() throws {
+        if try hasUser {
+            try simpleKeychain.deleteAll()
         }
     }
     
