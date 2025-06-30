@@ -19,6 +19,11 @@ struct Overview: View {
     @State private var viewErrorMsg:String?
     @State private var balancesErrorMsg:String?
     @State private var assets:[AssetInfo] = []
+    @State private var pin:String = ""
+    @State private var showSecret = false
+    @State private var secretKey:String?
+    @State private var isGettingSecret:Bool = false
+    @State private var getSecretErrorMsg:String?
     
     internal init(userAddress: String) {
         self.userAddress = userAddress
@@ -34,8 +39,10 @@ struct Overview: View {
                 }
                 if isLoadingData {
                     Utils.progressView
-                }else {
+                } else {
                     balancesView
+                    Spacer()
+                    myDataView
                 }
             }.padding().toast(isPresenting: $showToast){
                 AlertToast(type: .regular, title: "\(toastMessage)")
@@ -47,6 +54,69 @@ struct Overview: View {
         }
     }
     
+    private var myDataView: some View  {
+        GroupBox ("My data"){
+            Utils.divider
+            Text("Address").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
+            HStack {
+                Text(userAddress).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Button("", systemImage: "doc.on.doc") {
+                    copyToClipboard(text: userAddress)
+                }
+            }.padding(EdgeInsets(top: 5, leading: 0, bottom: 10, trailing: 0))
+            Toggle("Show secret key", isOn: $showSecret).padding(.vertical, 10.0)
+            if showSecret {
+                
+                if let secret = secretKey {
+                    Text("Secret key:").bold().font(.body).frame(maxWidth: .infinity, alignment: .leading)
+                    HStack {
+                        Text(secret).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).foregroundColor(.red)
+                        Button("", systemImage: "doc.on.doc") {
+                            copyToClipboard(text: secret)
+                        }
+                    }.padding(.vertical, 10.0)
+                } else {
+                    SecureField("Enter your pin to show secret key", text: $pin).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                        .padding(.vertical, 10.0).onChange(of: self.pin, { oldValue, value in
+                            if value.count > 6 {
+                                self.pin = String(value.prefix(6))
+                           }
+                       })
+                    if let error = getSecretErrorMsg {
+                        Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    if isGettingSecret {
+                        Utils.progressView
+                    } else {
+                        HStack {
+                            Button("Submit", action:   {
+                                Task {
+                                    getSecretErrorMsg = nil
+                                    await getSecretKey()
+                                }
+                            }).buttonStyle(.borderedProminent).tint(.green).padding(.vertical, 20.0)
+                            Button("Cancel", action:   {
+                                getSecretErrorMsg = nil
+                                showSecret = false
+                            }).buttonStyle(.borderedProminent).tint(.red).padding(.vertical, 20.0)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func getSecretKey() async {
+        isGettingSecret = true
+        let authService = AuthService()
+        do {
+            secretKey = try authService.userKeyPair(pin: self.pin).secretKey
+        } catch {
+            getSecretErrorMsg = error.localizedDescription
+        }
+        isGettingSecret = false
+    }
+    
     private var balancesView: some View  {
         GroupBox ("Balances"){
             Utils.divider
@@ -54,7 +124,7 @@ struct Overview: View {
                 fundAccountView
             } else {
                 List(assets, id: \.id) { asset in
-                    var name = asset.id == "native" ? "XLM" : asset.id
+                    let name = asset.id == "native" ? "XLM" : asset.id
                     Text("\(asset.balance) \(name)").italic().foregroundColor(.black)
                 }.listStyle(.automatic).frame(height: CGFloat((assets.count * 65) + (assets.count < 4 ? 40 : 0)), alignment: .top)
             }
@@ -111,6 +181,13 @@ struct Overview: View {
         
         
         isLoadingData = false
+    }
+    
+    private func copyToClipboard(text:String) {
+        let pasteboard = UIPasteboard.general
+        pasteboard.string = text
+        toastMessage = "Copied to clipboard"
+        showToast = true
     }
 }
 
