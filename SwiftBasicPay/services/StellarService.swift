@@ -50,6 +50,14 @@ public class StellarService {
         stellar.sign(tx: tx, keyPair: userKeyPair)
         return try await stellar.submitTransaction(signedTransaction: tx)
     }
+    
+    public static func removeAssetSupport(asset:IssuedAssetId, userKeyPair:SigningKeyPair)  async throws -> Bool {
+        let stellar = wallet.stellar
+        let txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        let tx = try txBuilder.removeAssetSupport(asset: asset).build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
+    }
 }
 
 public class AssetInfo: Hashable {

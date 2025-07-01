@@ -31,6 +31,7 @@
 		837398122E1000D90032FDAA /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398112E1000D90032FDAA /* Utils.swift */; };
 		837398142E10047A0032FDAA /* StellarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398132E10047A0032FDAA /* StellarService.swift */; };
 		837398162E129CF20032FDAA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398152E129CF20032FDAA /* SettingsView.swift */; };
+		83F632392E1411C800C5A38E /* PinSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F632382E1411C800C5A38E /* PinSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +56,7 @@
 		837398112E1000D90032FDAA /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		837398132E10047A0032FDAA /* StellarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StellarService.swift; sourceTree = "<group>"; };
 		837398152E129CF20032FDAA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		83F632382E1411C800C5A38E /* PinSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +137,7 @@
 			children = (
 				837397FA2E0D90080032FDAA /* LabelledDivider.swift */,
 				837398112E1000D90032FDAA /* Utils.swift */,
+				83F632382E1411C800C5A38E /* PinSheet.swift */,
 			);
 			path = common;
 			sourceTree = "<group>";
@@ -229,6 +232,7 @@
 				837397D62E0D55E10032FDAA /* ContentView.swift in Sources */,
 				8373980C2E0F2B9B0032FDAA /* KycView.swift in Sources */,
 				837397F02E0D6A830032FDAA /* SecureStorage.swift in Sources */,
+				83F632392E1411C800C5A38E /* PinSheet.swift in Sources */,
 				837398122E1000D90032FDAA /* Utils.swift in Sources */,
 				837398082E0F2AE50032FDAA /* AssetsView.swift in Sources */,
 				837397EB2E0D685C0032FDAA /* AuthView.swift in Sources */,
