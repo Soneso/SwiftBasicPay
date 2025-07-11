@@ -14,6 +14,7 @@ public class SecureStorage {
 
     private static let simpleKeychain = SimpleKeychain()
     private static let userSecretStorageKey:String = "secret"
+    private static let userContactsStorageKey:String = "contacts"
     private static let salt:String = "stellar"
     
     public static var hasUser:Bool {
@@ -71,6 +72,30 @@ public class SecureStorage {
         }
     }
     
+
+    
+    public static func getContacts() -> [ContactInfo] {
+        var contacts:[ContactInfo] = []
+        if let hasContacts = try? simpleKeychain.hasItem(forKey:userContactsStorageKey),
+            hasContacts,
+            let jsonString = try? simpleKeychain.string(forKey: userContactsStorageKey)  {
+            let jsonData = Data(jsonString.utf8)
+            let jsonDecoder = JSONDecoder()
+            if let c = try? jsonDecoder.decode([ContactInfo].self, from: jsonData) {
+                contacts = c
+            }
+        }
+        return contacts
+    }
+    
+    public static func saveContacts(contacts: [ContactInfo]) throws {
+        let jsonEncoder = JSONEncoder()
+        jsonEncoder.outputFormatting = .prettyPrinted
+        let encodeContacts = try jsonEncoder.encode(contacts)
+        let endcodeStringContacts = String(data: encodeContacts, encoding: .utf8)!
+        try simpleKeychain.set(endcodeStringContacts, forKey: userContactsStorageKey)
+    }
+    
     public static func deleteAll() throws {
         if try hasUser {
             try simpleKeychain.deleteAll()
@@ -93,5 +118,28 @@ extension SecureStorageError: LocalizedError {
         case .invalidPin:
             return NSLocalizedString("sorry, pin is wrong", comment: "Secure storage error")
         }
+    }
+}
+
+public struct ContactInfo: Identifiable, Codable {
+    public let id: String
+    public let name: String
+    public let accountId: String
+    
+    enum CodingKeys: String, CodingKey {
+           case id, name, accountId
+    }
+    
+    public init(name: String, accountId:String) {
+        self.id = UUID().uuidString
+        self.name = name
+        self.accountId = accountId
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        accountId = try container.decode(String.self, forKey: .accountId)
     }
 }
