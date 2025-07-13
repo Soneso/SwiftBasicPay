@@ -20,7 +20,7 @@ struct Dashboard: View {
     var body: some View {
         TabView {
             Overview(userAddress: userAddress).tabItem { Label("Overview", systemImage: "list.dash") }
-            PaymentsView().tabItem { Label("Payments", systemImage: "dollarsign.circle") }
+            PaymentsView(userAddress: userAddress).tabItem { Label("Payments", systemImage: "dollarsign.circle") }
             AssetsView(userAddress: userAddress).tabItem { Label("Assets", systemImage: "bitcoinsign.arrow.circlepath") }
             TransfersView().tabItem { Label("Transfers", systemImage: "paperplane") }
             KycView().tabItem { Label("KYC", systemImage: "shield.lefthalf.filled.badge.checkmark") }

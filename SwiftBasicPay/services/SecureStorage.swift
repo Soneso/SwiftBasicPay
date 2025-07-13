@@ -121,7 +121,7 @@ extension SecureStorageError: LocalizedError {
     }
 }
 
-public struct ContactInfo: Identifiable, Codable {
+public struct ContactInfo: Identifiable, Codable, Hashable {
     public let id: String
     public let name: String
     public let accountId: String
@@ -141,5 +141,13 @@ public struct ContactInfo: Identifiable, Codable {
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         accountId = try container.decode(String.self, forKey: .accountId)
+    }
+    
+    public static func == (lhs: ContactInfo, rhs: ContactInfo) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

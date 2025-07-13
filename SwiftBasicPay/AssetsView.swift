@@ -69,9 +69,9 @@ struct AssetsView: View {
             Text("Add a trustline on your account, allowing you to hold the specified asset:").italic().foregroundColor(.black)
             Picker("select asset", selection: $selectedAsset) {
                 ForEach(assetsToAdd, id: \.self) { asset in
-                    Text("\(asset.id)").italic().foregroundColor(.black).tag(asset.id as String)
+                    Text("\(asset.id)").italic().foregroundColor(.black).tag(asset.id)
                 }
-                Text(AssetsView.customAssetItem).italic().foregroundColor(.black).tag(AssetsView.customAssetItem as String)
+                Text(AssetsView.customAssetItem).italic().foregroundColor(.black).tag(AssetsView.customAssetItem)
             }.padding(.vertical, 20)
             
             if isAddingAsset {

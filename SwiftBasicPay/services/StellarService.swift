@@ -58,9 +58,30 @@ public class StellarService {
         stellar.sign(tx: tx, keyPair: userKeyPair)
         return try await stellar.submitTransaction(signedTransaction: tx)
     }
+    
+    public static func sendPayment(destinationAddress:String, 
+                                   assetId:StellarAssetId,
+                                   amount:Decimal,
+                                   memo:Memo? = nil,
+                                   userKeyPair:SigningKeyPair) async throws -> Bool {
+        let stellar = wallet.stellar
+        var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        txBuilder = try txBuilder.transfer(destinationAddress: destinationAddress,
+                                        assetId: assetId,
+                                        amount: amount)
+        if let memo = memo {
+            // TODO: split memo into memo and memo type as parameters of this `sendPayment´ function
+            txBuilder = txBuilder.setMemo(memo: memo)
+        }
+        
+        let tx = try txBuilder.build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
+        
+    }
 }
 
-public class AssetInfo: Hashable {
+public class AssetInfo: Hashable, Identifiable {
     
     public var asset:AssetId
     public var balance:String
