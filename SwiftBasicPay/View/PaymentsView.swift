@@ -56,6 +56,7 @@ struct PaymentsView: View {
                         standardPaymentsView
                     }
                     balancesView
+                    RecentPaymentsView().environmentObject(dashboardData)
                 }
             }.padding()
         }
@@ -307,6 +308,7 @@ struct PaymentsView: View {
             } else {
                 resetState()
                 await dashboardData.fetchUserAssets()
+                await dashboardData.fetchRecentPayments()
             }
         } catch {
             standardPaymentErrMsg = error.localizedDescription

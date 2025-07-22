@@ -32,6 +32,7 @@
 		837398162E129CF20032FDAA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398152E129CF20032FDAA /* SettingsView.swift */; };
 		8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8376983A2E269C1400867095 /* AssetsFetcher.swift */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
+		83F5B2CC2E30342600920FF1 /* RecentPaymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsView.swift */; };
 		83F632392E1411C800C5A38E /* PinSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F632382E1411C800C5A38E /* PinSheet.swift */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,7 @@
 		837398152E129CF20032FDAA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8376983A2E269C1400867095 /* AssetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsFetcher.swift; sourceTree = "<group>"; };
 		83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
+		83F5B2CB2E30342600920FF1 /* RecentPaymentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPaymentsView.swift; sourceTree = "<group>"; };
 		83F632382E1411C800C5A38E /* PinSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -157,6 +159,7 @@
 				837398152E129CF20032FDAA /* SettingsView.swift */,
 				837397FA2E0D90080032FDAA /* LabelledDivider.swift */,
 				83F632382E1411C800C5A38E /* PinSheet.swift */,
+				83F5B2CB2E30342600920FF1 /* RecentPaymentsView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -260,6 +263,7 @@
 				837397D42E0D55E10032FDAA /* SwiftBasicPayApp.swift in Sources */,
 				837397EE2E0D6A3F0032FDAA /* AuthService.swift in Sources */,
 				837398142E10047A0032FDAA /* StellarService.swift in Sources */,
+				83F5B2CC2E30342600920FF1 /* RecentPaymentsView.swift in Sources */,
 				83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */,
 				837397F82E0D7AEE0032FDAA /* DemoError.swift in Sources */,
 				8373980A2E0F2B2C0032FDAA /* TransfersView.swift in Sources */,

@@ -156,6 +156,62 @@ public class StellarService {
         
     }
     
+    public static func loadRecentPayments(address:String) async throws -> [PaymentInfo] {
+        let server = wallet.stellar.server
+        let paymentsResponseEnum = await server.payments.getPayments(forAccount: address, order: Order.descending, limit: 5)
+        switch paymentsResponseEnum {
+        case .success(let page):
+            let records = page.records
+            var result:[PaymentInfo] = []
+            for record in records {
+                if let payment = record as? PaymentOperationResponse {
+                    let info = try paymentInfoFromPaymentOperationResponse(payment: payment, address: address)
+                    result.append(info)
+                } else if let payment = record as? AccountCreatedOperationResponse {
+                    let info = paymentInfoFromAccountCreatedOperationResponse(payment: payment)
+                    result.append(info)
+                } else if let payment = record as? PathPaymentStrictReceiveOperationResponse {
+                    let info = try paymentInfoFromPathPaymentStrictReceiveOperationResponse(payment: payment, address: address)
+                    result.append(info)
+                } else if let payment = record as? PathPaymentStrictSendOperationResponse {
+                    let info = try paymentInfoFromPathPaymentStrictSendOperationResponse(payment: payment, address: address)
+                    result.append(info)
+                }
+            }
+            return result
+        case .failure(_):
+            throw StellarServiceError.runtimeError("could not load recent payments for \(address)")
+        }
+    }
+    
+    private static func paymentInfoFromPaymentOperationResponse(payment: PaymentOperationResponse, address:String) throws -> PaymentInfo{
+        let direction = payment.to == address ? PaymentDirection.received : PaymentDirection.sent
+        let asset = try StellarAssetId.fromAssetData(type: payment.assetType, code: payment.assetCode, issuerAccountId: payment.assetIssuer)
+        let address = direction == PaymentDirection.sent ? payment.to : payment.from
+        return PaymentInfo(asset: asset, amount: payment.amount, direction: direction, address: address)
+    }
+    
+    private static func paymentInfoFromAccountCreatedOperationResponse(payment: AccountCreatedOperationResponse) -> PaymentInfo{
+        
+        let amount = Utils.removeTrailingZerosFormAmount(amount: payment.startingBalance.description)
+        return PaymentInfo(asset: NativeAssetId(), amount: amount, direction: PaymentDirection.received, address: payment.funder)
+    }
+    
+    private static func paymentInfoFromPathPaymentStrictSendOperationResponse(payment: PathPaymentStrictSendOperationResponse, address:String) throws -> PaymentInfo{
+        let direction = payment.to == address ? PaymentDirection.received : PaymentDirection.sent
+        let asset = try StellarAssetId.fromAssetData(type: payment.assetType, code: payment.assetCode, issuerAccountId: payment.assetIssuer)
+        let address = direction == PaymentDirection.sent ? payment.to : payment.from
+        return PaymentInfo(asset: asset, amount: payment.amount, direction: direction, address: address)
+    }
+    
+    
+    private static func paymentInfoFromPathPaymentStrictReceiveOperationResponse(payment: PathPaymentStrictReceiveOperationResponse, address:String) throws -> PaymentInfo{
+        let direction = payment.to == address ? PaymentDirection.received : PaymentDirection.sent
+        let asset = try StellarAssetId.fromAssetData(type: payment.assetType, code: payment.assetCode, issuerAccountId: payment.assetIssuer)
+        let address = direction == PaymentDirection.sent ? payment.to : payment.from
+        return PaymentInfo(asset: asset, amount: payment.amount, direction: direction, address: address)
+    }
+    
 }
 
 public class AssetInfo: Hashable, Identifiable {
@@ -206,6 +262,53 @@ public class AssetInfo: Hashable, Identifiable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
+}
+
+public class PaymentInfo: Hashable, Identifiable {
+    
+    let asset:StellarAssetId
+    let amount:String
+    let direction:PaymentDirection
+    let address:String
+    let contactName:String?
+    
+    internal init(asset: StellarAssetId, amount: String, direction: PaymentDirection, address: String, contactName: String? = nil) {
+        self.asset = asset
+        self.amount = amount
+        self.direction = direction
+        self.address = address
+        self.contactName = contactName
+    }
+    
+    public var description:String {
+        let strAmount = Utils.removeTrailingZerosFormAmount(amount: amount)
+        let id = asset.id == "native" ? "XLM" : (asset is IssuedAssetId ? (asset as! IssuedAssetId).code : asset.id)
+        let dir = direction.rawValue
+        let name = contactName ?? Utils.shortAddress(address: address)
+        return "\(strAmount) \(id) \(dir) \(name)"
+    }
+    
+    public static func == (lhs: PaymentInfo, rhs: PaymentInfo) -> Bool {
+        lhs.asset.id == rhs.asset.id &&
+        lhs.amount == rhs.amount &&
+        lhs.direction == rhs.direction &&
+        lhs.address == rhs.address &&
+        lhs.contactName == rhs.contactName
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(asset.id)
+        hasher.combine(amount)
+        hasher.combine(direction)
+        hasher.combine(address)
+        hasher.combine(contactName)
+    }
+    
+}
+
+public enum PaymentDirection:String {
+    case sent = "sent to"
+    case received = "received from"
 }
 
 public enum StellarServiceError: Error {

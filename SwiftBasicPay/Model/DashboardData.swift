@@ -13,10 +13,13 @@ class DashboardData: ObservableObject {
     @Published var userAccountExists: Bool = false
     @Published var userAssets: [AssetInfo] = []
     @Published var userContacts: [ContactInfo] = []
+    @Published var recentPayments: [PaymentInfo] = []
     @Published var isLoadingAssets: Bool = false
     @Published var isLoadingContacts: Bool = false
+    @Published var isLoadingRecentPayments: Bool = false
     @Published var error: DashboardDataError? = nil
-
+    @Published var recentPaymentsLoadingError: DashboardDataError? = nil
+    
     internal init(userAddress: String) {
         self.userAddress = userAddress
     }
@@ -60,6 +63,36 @@ class DashboardData: ObservableObject {
         Task { @MainActor in
             self.userContacts = contacts
             self.isLoadingContacts = false
+        }
+    }
+    
+    func fetchRecentPayments() async  {
+        Task { @MainActor in
+            self.isLoadingRecentPayments = true
+        }
+        do {
+            let accountExists = try await StellarService.accountExists(address: userAddress)
+            if !accountExists {
+                Task { @MainActor in
+                    self.recentPayments = []
+                    self.recentPaymentsLoadingError = .accountNotFound(accountId: userAddress)
+                    self.isLoadingRecentPayments = false
+                }
+                return
+            }
+            let loadedPayments = try await StellarService.loadRecentPayments(address: userAddress)
+            // TODO: set contact names
+            Task { @MainActor in
+                self.recentPaymentsLoadingError = nil
+                self.recentPayments = loadedPayments
+                self.isLoadingRecentPayments = false
+            }
+        } catch {
+            Task { @MainActor in
+                self.recentPaymentsLoadingError = .fetchingError(message: error.localizedDescription)
+                self.recentPayments = []
+                self.isLoadingRecentPayments = false
+            }
         }
     }
 }

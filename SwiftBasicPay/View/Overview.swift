@@ -30,15 +30,18 @@ struct Overview: View {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
                 balancesView
-                Spacer()
                 myDataView
+                RecentPaymentsView().environmentObject(dashboardData)
             }.padding().toast(isPresenting: $showToast){
                 AlertToast(type: .regular, title: "\(toastMessage)")
             }
         }.onAppear() {
             Task {
-                await dashboardData.fetchUserAssets()
-                await dashboardData.loadUserContacts()
+                if (dashboardData.userAssets.isEmpty) {
+                    await dashboardData.fetchUserAssets()
+                    await dashboardData.loadUserContacts()
+                    await dashboardData.fetchRecentPayments()
+                }
             }
         }
     }

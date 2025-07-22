@@ -28,4 +28,11 @@ public class Utils {
         }
         return amount
     }
+    
+    public static func shortAddress(address:String) -> String {
+        if address.count == 56 {
+            return "\(address.prefix(4))...\(address.suffix(4))"
+        }
+        return address
+    }
 }
