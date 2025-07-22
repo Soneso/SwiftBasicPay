@@ -10,46 +10,35 @@ import AlertToast
 
 struct Overview: View {
     
-    public let userAddress:String
+    @EnvironmentObject var dashboardData: DashboardData
+    
     @State private var showToast = false
     @State private var toastMessage:String = ""
-    @State private var isLoadingData:Bool = false
     @State private var isFundingAccount:Bool = false
-    @State private var accountFunded:Bool = true
     @State private var viewErrorMsg:String?
-    @State private var balancesErrorMsg:String?
-    @State private var assets:[AssetInfo] = []
     @State private var pin:String = ""
     @State private var showSecret = false
     @State private var secretKey:String?
     @State private var isGettingSecret:Bool = false
     @State private var getSecretErrorMsg:String?
     
-    internal init(userAddress: String) {
-        self.userAddress = userAddress
-    }
-    
-        
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
-                Text("Overview").foregroundColor(Color.blue).multilineTextAlignment(.leading).bold().font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Label("Overview", systemImage: "list.dash")
                 if let error = viewErrorMsg {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
-                if isLoadingData {
-                    Utils.progressView
-                } else {
-                    balancesView
-                    Spacer()
-                    myDataView
-                }
+                balancesView
+                Spacer()
+                myDataView
             }.padding().toast(isPresenting: $showToast){
                 AlertToast(type: .regular, title: "\(toastMessage)")
             }
         }.onAppear() {
             Task {
-                await loadData()
+                await dashboardData.fetchUserAssets()
+                await dashboardData.loadUserContacts()
             }
         }
     }
@@ -57,18 +46,22 @@ struct Overview: View {
     private var myDataView: some View  {
         GroupBox ("My data"){
             Utils.divider
-            Text("Address").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
+            Text("Address:").font(.subheadline).italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
             HStack {
-                Text(userAddress).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Text(dashboardData.userAddress).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
                 Button("", systemImage: "doc.on.doc") {
-                    copyToClipboard(text: userAddress)
+                    copyToClipboard(text: dashboardData.userAddress)
                 }
             }.padding(EdgeInsets(top: 5, leading: 0, bottom: 10, trailing: 0))
-            Toggle("Show secret key", isOn: $showSecret).padding(.vertical, 10.0)
+            Toggle("Show secret key", isOn: $showSecret).padding(.vertical, 10.0).onChange(of: showSecret) { oldValue, newValue in
+                if oldValue && !newValue {
+                    secretKey = nil
+                }
+            }
             if showSecret {
                 
                 if let secret = secretKey {
-                    Text("Secret key:").bold().font(.body).frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Secret key:").bold().font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
                     HStack {
                         Text(secret).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).foregroundColor(.red)
                         Button("", systemImage: "doc.on.doc") {
@@ -114,23 +107,32 @@ struct Overview: View {
         } catch {
             getSecretErrorMsg = error.localizedDescription
         }
+        self.pin = ""
         isGettingSecret = false
+    }
+    
+    var userAssets: [AssetInfo] {
+        dashboardData.userAssets
     }
     
     private var balancesView: some View  {
         GroupBox ("Balances"){
             Utils.divider
-            if !accountFunded {
-                fundAccountView
+            if dashboardData.isLoadingAssets {
+                Utils.progressView
+            } else if let error = dashboardData.error {
+                switch error {
+                case .accountNotFound(_):
+                    fundAccountView
+                case .fetchingError(let message):
+                    Utils.divider
+                    Text("\(message)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
+                }
             } else {
-                List(assets, id: \.id) { asset in
-                    let formattedBalance = Utils.removeTrailingZerosFormAmount(amount: asset.balance)
-                    Text("\(formattedBalance) \(asset.code)").italic().foregroundColor(.black)
-                }.listStyle(.automatic).frame(height: CGFloat((assets.count * 65) + (assets.count < 4 ? 40 : 0)), alignment: .top)
-            }
-            if let error = balancesErrorMsg {
-                Utils.divider
-                Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
+                ForEach(userAssets, id: \.id) { asset in
+                    Spacer()
+                    Text("\(asset.formattedBalance) \(asset.code)").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
     }
@@ -155,30 +157,12 @@ struct Overview: View {
     private func fundAccount() async {
         isFundingAccount = true
         do {
-            try await StellarService.fundTestnetAccount(address: userAddress)
-            await loadData()
-        } catch {
-            balancesErrorMsg = error.localizedDescription
-        }
-        isFundingAccount = false
-    }
-    
-    private func loadData() async {
-        isLoadingData = true
-        do {
-            let accountExists = try await StellarService.accountExists(address: userAddress)
-            if !accountExists {
-                accountFunded = false
-            } else {
-                accountFunded = true
-                assets = try await StellarService.loadAssetsForAddress(address: userAddress)
-            }
+            try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
+            await dashboardData.fetchUserAssets()
         } catch {
             viewErrorMsg = error.localizedDescription
         }
-        
-        
-        isLoadingData = false
+        isFundingAccount = false
     }
     
     private func copyToClipboard(text:String) {
@@ -190,5 +174,6 @@ struct Overview: View {
 }
 
 #Preview {
-    Overview(userAddress: "GAG4MYEEIJZ7DGS2PGCEEY5PX3HMZC7L7KK62BFLJ3LSYQIS4TYC4ETJ")
+    Overview().environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+    // GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5
 }

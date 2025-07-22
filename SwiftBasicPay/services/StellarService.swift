@@ -79,6 +79,83 @@ public class StellarService {
         return try await stellar.submitTransaction(signedTransaction: tx)
         
     }
+    
+    public static func findStrictSendPaymentPath(sourceAsset: StellarAssetId,
+                                                 sourceAmount:Decimal,
+                                                 destinationAddress:String) async throws -> [PaymentPath] {
+        
+        let stellar = wallet.stellar
+        return try await stellar.findStrictSendPathForDestinationAddress(destinationAddress: destinationAddress,
+                                                                         sourceAssetId: sourceAsset,
+                                                                         sourceAmount: sourceAmount.description)
+        
+    }
+    
+    public static func findStrictReceivePaymentPath(sourceAddress:String,
+                                                    destinationAsset:StellarAssetId,
+                                                    destinationAmount:Decimal) async throws -> [PaymentPath] {
+        let stellar = wallet.stellar
+        return try await stellar.findStrictReceivePathForSourceAddress(sourceAddress: sourceAddress,
+                                                                       destinationAssetId: destinationAsset,
+                                                                       destinationAmount: destinationAmount.description)
+    }
+    
+    public static func strictSendPayment(sendAssetId: StellarAssetId,
+                                         sendAmount: Decimal,
+                                         destinationAddress:String,
+                                         destinationAssetId: StellarAssetId,
+                                         destinationMinAmount:Decimal,
+                                         path: [StellarAssetId],
+                                         memo:String? = nil,
+                                         userKeyPair: SigningKeyPair) async throws -> Bool {
+        let stellar = wallet.stellar
+        var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        txBuilder = txBuilder.strictSend(sendAssetId: sendAssetId,
+                                         sendAmount: sendAmount,
+                                         destinationAddress: destinationAddress,
+                                         destinationAssetId: destinationAssetId,
+                                         destinationMinAmount: destinationMinAmount,
+                                         path: path)
+        
+        if let memo = memo {
+            guard let memoObj = try Memo(text: memo) else {
+                throw StellarServiceError.runtimeError("invalid argument 'memo' value: \(memo)")
+            }
+            txBuilder = txBuilder.setMemo(memo: memoObj)
+        }
+        let tx = try txBuilder.build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
+    }
+    
+    public static func strictReceivePayment(sendAssetId: StellarAssetId,
+                                            sendMaxAmount: Decimal,
+                                            destinationAddress:String,
+                                            destinationAssetId: StellarAssetId,
+                                            destinationAmount:Decimal,
+                                            path: [StellarAssetId],
+                                            memo:String? = nil,
+                                            userKeyPair: SigningKeyPair) async throws -> Bool {
+        let stellar = wallet.stellar
+        var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        txBuilder = txBuilder.strictReceive(sendAssetId: sendAssetId,
+                                            destinationAddress: destinationAddress,
+                                            destinationAssetId: destinationAssetId,
+                                            destinationAmount: destinationAmount,
+                                            sendMaxAmount: sendMaxAmount,
+                                            path: path)
+        if let memo = memo {
+            guard let memoObj = try Memo(text: memo) else {
+                throw StellarServiceError.runtimeError("invalid argument 'memo' value: \(memo)")
+            }
+            txBuilder = txBuilder.setMemo(memo: memoObj)
+        }
+        let tx = try txBuilder.build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
+        
+    }
+    
 }
 
 public class AssetInfo: Hashable, Identifiable {
@@ -118,11 +195,28 @@ public class AssetInfo: Hashable, Identifiable {
         }
     }
     
+    public var formattedBalance:String {
+        Utils.removeTrailingZerosFormAmount(amount: self.balance)
+    }
+    
     public static func == (lhs: AssetInfo, rhs: AssetInfo) -> Bool {
         lhs.id == rhs.id
     }
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+public enum StellarServiceError: Error {
+    case runtimeError(String)
+}
+
+extension StellarServiceError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .runtimeError(let val):
+            return NSLocalizedString(val, comment: "Stellar service error")
+        }
     }
 }

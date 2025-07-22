@@ -1,0 +1,83 @@
+//
+//  DashboardData.swift
+//  SwiftBasicPay
+//
+//  Created by Christian Rogobete on 22.07.25.
+//
+
+import Foundation
+
+class DashboardData: ObservableObject {
+    
+    let userAddress:String
+    @Published var userAccountExists: Bool = false
+    @Published var userAssets: [AssetInfo] = []
+    @Published var userContacts: [ContactInfo] = []
+    @Published var isLoadingAssets: Bool = false
+    @Published var isLoadingContacts: Bool = false
+    @Published var error: DashboardDataError? = nil
+
+    internal init(userAddress: String) {
+        self.userAddress = userAddress
+    }
+    
+    func fetchUserAssets() async  {
+        Task { @MainActor in
+            self.isLoadingAssets = true
+        }
+        do {
+            let accountExists = try await StellarService.accountExists(address: userAddress)
+            if !accountExists {
+                Task { @MainActor in
+                    self.error = .accountNotFound(accountId: self.userAddress)
+                    self.userAssets = []
+                    self.userAccountExists = false
+                    self.isLoadingAssets = false
+                }
+                return
+            }
+            let loadedAssets = try await StellarService.loadAssetsForAddress(address: userAddress)
+            Task { @MainActor in
+                self.error = nil
+                self.userAssets = loadedAssets
+                self.userAccountExists = true
+                self.isLoadingAssets = false
+            }
+        } catch {
+            Task { @MainActor in
+                self.error = .fetchingError(message: error.localizedDescription)
+                self.userAssets = []
+                self.isLoadingAssets = false
+            }
+        }
+    }
+    
+    func loadUserContacts() async  {
+        Task { @MainActor in
+            self.isLoadingContacts = true
+        }
+        let contacts = SecureStorage.getContacts()
+        Task { @MainActor in
+            self.userContacts = contacts
+            self.isLoadingContacts = false
+        }
+    }
+}
+
+enum DashboardDataError: Error {
+    case accountNotFound(accountId:String)
+    case fetchingError(message:String)
+}
+
+
+
+extension DashboardDataError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .accountNotFound(let accountId):
+            return NSLocalizedString("Account with id: \(accountId) not found on the Stellar Network.", comment: "The account is not funded.")
+        case .fetchingError(let message):
+            return NSLocalizedString("Error fetching data: \(message)", comment: "Could not fetch data")
+        }
+    }
+}

@@ -12,9 +12,8 @@ import AlertToast
 // Very basic contacts view for this demo. In your wallet you should implement a better one ;)
 struct ContactsView: View {
     
-    @State private var showToast = false
-    @State private var toastMessage:String = ""
-    @State var contactListData:[ContactInfo] = []
+    @EnvironmentObject var dashboardData: DashboardData
+    
     @State private var addMode = false
     @State private var isAddingContact = false
     @State private var newContactName:String = ""
@@ -23,10 +22,10 @@ struct ContactsView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Contacts").foregroundColor(Color.blue).multilineTextAlignment(.leading).bold().font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            Label("Contacts", systemImage: "person")
             Utils.divider
             List {
-                ForEach(contactListData) { item in
+                ForEach(userContacts) { item in
                     VStack(spacing: 5) {
                         Text(item.name).foregroundColor(Color.blue).frame(maxWidth: .infinity, alignment: .leading)
                         Text(item.accountId).frame(maxWidth: .infinity, alignment: .leading)
@@ -41,15 +40,11 @@ struct ContactsView: View {
                     addMode.toggle()
                 }).buttonStyle(.borderedProminent).tint(.blue)
             }
-        }.padding().toast(isPresenting: $showToast){
-            AlertToast(type: .regular, title: "\(toastMessage)")
-        }.onAppear() {
-            loadData()
         }
     }
     
-    private func loadData() {
-        contactListData = SecureStorage.getContacts()
+    var userContacts: [ContactInfo] {
+        dashboardData.userContacts
     }
     
     private var addContactView: some View { 
@@ -92,7 +87,7 @@ struct ContactsView: View {
             addContactError = "Please name and account id."
             return
         }
-        if contactListData.filter({$0.name == name}).count > 0 {
+        if userContacts.filter({$0.name == name}).count > 0 {
             addContactError = "Name already exists."
             return
         }
@@ -111,12 +106,10 @@ struct ContactsView: View {
                 isAddingContact.toggle()
                 return
             }
-            
+            var contactListData = userContacts
             contactListData.append(ContactInfo(name: name, accountId: accountId))
             try SecureStorage.saveContacts(contacts: contactListData)
-            contactListData = SecureStorage.getContacts()
-            showToast = true
-            toastMessage = "contact added"
+            await dashboardData.loadUserContacts()
             addMode.toggle()
             isAddingContact.toggle()
         } catch {
@@ -126,15 +119,11 @@ struct ContactsView: View {
     }
     
     func deleteItems(at offsets: IndexSet) {
+        var contactListData = userContacts
         contactListData.remove(atOffsets: offsets)
-        do {
-            try SecureStorage.saveContacts(contacts: contactListData)
-            contactListData = SecureStorage.getContacts()
-            showToast = true
-            toastMessage = "contact deleted"
-        } catch {
-            showToast = true
-            toastMessage = "error deliting contact"
+        try? SecureStorage.saveContacts(contacts: contactListData)
+        Task {
+            await dashboardData.loadUserContacts()
         }
     }
 
