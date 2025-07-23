@@ -1,5 +1,5 @@
 //
-//  RecentPaymentsView.swift
+//  RecentPaymentsBox.swift
 //  SwiftBasicPay
 //
 //  Created by Christian Rogobete on 22.07.25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct RecentPaymentsView: View {
+struct RecentPaymentsBox: View {
     @EnvironmentObject var dashboardData: DashboardData
     
     var body: some View {
@@ -38,5 +38,5 @@ struct RecentPaymentsView: View {
 }
 
 #Preview {
-    RecentPaymentsView()
+    RecentPaymentsBox()
 }

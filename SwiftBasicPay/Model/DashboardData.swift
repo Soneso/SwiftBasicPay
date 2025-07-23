@@ -17,11 +17,16 @@ class DashboardData: ObservableObject {
     @Published var isLoadingAssets: Bool = false
     @Published var isLoadingContacts: Bool = false
     @Published var isLoadingRecentPayments: Bool = false
-    @Published var error: DashboardDataError? = nil
+    @Published var userAssetsLoadingError: DashboardDataError? = nil
     @Published var recentPaymentsLoadingError: DashboardDataError? = nil
     
     internal init(userAddress: String) {
         self.userAddress = userAddress
+    }
+    
+    func fetchStellarData() async {
+        await fetchUserAssets()
+        await fetchRecentPayments()
     }
     
     func fetchUserAssets() async  {
@@ -32,7 +37,7 @@ class DashboardData: ObservableObject {
             let accountExists = try await StellarService.accountExists(address: userAddress)
             if !accountExists {
                 Task { @MainActor in
-                    self.error = .accountNotFound(accountId: self.userAddress)
+                    self.userAssetsLoadingError = .accountNotFound(accountId: self.userAddress)
                     self.userAssets = []
                     self.userAccountExists = false
                     self.isLoadingAssets = false
@@ -41,14 +46,14 @@ class DashboardData: ObservableObject {
             }
             let loadedAssets = try await StellarService.loadAssetsForAddress(address: userAddress)
             Task { @MainActor in
-                self.error = nil
+                self.userAssetsLoadingError = nil
                 self.userAssets = loadedAssets
                 self.userAccountExists = true
                 self.isLoadingAssets = false
             }
         } catch {
             Task { @MainActor in
-                self.error = .fetchingError(message: error.localizedDescription)
+                self.userAssetsLoadingError = .fetchingError(message: error.localizedDescription)
                 self.userAssets = []
                 self.isLoadingAssets = false
             }

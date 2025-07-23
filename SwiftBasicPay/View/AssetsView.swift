@@ -14,7 +14,6 @@ struct AssetsView: View {
     
     private static let customAssetItem = "Custom asset"
     
-    @State private var accountFunded:Bool = true
     @State private var viewErrorMsg:String?
     @State private var selectedAsset = customAssetItem
     @State private var pin:String = ""
@@ -39,8 +38,8 @@ struct AssetsView: View {
                 if let error = viewErrorMsg {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
-                if !accountFunded {
-                    Text("Your account is not yet funded. Switch to the 'Overview' Tab to fund your account first.").font(.subheadline).multilineTextAlignment(.leading).italic().foregroundColor(.orange)
+                if dashboardData.userAssets.isEmpty {
+                    BalancesBox().environmentObject(dashboardData)
                 } else {
                     addAssetView
                     balancesView
@@ -254,10 +253,10 @@ struct AssetsView: View {
     
     private func loadData() async {
         await dashboardData.fetchUserAssets()
-        if let error = dashboardData.error {
+        if let error = dashboardData.userAssetsLoadingError {
             switch error {
             case .accountNotFound(_):
-                accountFunded = false
+                break
             case .fetchingError(let message):
                 viewErrorMsg = message
             }

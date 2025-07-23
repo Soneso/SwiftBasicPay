@@ -112,6 +112,8 @@ struct ContactsView: View {
             await dashboardData.loadUserContacts()
             addMode.toggle()
             isAddingContact.toggle()
+            newContactName = ""
+            newContactAccountId = ""
         } catch {
             addContactError = error.localizedDescription
             isAddingContact.toggle()

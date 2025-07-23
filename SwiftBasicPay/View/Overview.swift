@@ -14,7 +14,6 @@ struct Overview: View {
     
     @State private var showToast = false
     @State private var toastMessage:String = ""
-    @State private var isFundingAccount:Bool = false
     @State private var viewErrorMsg:String?
     @State private var pin:String = ""
     @State private var showSecret = false
@@ -29,18 +28,17 @@ struct Overview: View {
                 if let error = viewErrorMsg {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
-                balancesView
+                BalancesBox().environmentObject(dashboardData)
                 myDataView
-                RecentPaymentsView().environmentObject(dashboardData)
+                RecentPaymentsBox().environmentObject(dashboardData)
             }.padding().toast(isPresenting: $showToast){
                 AlertToast(type: .regular, title: "\(toastMessage)")
             }
         }.onAppear() {
             Task {
-                if (dashboardData.userAssets.isEmpty) {
-                    await dashboardData.fetchUserAssets()
+                await dashboardData.fetchStellarData()
+                if (dashboardData.userContacts.isEmpty) {
                     await dashboardData.loadUserContacts()
-                    await dashboardData.fetchRecentPayments()
                 }
             }
         }
@@ -112,60 +110,6 @@ struct Overview: View {
         }
         self.pin = ""
         isGettingSecret = false
-    }
-    
-    var userAssets: [AssetInfo] {
-        dashboardData.userAssets
-    }
-    
-    private var balancesView: some View  {
-        GroupBox ("Balances"){
-            Utils.divider
-            if dashboardData.isLoadingAssets {
-                Utils.progressView
-            } else if let error = dashboardData.error {
-                switch error {
-                case .accountNotFound(_):
-                    fundAccountView
-                case .fetchingError(let message):
-                    Utils.divider
-                    Text("\(message)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-                }
-            } else {
-                ForEach(userAssets, id: \.id) { asset in
-                    Spacer()
-                    Text("\(asset.formattedBalance) \(asset.code)").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-    }
-    
-    private var fundAccountView: some View  {
-        VStack {
-            Text("Your account does not exist on the Stellar Test Network and needs to be funded!").italic().foregroundColor(.black)
-            Utils.divider
-            if isFundingAccount {
-                Utils.progressView
-            } else {
-                Button("Fund on Testnet", action:   {
-                    Task {
-                        await fundAccount()
-                    }
-                }).buttonStyle(.borderedProminent).tint(.green).padding(.vertical, 20.0)
-            }
-        }
-        
-    }
-    
-    private func fundAccount() async {
-        isFundingAccount = true
-        do {
-            try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
-            await dashboardData.fetchUserAssets()
-        } catch {
-            viewErrorMsg = error.localizedDescription
-        }
-        isFundingAccount = false
     }
     
     private func copyToClipboard(text:String) {
