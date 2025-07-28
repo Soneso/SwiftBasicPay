@@ -94,7 +94,7 @@ public class StellarService {
     /// needed to sign the transaction before submission. Returns true on success.
     ///
     /// - Parameters:
-    ///   - destinationAddress: Account id of the recipeint (G...)
+    ///   - destinationAddress: Account id of the recipient (G...)
     ///   - assetId: Asset to send
     ///   - assetId: Amount to send
     ///   - memo: Optional memo to attach to the transaction
@@ -119,6 +119,35 @@ public class StellarService {
         stellar.sign(tx: tx, keyPair: userKeyPair)
         return try await stellar.submitTransaction(signedTransaction: tx)
         
+    }
+    
+    /// Submits a transaction to the Stellar Network that funds an account for the destination address.
+    /// The starting balance must be min. one XLM. The signing user keypair is needed to sign the transaction before submission.
+    /// The users stellar address  will be used as the source account of the transaction.
+    ///
+    /// - Parameters:
+    ///   - destinationAddress: Account id of the recipient (G...)
+    ///   - startingBalance: The XLM amount that the new account will receive as a starting balance (min. 1 XLM)
+    ///   - memo: Optional memo to attach to the transaction
+    ///   - userKeyPair: The user's signing keypair needed to sign the transaction
+    ///
+    public static func createAccount(destinationAddress:String,
+                                     startingBalance:Decimal = 1,
+                                     memo:Memo?,
+                                     userKeyPair:SigningKeyPair) async throws -> Bool {
+        
+        let stellar = wallet.stellar
+        var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
+        txBuilder = try txBuilder.createAccount(newAccount: try PublicKeyPair(accountId: destinationAddress),
+                                            startingBalance: startingBalance)
+        
+        if let memo = memo {
+            txBuilder = txBuilder.setMemo(memo: memo)
+        }
+        
+        let tx = try txBuilder.build()
+        stellar.sign(tx: tx, keyPair: userKeyPair)
+        return try await stellar.submitTransaction(signedTransaction: tx)
     }
     
     /// Searches for a strict send payment path by using the wallet sdk.

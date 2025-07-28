@@ -162,8 +162,9 @@ struct SendPaymentBox: View {
             let userKeyPair = try authService.userKeyPair(pin: self.pin)
             let destinationExists = try await StellarService.accountExists(address: recipientAccountId)
             
-            // if the destination account does not exist on the testnet, let's fund it!
-            // alternatively we can use the create account operation.
+            // if the destination account does not exist on the testnet, let's fund it with friendbot!
+            // alternatively we can use the create account operation:
+            // StellarService.createAccount(...)
             if !destinationExists {
                 try await StellarService.fundTestnetAccount(address: recipientAccountId)
             }
