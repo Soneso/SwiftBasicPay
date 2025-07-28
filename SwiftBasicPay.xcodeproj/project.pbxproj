@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -87,6 +87,7 @@
 		83F5B36D2E32848900920FF1 /* manage_trust.md in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3232E32848900920FF1 /* manage_trust.md */; };
 		83F5B3702E33988A00920FF1 /* custom_asset_form.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B36E2E33988A00920FF1 /* custom_asset_form.png */; };
 		83F5B3712E33988A00920FF1 /* my_data_box.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B36F2E33988A00920FF1 /* my_data_box.png */; };
+		83F5B3742E37B9E300920FF1 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83F5B3732E37B9E300920FF1 /* stellar-wallet-sdk */; };
 		83F632392E1411C800C5A38E /* PinSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F632382E1411C800C5A38E /* PinSheet.swift */; };
 /* End PBXBuildFile section */
 
@@ -178,6 +179,7 @@
 			files = (
 				837397F32E0D6B660032FDAA /* SimpleKeychain in Frameworks */,
 				837397FE2E0E87110032FDAA /* AlertToast in Frameworks */,
+				83F5B3742E37B9E300920FF1 /* stellar-wallet-sdk in Frameworks */,
 				837397E52E0D653E0032FDAA /* stellar-wallet-sdk in Frameworks */,
 				837397F62E0D72B90032FDAA /* CryptoSwift in Frameworks */,
 			);
@@ -387,6 +389,7 @@
 				837397F22E0D6B660032FDAA /* SimpleKeychain */,
 				837397F52E0D72B90032FDAA /* CryptoSwift */,
 				837397FD2E0E87110032FDAA /* AlertToast */,
+				83F5B3732E37B9E300920FF1 /* stellar-wallet-sdk */,
 			);
 			productName = SwiftBasicPay;
 			productReference = 837397D02E0D55E10032FDAA /* SwiftBasicPay.app */;
@@ -417,10 +420,10 @@
 			);
 			mainGroup = 837397C72E0D55E10032FDAA;
 			packageReferences = (
-				837397E32E0D653E0032FDAA /* XCLocalSwiftPackageReference "../stellar-swift-wallet-sdk" */,
 				837397F12E0D6B660032FDAA /* XCRemoteSwiftPackageReference "SimpleKeychain" */,
 				837397F42E0D72B90032FDAA /* XCRemoteSwiftPackageReference "CryptoSwift" */,
 				837397FC2E0E87110032FDAA /* XCRemoteSwiftPackageReference "AlertToast" */,
+				83F5B3722E37B9E300920FF1 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */,
 			);
 			productRefGroup = 837397D12E0D55E10032FDAA /* Products */;
 			projectDirPath = "";
@@ -729,13 +732,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		837397E32E0D653E0032FDAA /* XCLocalSwiftPackageReference "../stellar-swift-wallet-sdk" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../stellar-swift-wallet-sdk";
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		837397F12E0D6B660032FDAA /* XCRemoteSwiftPackageReference "SimpleKeychain" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -761,6 +757,14 @@
 				minimumVersion = 1.3.9;
 			};
 		};
+		83F5B3722E37B9E300920FF1 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Soneso/stellar-swift-wallet-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -782,6 +786,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 837397FC2E0E87110032FDAA /* XCRemoteSwiftPackageReference "AlertToast" */;
 			productName = AlertToast;
+		};
+		83F5B3732E37B9E300920FF1 /* stellar-wallet-sdk */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83F5B3722E37B9E300920FF1 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */;
+			productName = "stellar-wallet-sdk";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
