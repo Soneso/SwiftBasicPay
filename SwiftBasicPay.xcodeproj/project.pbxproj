@@ -61,7 +61,6 @@
 		83F5B34F2E32848900920FF1 /* remove_srt_trash.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3022E32848900920FF1 /* remove_srt_trash.png */; };
 		83F5B3512E32848900920FF1 /* select_custom_asset.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3042E32848900920FF1 /* select_custom_asset.png */; };
 		83F5B3522E32848900920FF1 /* srt_added.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3052E32848900920FF1 /* srt_added.png */; };
-		83F5B3532E32848900920FF1 /* 200_silver_sent.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3072E32848900920FF1 /* 200_silver_sent.png */; };
 		83F5B3542E32848900920FF1 /* add_james_contact.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3082E32848900920FF1 /* add_james_contact.png */; };
 		83F5B3552E32848900920FF1 /* create_copper_offer.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3092E32848900920FF1 /* create_copper_offer.png */; };
 		83F5B3562E32848900920FF1 /* create_james_account.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B30A2E32848900920FF1 /* create_james_account.png */; };
@@ -76,8 +75,6 @@
 		83F5B35F2E32848900920FF1 /* recent_payments_updated.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3132E32848900920FF1 /* recent_payments_updated.png */; };
 		83F5B3602E32848900920FF1 /* select_send_gold.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3142E32848900920FF1 /* select_send_gold.png */; };
 		83F5B3612E32848900920FF1 /* show_strict_send_path.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3152E32848900920FF1 /* show_strict_send_path.png */; };
-		83F5B3622E32848900920FF1 /* simple_payment_initial.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3162E32848900920FF1 /* simple_payment_initial.png */; };
-		83F5B3632E32848900920FF1 /* simple_payment_recipient_asset_error.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3172E32848900920FF1 /* simple_payment_recipient_asset_error.png */; };
 		83F5B3642E32848900920FF1 /* simple_payment.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3182E32848900920FF1 /* simple_payment.png */; };
 		83F5B3652E32848900920FF1 /* strict_receive_path.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3192E32848900920FF1 /* strict_receive_path.png */; };
 		83F5B3662E32848900920FF1 /* strict_receive_silver.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B31A2E32848900920FF1 /* strict_receive_silver.png */; };
@@ -145,7 +142,6 @@
 		83F5B3022E32848900920FF1 /* remove_srt_trash.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = remove_srt_trash.png; sourceTree = "<group>"; };
 		83F5B3042E32848900920FF1 /* select_custom_asset.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = select_custom_asset.png; sourceTree = "<group>"; };
 		83F5B3052E32848900920FF1 /* srt_added.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = srt_added.png; sourceTree = "<group>"; };
-		83F5B3072E32848900920FF1 /* 200_silver_sent.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 200_silver_sent.png; sourceTree = "<group>"; };
 		83F5B3082E32848900920FF1 /* add_james_contact.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = add_james_contact.png; sourceTree = "<group>"; };
 		83F5B3092E32848900920FF1 /* create_copper_offer.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = create_copper_offer.png; sourceTree = "<group>"; };
 		83F5B30A2E32848900920FF1 /* create_james_account.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = create_james_account.png; sourceTree = "<group>"; };
@@ -160,8 +156,6 @@
 		83F5B3132E32848900920FF1 /* recent_payments_updated.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = recent_payments_updated.png; sourceTree = "<group>"; };
 		83F5B3142E32848900920FF1 /* select_send_gold.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = select_send_gold.png; sourceTree = "<group>"; };
 		83F5B3152E32848900920FF1 /* show_strict_send_path.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = show_strict_send_path.png; sourceTree = "<group>"; };
-		83F5B3162E32848900920FF1 /* simple_payment_initial.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = simple_payment_initial.png; sourceTree = "<group>"; };
-		83F5B3172E32848900920FF1 /* simple_payment_recipient_asset_error.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = simple_payment_recipient_asset_error.png; sourceTree = "<group>"; };
 		83F5B3182E32848900920FF1 /* simple_payment.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = simple_payment.png; sourceTree = "<group>"; };
 		83F5B3192E32848900920FF1 /* strict_receive_path.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = strict_receive_path.png; sourceTree = "<group>"; };
 		83F5B31A2E32848900920FF1 /* strict_receive_silver.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = strict_receive_silver.png; sourceTree = "<group>"; };
@@ -336,7 +330,6 @@
 		83F5B31E2E32848900920FF1 /* payment */ = {
 			isa = PBXGroup;
 			children = (
-				83F5B3072E32848900920FF1 /* 200_silver_sent.png */,
 				83F5B3082E32848900920FF1 /* add_james_contact.png */,
 				83F5B3092E32848900920FF1 /* create_copper_offer.png */,
 				83F5B30A2E32848900920FF1 /* create_james_account.png */,
@@ -351,8 +344,6 @@
 				83F5B3132E32848900920FF1 /* recent_payments_updated.png */,
 				83F5B3142E32848900920FF1 /* select_send_gold.png */,
 				83F5B3152E32848900920FF1 /* show_strict_send_path.png */,
-				83F5B3162E32848900920FF1 /* simple_payment_initial.png */,
-				83F5B3172E32848900920FF1 /* simple_payment_recipient_asset_error.png */,
 				83F5B3182E32848900920FF1 /* simple_payment.png */,
 				83F5B3192E32848900920FF1 /* strict_receive_path.png */,
 				83F5B31A2E32848900920FF1 /* strict_receive_silver.png */,
@@ -446,7 +437,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				83F5B3242E32848900920FF1 /* README.md in Resources */,
-				83F5B3622E32848900920FF1 /* simple_payment_initial.png in Resources */,
 				83F5B32E2E32848900920FF1 /* account_not_funded.png in Resources */,
 				83F5B35A2E32848900920FF1 /* james_trust_silver_1.png in Resources */,
 				83F5B36D2E32848900920FF1 /* manage_trust.md in Resources */,
@@ -480,10 +470,8 @@
 				83F5B3482E32848900920FF1 /* laboratory_send_gold_2.png in Resources */,
 				83F5B3462E32848900920FF1 /* laboratory_create_issuer.png in Resources */,
 				83F5B32C2E32848900920FF1 /* path_payment.md in Resources */,
-				83F5B3532E32848900920FF1 /* 200_silver_sent.png in Resources */,
 				83F5B33F2E32848900920FF1 /* asset_removed.png in Resources */,
 				83F5B3472E32848900920FF1 /* laboratory_send_gold_1.png in Resources */,
-				83F5B3632E32848900920FF1 /* simple_payment_recipient_asset_error.png in Resources */,
 				83F5B3402E32848900920FF1 /* assets_dropdown.png in Resources */,
 				83F5B3672E32848900920FF1 /* switched_2_path_payments.png in Resources */,
 				83F5B33E2E32848900920FF1 /* adding_asset.png in Resources */,
