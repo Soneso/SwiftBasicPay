@@ -137,7 +137,7 @@ We received the list of recent payments from the wallet sdk. Depending on the ty
 
 ## Next
 
-Continue with [Path payment](path_payment.md).
+Continue with [`Path payment`](path_payment.md).
 
 
 

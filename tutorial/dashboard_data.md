@@ -67,4 +67,4 @@ public static func loadAssetsForAddress(address:String) async throws -> [AssetIn
 
 ## Next
 
-Continue with [Account creation](account_creation.md)
+Continue with [`Account creation`](account_creation.md).

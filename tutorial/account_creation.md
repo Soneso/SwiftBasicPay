@@ -51,4 +51,4 @@ When you're ready to move your application to Pubnet, accounts will need to be f
 
 ## Next
 
-Continue with [`Manage trust`](manage_trust.md)
+Continue with [`Manage trust`](manage_trust.md).

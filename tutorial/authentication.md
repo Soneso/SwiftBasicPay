@@ -103,12 +103,12 @@ public func userKeyPair(pin:String) throws -> SigningKeyPair {
 }
 ```
 
-The user's signing keypair is retrieved from the [secure data storage](secure_data_storage.md).
+The user's signing keypair is retrieved from the [`secure data storage`](secure_data_storage.md).
 
 
 ## Next
 
-Continue with [Sign up and login](signup_and_sign_in.md).
+Continue with [`Sign up and login`](signup_and_sign_in.md).
 
 
 
