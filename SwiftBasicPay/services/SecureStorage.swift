@@ -10,6 +10,7 @@ import SimpleKeychain
 import stellar_wallet_sdk
 import CryptoSwift
 
+/// Service used to securely store private user data in the keychain.
 public class SecureStorage {
 
     private static let simpleKeychain = SimpleKeychain()

@@ -9,14 +9,21 @@ import SwiftUI
 import stellar_wallet_sdk
 import stellarsdk
 
+/// For sending standard payments
 struct SendPaymentBox: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// Static picker items
     private static let xlmAssetItem = "native"
     private static let selectRecipient = "Select"
     private static let otherRecipient = "Other"
+    
+    /// Fetcher used to fetch the recipients assets from the Stellar Network.
     @StateObject var recipientAssetsFetcher = AssetsFetcher()
+    
+    /// State variable used to update the UI
     @State private var pathPaymentMode:Bool = false
     @State private var selectedAsset = xlmAssetItem
     @State private var selectedRecipient = selectRecipient
@@ -176,6 +183,7 @@ struct SendPaymentBox: View {
                 isSendingPayment = false
                 return
             }
+            // check if the recipient can receive the asset the user wants to send
             if let issuedAsset = asset.asset as? IssuedAssetId, issuedAsset.issuer != recipientAccountId {
                 let recipientAssets = try await StellarService.loadAssetsForAddress(address: recipientAccountId)
                 guard let _ = recipientAssets.filter({$0.id == selectedAsset}).first else {

@@ -9,8 +9,10 @@ import SwiftUI
 
 struct BalancesBox: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// State variable used to update the UI
     @State private var isFundingAccount:Bool = false
     @State private var errorMsg:String?
     

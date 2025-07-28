@@ -11,7 +11,11 @@ import stellarsdk
 
 struct PaymentsView: View {
     
+    
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
+    
+    /// State variable used to update the UI
     @State private var pathPaymentMode:Bool = false
     
     var body: some View {
@@ -27,6 +31,7 @@ struct PaymentsView: View {
                 } else {
                     Toggle("Send and receive different assets?", isOn: $pathPaymentMode)
                     Utils.divider
+                    // toggle between standard payments and path payments
                     if !pathPaymentMode {
                         SendPaymentBox().environmentObject(dashboardData)
                     } else {

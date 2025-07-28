@@ -11,12 +11,18 @@ import stellarsdk
 
 struct SendPathPaymentBox: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// Static picker items
     private static let xlmAssetItem = "native"
     private static let selectRecipient = "Select recipient"
     private static let otherRecipient = "Other"
+    
+    /// Fetcher used to fetch the recipients assets from the Stellar Network.
     @StateObject var recipientAssetsFetcher = AssetsFetcher()
+    
+    /// State variable used to update the UI
     @State private var selectedAssetToSend = xlmAssetItem
     @State private var selectedAssetToReceive = xlmAssetItem
     @State private var selectedRecipient = selectRecipient

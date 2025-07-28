@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RecentPaymentsBox: View {
+    
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
     var body: some View {

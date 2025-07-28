@@ -11,10 +11,13 @@ import AlertToast
 
 struct AuthView: View {
     
+    /// Delegate function to be called when the user is logged in.
     private let userLoggedIn:((_ userAddress:String) -> Void)
     
+    /// Service used to authenticate the user.
     private let authService = AuthService()
     
+    /// State variables for updating the UI
     @State private var checkUserError:String?
     @State private var hasUser:Bool
     @State private var newUserKeypair = SigningKeyPair.random
@@ -28,9 +31,15 @@ struct AuthView: View {
     @State private var isLoggingIn:Bool = false
     @State private var loginError:String?
     
+    /// Constructor.
+    ///
+    /// - Parameters:
+    ///   - userLoggedIn: A delegate function to be called whe the user is logged in
+    ///
     internal init(userLoggedIn: @escaping ((String) -> Void)) {
         self.userLoggedIn = userLoggedIn
         do {
+            // check if the app already has a user.
             hasUser = try authService.userIsSignedUp
         } catch {
             checkUserError = error.localizedDescription
@@ -44,8 +53,10 @@ struct AuthView: View {
                 if let error = checkUserError {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 } else if hasUser {
+                    // if the app already has a user show the login form
                     loginView
                 } else {
+                    // if the app has no user, shwo the signup form
                     signupView
                 }
             }.padding().toast(isPresenting: $showToast){
@@ -145,7 +156,9 @@ struct AuthView: View {
             signupError = "pin & confirmation are not identical"
         } else {
             do {
+                // use the auth service to sign up the user
                 let address = try authService.signUp(userKeyPair: newUserKeypair, pin: pin)
+                // call the delegate function to signal that the user is logged in
                 userLoggedIn(address)
             } catch {
                 signupError = error.localizedDescription
@@ -161,7 +174,9 @@ struct AuthView: View {
         }
         else {
             do {
+                // use the auth service to log in the user
                 let address = try authService.signIn(pin: pin)
+                // call the delegate function to signal that the user is logged in
                 userLoggedIn(address)
             } catch {
                 loginError = error.localizedDescription

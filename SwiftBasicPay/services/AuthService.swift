@@ -8,6 +8,7 @@
 import Foundation
 import stellar_wallet_sdk
 
+/// Service used to authenticate the user.
 public class AuthService {
     
     /// True if a user is signed up.

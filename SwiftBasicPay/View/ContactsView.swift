@@ -12,8 +12,10 @@ import AlertToast
 // Very basic contacts view for this demo. In your wallet you should implement a better one ;)
 struct ContactsView: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// State variable used to update the UI
     @State private var addMode = false
     @State private var isAddingContact = false
     @State private var newContactName:String = ""

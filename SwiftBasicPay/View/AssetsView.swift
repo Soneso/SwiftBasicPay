@@ -10,10 +10,13 @@ import stellar_wallet_sdk
 
 struct AssetsView: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    // static menu item
     private static let customAssetItem = "Custom asset"
     
+    /// State variables for updating the UI
     @State private var viewErrorMsg:String?
     @State private var selectedAsset = customAssetItem
     @State private var pin:String = ""
@@ -106,10 +109,12 @@ struct AssetsView: View {
         }
     }
     
+    /// the assets with their balances hold by the user
     var userAssets: [AssetInfo] {
         dashboardData.userAssets
     }
     
+    /// assets to add, that can be listed in the picker
     var assetsToAdd:[IssuedAssetId] {
         var result = StellarService.testnetAssets()
         for asset in userAssets {

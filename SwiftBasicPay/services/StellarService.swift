@@ -9,6 +9,7 @@ import Foundation
 import stellar_wallet_sdk
 import stellarsdk
 
+/// Service used to interact with the Stellar Network by using the wallet sdk.
 public class StellarService {
     
     public static var wallet = Wallet.testNet

@@ -10,8 +10,10 @@ import AlertToast
 
 struct Overview: View {
     
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// State variables for updating the UI
     @State private var showToast = false
     @State private var toastMessage:String = ""
     @State private var viewErrorMsg:String?
@@ -104,6 +106,7 @@ struct Overview: View {
         isGettingSecret = true
         let authService = AuthService()
         do {
+            // load the users secret key from secure storage by using the provided pin.
             secretKey = try authService.userKeyPair(pin: self.pin).secretKey
         } catch {
             getSecretErrorMsg = error.localizedDescription

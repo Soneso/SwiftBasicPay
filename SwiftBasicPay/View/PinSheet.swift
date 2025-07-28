@@ -28,18 +28,6 @@ struct PinSheet: View {
     var body: some View {
         VStack {
             Text("Enter your Pin!").bold().font(.title).frame(maxWidth: .infinity, alignment: .center)
-            /*HStack {
-                Text("Enter your Pin!").bold().font(.title).frame(maxWidth: .infinity, alignment: .center)
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle")
-                        .font(.largeTitle)
-                        .foregroundColor(.gray)
-                }.frame(maxWidth: 55, alignment: .trailing)
-                
-
-            }*/
             Utils.divider
             Text("Please enter your pin to continue!").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
             Utils.divider

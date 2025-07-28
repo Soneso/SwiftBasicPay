@@ -9,14 +9,23 @@ import SwiftUI
 
 struct Dashboard: View {
     
+    /// function to logout the user.
     private let logoutUser:(() -> Void)
+    
+    /// Holds the current user data.
     @EnvironmentObject var dashboardData: DashboardData
     
+    /// Constructor.
+    ///
+    /// - Parameters:
+    ///   - logoutUser: A delegate function used to logout the user
+    ///
     internal init(logoutUser: @escaping (() -> Void)) {
         self.logoutUser = logoutUser
     }
     
     var body: some View {
+        // Tabs of the dasboard. Add dashboardData as environmentObject for each tab.
         TabView {
             Overview().environmentObject(dashboardData).tabItem { Label("Overview", systemImage: "list.dash") }
             PaymentsView().environmentObject(dashboardData).tabItem { Label("Payments", systemImage: "dollarsign.circle") }
