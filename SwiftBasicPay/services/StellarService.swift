@@ -365,7 +365,7 @@ public class PaymentInfo: Hashable, Identifiable {
     let amount:String
     let direction:PaymentDirection
     let address:String
-    let contactName:String?
+    var contactName:String?
     
     internal init(asset: StellarAssetId, amount: String, direction: PaymentDirection, address: String, contactName: String? = nil) {
         self.asset = asset

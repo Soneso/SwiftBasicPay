@@ -97,7 +97,11 @@ class DashboardData: ObservableObject {
                 return
             }
             let loadedPayments = try await StellarService.loadRecentPayments(address: userAddress)
-            // TODO: set contact names
+            for payment in loadedPayments {
+                if let contact = userContacts.filter({$0.accountId == payment.address}).first {
+                    payment.contactName = contact.name
+                }
+            }
             Task { @MainActor in
                 self.recentPaymentsLoadingError = nil
                 self.recentPayments = loadedPayments
