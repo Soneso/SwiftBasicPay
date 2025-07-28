@@ -173,7 +173,6 @@ struct SendPathPaymentBox: View {
         if strictSend {
             assetFromList = userAssets.filter({$0.id == selectedAssetToSend}).first
         } else {
-            print(selectedAssetToReceive)
             assetFromList = assetsThatCanBeReceived.filter({$0.id == selectedAssetToReceive}).first
         }
         
@@ -479,6 +478,8 @@ struct SendPathPaymentBox: View {
     
     private func resetState() {
         errorMessage = nil
+        sendPaymentErrorMsg = nil
+        findPathErrorMsg = nil
         recipientAccountId = ""
         amountToSend = ""
         memoToSend = ""

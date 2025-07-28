@@ -17,12 +17,21 @@ public class SecureStorage {
     private static let userContactsStorageKey:String = "contacts"
     private static let salt:String = "stellar"
     
+    /// true if secure user data is stored in the storage.
     public static var hasUser:Bool {
         get throws {
             try simpleKeychain.hasItem(forKey:userSecretStorageKey)
         }
     }
     
+    /// Stores the signing `userSigningKeyPair` to secure storage. Uses the `pin` to
+    /// cryptographically encode the secret key before storing it, so that
+    /// it can only be retrieved by the user who knows the pin.
+    ///
+    /// - Parameters:
+    ///   - userSigningKeyPair: The user's signing keypair containing the user's secret key
+    ///   - pin: The user's pin code.
+    ///
     public static func storeUserKeyPair(userSigningKeyPair: SigningKeyPair, pin:String) throws {
         let key = try calculateEncryptionKey(pin: pin)
         
@@ -48,11 +57,21 @@ public class SecureStorage {
         ).calculate()
     }
     
+    /// Returns the signing user keypair from the storage. Requires the user's `pin` to decode the stored user's secret key.
+    /// It can only construct the keypair if there is user data in the storage (see `hasUser`) and if the given `pin` is valid.
+    ///
+    /// - Throws:
+    ///   - `SecureStorageError.userNotFound`  if the user data could not be found in the secure storage.
+    ///   - `SecureStorageError.invalidPin` if the pin is invalid and the data could not be decrypted.
+    ///
+    /// - Parameters:
+    ///   - pin: The users pin code.
+    ///
     public static func getUserKeyPair(pin:String) throws -> SigningKeyPair {
-        if (try !simpleKeychain.hasItem(forKey: userSecretStorageKey)) {
+        if (try !hasUser) {
             throw SecureStorageError.userNotFound
         }
-        let data = try! simpleKeychain.string(forKey: userSecretStorageKey)
+        let data = try simpleKeychain.string(forKey: userSecretStorageKey)
         let values = data.split(separator: ";") // data contains iv + encrypted seed separated by ;
         if values.count != 2 {
             throw SecureStorageError.userNotFound
@@ -71,9 +90,7 @@ public class SecureStorage {
             throw SecureStorageError.invalidPin
         }
     }
-    
-
-    
+        
     public static func getContacts() -> [ContactInfo] {
         var contacts:[ContactInfo] = []
         if let hasContacts = try? simpleKeychain.hasItem(forKey:userContactsStorageKey),

@@ -13,7 +13,8 @@ struct ContentView: View {
     var body: some View {
         VStack {
             if let userAddress = userAddress {
-                Dashboard(logoutUser: logoutUser).environmentObject(DashboardData(userAddress: userAddress))
+                let dashboardData = DashboardData(userAddress: userAddress)
+                Dashboard(logoutUser: logoutUser).environmentObject(dashboardData)
             } else {
                 AuthView(userLoggedIn: userLoggedIn(_:))
             }

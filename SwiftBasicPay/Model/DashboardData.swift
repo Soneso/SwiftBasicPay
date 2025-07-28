@@ -9,11 +9,22 @@ import Foundation
 
 class DashboardData: ObservableObject {
     
+    /// The user's Stellar account id.
     let userAddress:String
+    
+    /// True if the user account exists on the Stellar Network (otherwise it needs to be funded)
     @Published var userAccountExists: Bool = false
+    
+    /// The assets currently hold by the user.
     @Published var userAssets: [AssetInfo] = []
-    @Published var userContacts: [ContactInfo] = []
+    
+    /// A list of recent payments that the user received or sent.
     @Published var recentPayments: [PaymentInfo] = []
+    
+    /// The list of contacts that the user stored locally.
+    @Published var userContacts: [ContactInfo] = []
+    
+
     @Published var isLoadingAssets: Bool = false
     @Published var isLoadingContacts: Bool = false
     @Published var isLoadingRecentPayments: Bool = false

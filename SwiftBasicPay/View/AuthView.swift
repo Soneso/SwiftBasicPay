@@ -17,7 +17,7 @@ struct AuthView: View {
     
     @State private var checkUserError:String?
     @State private var hasUser:Bool
-    @State private var newUserKeypair:SigningKeyPair = SigningKeyPair.random
+    @State private var newUserKeypair = SigningKeyPair.random
     @State private var showSeed = false
     @State private var showToast = false
     @State private var toastMessage:String = ""

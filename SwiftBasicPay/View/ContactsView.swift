@@ -76,6 +76,7 @@ struct ContactsView: View {
                         }
                     }).buttonStyle(.borderedProminent).tint(.green)
                     Button("Cancel", action:   {
+                        clearForm()
                         addMode.toggle()
                     }).buttonStyle(.borderedProminent).tint(.red)
                 }
@@ -111,13 +112,18 @@ struct ContactsView: View {
             try SecureStorage.saveContacts(contacts: contactListData)
             await dashboardData.loadUserContacts()
             addMode.toggle()
+            clearForm()
             isAddingContact.toggle()
-            newContactName = ""
-            newContactAccountId = ""
         } catch {
             addContactError = error.localizedDescription
             isAddingContact.toggle()
         }
+    }
+    
+    private func clearForm() {
+        newContactName = ""
+        newContactAccountId = ""
+        addContactError = nil
     }
     
     func deleteItems(at offsets: IndexSet) {

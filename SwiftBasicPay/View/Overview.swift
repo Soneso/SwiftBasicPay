@@ -29,8 +29,8 @@ struct Overview: View {
                     Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
                 BalancesBox().environmentObject(dashboardData)
-                myDataView
                 RecentPaymentsBox().environmentObject(dashboardData)
+                myDataView
             }.padding().toast(isPresenting: $showToast){
                 AlertToast(type: .regular, title: "\(toastMessage)")
             }

@@ -13,14 +13,29 @@ public class StellarService {
     
     public static var wallet = Wallet.testNet
     
+    /// Checks if an account for the given address (account id) exists on the Stellar Network.
+    /// 
+    /// - Parameters:
+    ///   - address: Stellar account id (G...) to check.
+    ///
     public static func accountExists(address:String) async throws -> Bool {
         return try await wallet.stellar.account.accountExists(accountAddress: address)
     }
     
+    /// Funds the user account on the Stellar Test Network by using Friendbot.
+    ///
+    /// - Parameters:
+    ///   - address: Stellar account id (G...) to be funded. E.g. the user's stellar account id
+    ///
     public static func fundTestnetAccount(address:String) async throws {
         return try await wallet.stellar.fundTestNetAccount(address: address)
     }
     
+    /// Loads the assets for a given account specified by `address` from the Stellar Network by using the wallet sdk.
+    ///
+    /// - Parameters:
+    ///   - address: Stellar account id (G...). E.g. the user's stellar account id
+    ///
     public static func loadAssetsForAddress(address:String) async throws -> [AssetInfo] {
         var loadedAssets:[AssetInfo] = []
         let info = try await wallet.stellar.account.getInfo(accountAddress: address)
@@ -43,6 +58,13 @@ public class StellarService {
         ]
     }
     
+    /// Adds a trust line by using the wallet sdk, so that the user can hold the given asset. Requires the user's signing keypair to
+    /// sign the transaction before sending it to the Stellar Network. Returns true on success.
+    ///
+    /// - Parameters:
+    ///   - asset: The asset for which the trustline should be added
+    ///   - userKeyPair: The user's signing keypair needed to sign the transaction
+    ///
     public static func addAssetSupport(asset:IssuedAssetId, userKeyPair:SigningKeyPair) async throws -> Bool {
         let stellar = wallet.stellar
         let txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
@@ -51,6 +73,14 @@ public class StellarService {
         return try await stellar.submitTransaction(signedTransaction: tx)
     }
     
+    /// Removes a trust line by using the wallet sdk, so that the user can not hold the given asset any more.
+    /// It only works if the user has a balance of 0 for the given asset. Requires the user's signing keypair to
+    /// sign the transaction before sending it to the Stellar Network. Returns true on success.
+    ///
+    /// - Parameters:
+    ///   - asset: The asset to remove the trustline for
+    ///   - userKeyPair: The user's signing keypair needed to sign the transaction
+    ///
     public static func removeAssetSupport(asset:IssuedAssetId, userKeyPair:SigningKeyPair)  async throws -> Bool {
         let stellar = wallet.stellar
         let txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
@@ -59,7 +89,18 @@ public class StellarService {
         return try await stellar.submitTransaction(signedTransaction: tx)
     }
     
-    public static func sendPayment(destinationAddress:String, 
+    /// Submits a payment to the Stellar Network by using the wallet sdk. It requires the destinationAddress (account id) of the recipient,
+    /// the assetId representing the asset to send, amount, optional memo and the user's signing keypair,
+    /// needed to sign the transaction before submission. Returns true on success.
+    ///
+    /// - Parameters:
+    ///   - destinationAddress: Account id of the recipeint (G...)
+    ///   - assetId: Asset to send
+    ///   - assetId: Amount to send
+    ///   - memo: Optional memo to attach to the transaction
+    ///   - userKeyPair: The user's signing keypair needed to sign the transaction
+    ///
+    public static func sendPayment(destinationAddress:String,
                                    assetId:StellarAssetId,
                                    amount:Decimal,
                                    memo:Memo? = nil,
@@ -80,6 +121,14 @@ public class StellarService {
         
     }
     
+    /// Searches for a strict send payment path by using the wallet sdk.
+    /// Requires the source asset, the source amount and the destination address of the recipient.
+    ///
+    /// - Parameters:
+    ///   - sourceAsset: The asset you want to send
+    ///   - sourceAmount: The amount you want to send
+    ///   - destinationAddress: Account id of the recipient
+    ///
     public static func findStrictSendPaymentPath(sourceAsset: StellarAssetId,
                                                  sourceAmount:Decimal,
                                                  destinationAddress:String) async throws -> [PaymentPath] {
@@ -91,6 +140,14 @@ public class StellarService {
         
     }
     
+    /// Searches for a strict receive payment path by using the wallet sdk. Requires the account id of the sending account,
+    /// the destination asset to be received and the destination amount to be recived by the recipient. It will search for all source assets hold by the user (sending account).
+    ///
+    /// - Parameters:
+    ///   - sourceAddress: The account id of the sending account
+    ///   - destinationAsset: The asset the recipient should receive
+    ///   - destinationAmount: The amount of the destination asset the recipient shopuld receive
+    ///
     public static func findStrictReceivePaymentPath(sourceAddress:String,
                                                     destinationAsset:StellarAssetId,
                                                     destinationAmount:Decimal) async throws -> [PaymentPath] {
@@ -100,6 +157,22 @@ public class StellarService {
                                                                        destinationAmount: destinationAmount.description)
     }
     
+    /// Sends a strict send path payment by using the wallet sdk. Requires  the asset to send, strict amount to send and the account id of the recipient.
+    /// Also requires the the destination asset to be received, the minimum destination amount to be received and the assets path from the
+    /// payment path previously obtained by [findStrictSendPaymentPath]. Optionaly you can pass a text memo but the signing user's keypair is needed to sign
+    /// the transaction before submission. Returns true on success.
+    ///
+    /// - Parameters:
+    ///   - sendAssetId: The asset you want to send
+    ///   - sendAmount: The amount you want to send
+    ///   - destinationAddress: Account id of the recipient
+    ///   - destinationAssetId: The asset you want the recipient to recieve
+    ///   - destinationMinAmount: The min amount you want the recipient to recive
+    ///   - path: the transaction path previously received from findStrictSendPaymentPath
+    ///   - memo: Optional memo to attache to the transaction
+    ///   - userKeyPair: The user's signing keypair for signing the transaction
+    ///
+    ///
     public static func strictSendPayment(sendAssetId: StellarAssetId,
                                          sendAmount: Decimal,
                                          destinationAddress:String,
@@ -128,6 +201,22 @@ public class StellarService {
         return try await stellar.submitTransaction(signedTransaction: tx)
     }
     
+    /// Sends a strict receive path payment by using the wallet sdk. Requires  the asset to send, maximum amount to send and the account id of the recipient.
+    /// Also requires the the destination asset to be received, the destination amount to be received and the assets path from the
+    /// payment path previously obtained by [findStrictReceivePaymentPath]. Optionaly you can pass a text memo but the signing user's keypair is needed to sign
+    /// the transaction before submission. Returns true on success.
+    ///
+    /// - Parameters:
+    ///   - sendAssetId: The asset you want to send
+    ///   - sendMaxAmount: The maximal amount you want to send
+    ///   - destinationAddress: Account id of the recipient
+    ///   - destinationAssetId: The asset you want the recipient to recieve
+    ///   - destinationAmount: The amount you want the recipient to recive
+    ///   - path: the transaction path previously received from findStrictSendPaymentPath
+    ///   - memo: Optional memo to attache to the transaction
+    ///   - userKeyPair: The user's signing keypair for signing the transaction
+    ///
+    ///
     public static func strictReceivePayment(sendAssetId: StellarAssetId,
                                             sendMaxAmount: Decimal,
                                             destinationAddress:String,
@@ -156,6 +245,12 @@ public class StellarService {
         
     }
     
+    
+    /// Loads the list of the 5 most recent payments for given address (account id).
+    ///
+    /// - Parameters:
+    ///   - address: Account id to load the most recent payments for
+    ///
     public static func loadRecentPayments(address:String) async throws -> [PaymentInfo] {
         let server = wallet.stellar.server
         let paymentsResponseEnum = await server.payments.getPayments(forAccount: address, order: Order.descending, limit: 5)
