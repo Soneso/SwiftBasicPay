@@ -13,8 +13,7 @@ After the user enters the required data, they press the `Submit` button. If the 
 
 The implementation can be found in [`SendPaymentBox.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/SendPaymentBox.swift). 
 
-To be able to fill the pickers, it needs to access the available assets that the user holds and their contacts by using our `DashboardData` instance.
-See also [dashboard data](dashboard_data.md) and [dashboard state](dashboard_state.md).
+To be able to fill the pickers, it needs to access the available assets that the user holds and their contacts by using our `DashboardData` instance. See also [`dashboard data`](dashboard_data.md).
 
 ```swift
 var userAssets: [AssetInfo] {

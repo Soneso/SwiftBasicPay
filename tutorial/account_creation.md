@@ -17,7 +17,7 @@ If the user presses the `Fund on Testnet` button, we request the Stellar Testnet
 try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
 ```
 
-[`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) uses the wallet sdk to fund the testnet account:
+[`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) uses the wallet sdk to fund the testnet account:
 
 ```swift
 /// Funds the user account on the Stellar Test Network by using Friendbot.
@@ -34,7 +34,7 @@ public static func fundTestnetAccount(address:String) async throws {
 
 After the account has been funded, our instance of `DashboardData` must reload the users data, so that the app views can automatically update their state. 
 
-In [BalancesBox](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/BalancesBox.swift):
+In [`BalancesBox.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/BalancesBox.swift):
 
 ```swift
 try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
@@ -42,7 +42,7 @@ try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
 await dashboardData.fetchStellarData()
 ```
 
-After the user's data is loaded from the Stellar Network the views are automatically updated. E.g. [Overview](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift):
+After the user's data is loaded from the Stellar Network the views are automatically updated. E.g. [`Overview.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift):
 
 ![account funded](./img/account_creation/account_funded.png)
 

@@ -18,7 +18,7 @@ For now, let's select the predefined asset `SRT`. As soon as selected, the page 
 
 ![pin input](./img/manage_trust/pin_input.png)
 
-The user must enter their pincode, so that we can request and decrypt their secret key from the [secure storage](secure_data_storage.md).
+The user must enter their pincode, so that we can request and decrypt their secret key from the [`secure storage`](secure_data_storage.md).
 We will need it to sign the transaction. After entering the pincode and pressing the `Submit` button, the app builds the transaction and sends it to the Stellar Network.
 
 ![adding asset](./img/manage_trust/adding_asset.png)
@@ -54,9 +54,9 @@ var assetsToAdd:[IssuedAssetId] {
 }
 ```
 
-The user's assets were previously loaded from the Stellar Network using the wallet sdk and saved in [Dashboard Data](dashboard_data.md).
+The user's assets were previously loaded from the Stellar Network using the wallet sdk and saved in our `DashboardData` instance, see: [`dashboard data](dashboard_data.md).
 
-See [`Overview.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift):
+In [`Overview.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift):
 ```swift
 .onAppear() {
     Task {
@@ -156,7 +156,7 @@ To get the user's signing keypair we use our `AuthService` (see [authentication]
 let success = try await StellarService.addAssetSupport(asset: assetToAdd, userKeyPair: userKeyPair)
 ```
 
-In [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
+In [`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
 
 ```swift
 /// Adds a trust line by using the wallet sdk, so that the user can hold the given asset. Requires the user's signing keypair to
@@ -177,7 +177,7 @@ public static func addAssetSupport(asset:IssuedAssetId, userKeyPair:SigningKeyPa
 
 The wallet sdk is used to compose, sign and submit the signed transaction to the Stellar Network. 
 
-After submitting, we let our DashboardData instance reload so that our views get updated.
+After submitting, we let our `DashboardData` instance reload so that our views get updated.
 ```swift
 await dashboardData.fetchUserAssets()
 ```
@@ -284,7 +284,7 @@ After entering the pincode, the app decrypts the secret key, builds, signs and s
 
 ### Code implementation
 
-The implementation is similar to the above shown implementation for adding an asset. It can be found in [AssetsView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AssetsView.swift).
+The implementation is similar to the above shown implementation for adding an asset. It can be found in [`AssetsView.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AssetsView.swift).
 
 This time we call the `StellarService` function `removeAssetSupport` to remove the trustline: 
 
@@ -292,7 +292,7 @@ This time we call the `StellarService` function `removeAssetSupport` to remove t
 let success = try await StellarService.removeAssetSupport(asset: assetToRemove, userKeyPair: signingKey)
 ```
 
-In [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
+In [`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
 
 ```swift
 /// Removes a trust line by using the wallet sdk, so that the user can not hold the given asset any more.
@@ -322,7 +322,7 @@ await dashboardData.fetchUserAssets()
 
 # Next
 
-Continue with [Payment](payment.md).
+Continue with [`Payment`](payment.md).
 
 
 

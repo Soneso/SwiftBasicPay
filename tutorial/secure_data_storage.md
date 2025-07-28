@@ -1,6 +1,6 @@
 # Secure data storage
 
- Swift Basic pay is a non-custodial app. The user's private data is stored locally and securely on the user's device. It is never shared with other applications or services. Private data that is stored is the user's Stellar secret key and the list of their contacts.
+ SwiftBasicPay is a non-custodial app. The user's private data is stored locally and securely on the user's device. It is never shared with other applications or services. Private data that is stored is the user's Stellar secret key and the list of their contacts.
 
 ## Secret key
 Owning a Stellar account means possessing a key for that account. That key is made up of two parts: the public key, which you share with others, and the secret key, which you keep to yourself. This is what the secret key looks like. 
@@ -15,7 +15,7 @@ On the Stellar Network, the secret key that defines your account address is call
  ## Code implementation
 
 To store the user's private data, we have built the [`SecureStorage`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/SecureStorage.swift) class. 
-It uses the [SimpleKeychain library](https://github.com/auth0/SimpleKeychain). With this library we can store key value pairs in the secure storage of the device (keychain).
+It uses the [`SimpleKeychain library`](https://github.com/auth0/SimpleKeychain). With this library we can easily store key value pairs in the secure storage of the device (keychain).
 
 
 ### The user`s public and secret key
@@ -134,7 +134,7 @@ static func saveContacts(contacts: [ContactInfo])
 static func getContacts() -> [ContactInfo]
 ```
 
-A contact is represented by the struct `ContactInfo`. It holds the contact`s name (e.g. `John`) and the contact's Stellar address (account id). The data is stored in the secure storage as a json string.
+A contact is represented by the struct `ContactInfo`. It holds the contact's name (e.g. `John`) and the contact's Stellar address (account id). The data is stored in the secure storage as a json string.
 
 ## Next
 

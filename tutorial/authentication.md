@@ -1,7 +1,7 @@
 # Authentication
 
 The SwiftBasicPay app handles user authentication by using the [`AuthService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/AuthService.swift) class.
-The class provides methods to sign up a user, sign in, sign out and also to retrieve their Stellar secret key from the [secure storage](secure_data_storage.md).
+The class provides methods to sign up a user, sign in, sign out and also to retrieve their Stellar secret key from the [`secure storage`](secure_data_storage.md).
 Furthermore, the class holds the current authentication state of the user (signed up, signed in or signed out).
 
 
@@ -48,7 +48,7 @@ public func signUp(userKeyPair: SigningKeyPair, pin:String) throws -> String {
 To register the user, the service requires the user's signing keypair and pin. `SigningKeyPair` is a class provided by the wallet sdk, 
 that holds the user's Stellar address and their secret key. By using this class, we can make sure that the secret key and user address are valid and match together.
 
-The user data is stored in the secure storage, whereby the secret key is encrypted with the user's pin. See [secure data storage](secure_data_storage.md). 
+The user data is stored in the secure storage, whereby the secret key is encrypted with the user's pin. See [`secure data storage`](secure_data_storage.md). 
 By encrypting the secret key with the pin, we can ensure that only the user themselves have access to it by entering their pin code. The pin code is not saved by the app.
 
 After the secret key has been securely stored, we assign the user's Stellar address to the `signedInUserAddress` variable. This means that the user is logged in immediately after registering and the status of our service is `signed in`.
@@ -83,9 +83,7 @@ public func signIn(pin:String) throws -> String {
 ```
 
 To log the user in, an attempt is made to load their signing keypair from the secure storage. The user's pin code is required for this. 
-It must be requested from the user when logging in. On success, we assign the user's stellar address to the `signedInUserAddress` member variable. This means that the user is signed in and the status of our service is `signed in`.
-
-See [secure data storage](secure_data_storage.md). 
+It must be requested from the user when logging in. On success, we assign the user's stellar address to the `signedInUserAddress` member variable. This means that the user is signed in and the status of our service is `signed in`. See also [`secure data storage`](secure_data_storage.md). 
 
 
 **Retreive the users's signing key pair:**
