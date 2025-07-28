@@ -138,4 +138,4 @@ A contact is represented by the struct `ContactInfo`. It holds the contact's nam
 
 ## Next
 
-Continue with [Authentication](authentication.md).
+Continue with [`Authentication`](authentication.md).

@@ -16,9 +16,9 @@ To generate a random user keypair, we use the `swift wallet sdk`:
 newUserKeypair = SigningKeyPair.random
 ```
 
-Next, we'll trigger the user to enter a pincode used to encrypt their secret key before it gets saved to their [secure local storage](secure_data_storage.md). The user will need to remember their pincode for future logins and to sign transactions before submitting them to the Stellar Network.
+Next, we'll trigger the user to enter a pincode used to encrypt their secret key before it gets saved to their [`secure local storage`](secure_data_storage.md). The user will need to remember their pincode for future logins and to sign transactions before submitting them to the Stellar Network.
 
-Next we use our `AuthService` (see [authetication](authentication.md)) to sign up the user and securely store the users data.
+Next we use our `AuthService` (see [`authetication`](authentication.md)) to sign up the user and securely store the users data.
 
 ```swift
 let address = try authService.signUp(userKeyPair: newUserKeypair, pin: pin)
@@ -33,7 +33,7 @@ After signup, the user get's redirected to the dashboard home view.
 
 If the user is already registered, the sign in UI is displayed at app start via the SwiftUI view [`AuthView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AuthView.swift).
 
-To sign in, the user must enter his pin code. The pin code is then verified and the user is signed in by using the [authentication service](authentication.md).
+To sign in, the user must enter his pin code. The pin code is then verified and the user is signed in by using the [`authentication service`](authentication.md).
 
 
 ```swift
@@ -42,4 +42,4 @@ let address = try authService.signIn(pin: pin)
 
 ## Next
 
-Continue with [Dashboard data](dashboard_data.md).
+Continue with [`Dashboard data`](dashboard_data.md).

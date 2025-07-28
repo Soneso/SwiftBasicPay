@@ -19,7 +19,7 @@ Allows a user to specify the amount of the asset received. The amount sent will 
 
 ## Preparing data for our test
 
-In order to test the path payment functionality, we will first prepare the test data for it. We will use the [Stellar Lab](https://laboratory.stellar.org/#?network=test) to do so. We have already used it the chapter [manage tust](manage_trust.md) to make our user account trust the asset `GOLD` and transfer some `GOLD` to our user. 
+In order to test the path payment functionality, we will first prepare the test data for it. We will use the [Stellar Lab](https://laboratory.stellar.org/#?network=test) to do so. We have already used it the chapter [`manage tust`](manage_trust.md) to make our user account trust the asset `GOLD` and transfer some `GOLD` to our user. 
 
 ### Create recipient account
 
