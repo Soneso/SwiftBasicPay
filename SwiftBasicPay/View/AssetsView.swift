@@ -116,7 +116,7 @@ struct AssetsView: View {
     
     /// assets to add, that can be listed in the picker
     var assetsToAdd:[IssuedAssetId] {
-        var result = StellarService.testnetAssets()
+        var result = StellarService.testAnchorAssets
         for asset in userAssets {
             result = result.filter {$0.id != asset.id}
         }

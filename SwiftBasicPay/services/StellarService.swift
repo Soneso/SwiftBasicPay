@@ -13,6 +13,7 @@ import stellarsdk
 public class StellarService {
     
     public static var wallet = Wallet.testNet
+    public static let testAnchorDomain = "testanchor.stellar.org"
     
     /// Checks if an account for the given address (account id) exists on the Stellar Network.
     /// 
@@ -52,7 +53,7 @@ public class StellarService {
     
     /// A list of assets on the Stellar Test Network used to make
     /// testing easier. (to be used with testanchor.stellar.org)
-    public static func testnetAssets() -> [IssuedAssetId] {
+    public static var testAnchorAssets : [IssuedAssetId] {
         return [
             try! IssuedAssetId(code: "SRT", issuer: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B"),
             try! IssuedAssetId(code: "USDC", issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"),
@@ -309,6 +310,44 @@ public class StellarService {
         }
     }
     
+    public static func getAnchoredAssets(fromAssets:[AssetInfo]) async throws -> [AnchoredAssetInfo] {
+        var anchoredAssets:[AnchoredAssetInfo] = []
+        let stellar = wallet.stellar
+        
+        for assetInfo in fromAssets {
+            let asset = assetInfo.asset
+            var anchorDomain:String?
+            
+            // We are only interested in issued assets (not XLM)
+            if let issuedAsset = asset as? IssuedAssetId {
+                let issuerExists = try await stellar.account.accountExists(accountAddress: issuedAsset.issuer)
+                if !issuerExists {
+                    continue
+                }
+                // check if it is a known stellar testanchor asset
+                // if yes, we can use testanchor.stellar.org as anchor.
+                if let _ = testAnchorAssets.filter({$0.code == issuedAsset.code && $0.issuer == issuedAsset.issuer}).first {
+                    anchorDomain = testAnchorDomain
+                } else {
+                    // otherwise load from home domain (maybe it is an anchor ...)
+                    let issuerAccountInfo = try await stellar.account.getInfo(accountAddress: issuedAsset.issuer)
+                    if let homeDomain = issuerAccountInfo.homeDomain {
+                        anchorDomain = homeDomain
+                    }
+                }
+                
+                if let domain = anchorDomain {
+                    let info = AnchoredAssetInfo(asset: issuedAsset, 
+                                                 balance: assetInfo.balance,
+                                                 anchor: wallet.anchor(homeDomain: domain))
+                    anchoredAssets.append(info)
+                }
+            }
+        }
+        
+        return anchoredAssets
+    }
+    
     private static func paymentInfoFromPaymentOperationResponse(payment: PaymentOperationResponse, address:String) throws -> PaymentInfo{
         let direction = payment.to == address ? PaymentDirection.received : PaymentDirection.sent
         let asset = try StellarAssetId.fromAssetData(type: payment.assetType, code: payment.assetCode, issuerAccountId: payment.assetIssuer)
@@ -427,6 +466,54 @@ public class PaymentInfo: Hashable, Identifiable {
         hasher.combine(direction)
         hasher.combine(address)
         hasher.combine(contactName)
+    }
+    
+}
+
+public class AnchoredAssetInfo: Hashable, Identifiable {
+
+    public var asset:IssuedAssetId
+    public var balance:String
+    public var anchor:Anchor
+    
+    internal init(asset: IssuedAssetId, balance: String, anchor: Anchor) {
+        self.asset = asset
+        self.balance = balance
+        self.anchor = anchor
+    }
+    
+    public var id:String {
+        get {
+            asset.id
+        }
+    }
+    
+    public var code:String {
+        get {
+            return asset.code
+        }
+    }
+    
+    public var issuer:String? {
+        get {
+            return asset.issuer
+        }
+    }
+    
+    public var formattedBalance:String {
+        Utils.removeTrailingZerosFormAmount(amount: self.balance)
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(asset.id)
+        hasher.combine(balance)
+        hasher.combine(anchor.homeDomain)
+    }
+    
+    public static func == (lhs: AnchoredAssetInfo, rhs: AnchoredAssetInfo) -> Bool {
+        return lhs.asset.id == rhs.asset.id &&
+                lhs.balance == rhs.balance &&
+                lhs.anchor.homeDomain == rhs.anchor.homeDomain
     }
     
 }

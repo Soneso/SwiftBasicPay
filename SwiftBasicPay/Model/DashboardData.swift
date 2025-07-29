@@ -21,15 +21,20 @@ class DashboardData: ObservableObject {
     /// A list of recent payments that the user received or sent.
     @Published var recentPayments: [PaymentInfo] = []
     
-    /// The list of contacts that the user stored locally.
+    /// The list of contacts of the user stored locally.
     @Published var userContacts: [ContactInfo] = []
+    
+    /// The list of anchored assets currently hold by the user
+    @Published var anchoredAssets: [AnchoredAssetInfo] = []
     
 
     @Published var isLoadingAssets: Bool = false
     @Published var isLoadingContacts: Bool = false
     @Published var isLoadingRecentPayments: Bool = false
+    @Published var isLoadingAnchoredAssets: Bool = false
     @Published var userAssetsLoadingError: DashboardDataError? = nil
     @Published var recentPaymentsLoadingError: DashboardDataError? = nil
+    @Published var userAnchoredAssetsLoadingError: DashboardDataError? = nil
     
     internal init(userAddress: String) {
         self.userAddress = userAddress
@@ -112,6 +117,37 @@ class DashboardData: ObservableObject {
                 self.recentPaymentsLoadingError = .fetchingError(message: error.localizedDescription)
                 self.recentPayments = []
                 self.isLoadingRecentPayments = false
+            }
+        }
+    }
+    
+    func fetchAnchoredAssets() async  {
+        Task { @MainActor in
+            self.isLoadingAnchoredAssets = true
+        }
+        do {
+            let accountExists = try await StellarService.accountExists(address: userAddress)
+            if !accountExists {
+                Task { @MainActor in
+                    self.userAnchoredAssetsLoadingError = .accountNotFound(accountId: self.userAddress)
+                    self.anchoredAssets = []
+                    self.userAccountExists = false
+                    self.isLoadingAnchoredAssets = false
+                }
+                return
+            }
+            let loadedAssets = try await StellarService.getAnchoredAssets(fromAssets: self.userAssets)
+            Task { @MainActor in
+                self.userAnchoredAssetsLoadingError = nil
+                self.anchoredAssets = loadedAssets
+                self.userAccountExists = true
+                self.isLoadingAnchoredAssets = false
+            }
+        } catch {
+            Task { @MainActor in
+                self.userAnchoredAssetsLoadingError = .fetchingError(message: error.localizedDescription)
+                self.anchoredAssets = []
+                self.isLoadingAnchoredAssets = false
             }
         }
     }

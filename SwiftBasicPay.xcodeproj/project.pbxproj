@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7B92E391B9300D31614 /* NewTransferView.swift */; };
+		8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */; };
 		837397D42E0D55E10032FDAA /* SwiftBasicPayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */; };
 		837397D62E0D55E10032FDAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D52E0D55E10032FDAA /* ContentView.swift */; };
 		837397DA2E0D55E20032FDAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 837397D92E0D55E20032FDAA /* Assets.xcassets */; };
@@ -92,6 +94,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8304E7B92E391B9300D31614 /* NewTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTransferView.swift; sourceTree = "<group>"; };
+		8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferHistoryView.swift; sourceTree = "<group>"; };
 		837397D02E0D55E10032FDAA /* SwiftBasicPay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftBasicPay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftBasicPayApp.swift; sourceTree = "<group>"; };
 		837397D52E0D55E10032FDAA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -273,6 +277,8 @@
 				83F632382E1411C800C5A38E /* PinSheet.swift */,
 				83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */,
 				83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */,
+				8304E7B92E391B9300D31614 /* NewTransferView.swift */,
+				8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -505,9 +511,11 @@
 			files = (
 				83F5B2D02E30CD5400920FF1 /* SendPaymentBox.swift in Sources */,
 				837398062E0F2A800032FDAA /* PaymentsView.swift in Sources */,
+				8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */,
 				837398042E0F29E80032FDAA /* Overview.swift in Sources */,
 				837398162E129CF20032FDAA /* SettingsView.swift in Sources */,
 				8373980E2E0F2BD90032FDAA /* ContactsView.swift in Sources */,
+				8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */,
 				837397D62E0D55E10032FDAA /* ContentView.swift in Sources */,
 				8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */,
 				8373980C2E0F2B9B0032FDAA /* KycView.swift in Sources */,
