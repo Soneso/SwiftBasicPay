@@ -24,6 +24,8 @@ struct NewTransferView: View {
     @State private var pin:String = ""
     @State private var sep10AuthToken:AuthToken?
     @State private var loadingText = "Loading"
+    @State private var sep6Info:Sep6Info?
+    @State private var sep24Info:Sep24Info?
     
     var body: some View {
         VStack(spacing: 20) {
@@ -50,8 +52,13 @@ struct NewTransferView: View {
                 Text("Enter your pin to authenticate with the asset's anchor.").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
                 pinInputField
                 submitAndCanelButtons
-            } else if state == .sep10Authenticated{
-                Text("Successfully authenticated with anchor").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
+            } else if state == .transferInfoLoaded {
+                if sep6Info != nil {
+                    Text("Successfully loaded sep-6 info").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
+                }
+                if sep24Info != nil {
+                    Text("Successfully loaded sep-24 info").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
+                }
             }
             
         }.padding()
@@ -64,7 +71,7 @@ struct NewTransferView: View {
         case initial = 0
         case loading = 1
         case sep10AuthPinRequired = 3
-        case sep10Authenticated = 4
+        case transferInfoLoaded = 4
     }
     
     
@@ -162,20 +169,70 @@ struct NewTransferView: View {
             state = .sep10AuthPinRequired
             return
         }
-        guard let selectedAsset = selectedAssetInfo, let signingKeyPair = userKeyPair else {
+        
+        let signingKeyPair = userKeyPair!
+        guard let selectedAsset = selectedAssetInfo else {
             resetState()
-            errorMessage = "Internal error, please try again"
+            errorMessage = "Please select an asset"
             return
         }
+        
+        let anchor = selectedAsset.anchor
         do {
-            let sep10 = try await selectedAsset.anchor.sep10
+            let sep10 = try await anchor.sep10
             sep10AuthToken = try await sep10.authenticate(userKeyPair: signingKeyPair)
         } catch {
             pinErrorMessage = error.localizedDescription
             state = .sep10AuthPinRequired
             return
         }
-        state = .sep10Authenticated
+        
+        // load sep-06 & sep-24 info
+        sep6Info = nil
+        sep24Info = nil
+        loadingText = "Loading toml file from anchor"
+        var tomlInfo:TomlInfo?
+        do {
+            tomlInfo = try await anchor.sep1
+        } catch {
+            errorMessage = "Could not load toml data from anchor: \(error.localizedDescription)"
+            state = .initial
+            return
+        }
+        
+        let sep6Supported = tomlInfo?.transferServer != nil
+        let sep24Supported = tomlInfo?.transferServerSep24 != nil
+        if (!sep6Supported && !sep24Supported) {
+            errorMessage = "The anchor does not support SEP-06 & SEP-24 transfers."
+            state = .initial
+            return
+        }
+        
+        loadingText = "Loading SEP-6 info"
+        
+        do {
+            if sep6Supported {
+                sep6Info = try await anchor.sep6.info(authToken: sep10AuthToken)
+            }
+        } catch {
+            errorMessage = "Error loading SEP-06 info from anchor: \(error.localizedDescription)."
+        }
+        
+        loadingText = "Loading SEP-24 info"
+        do {
+            if sep24Supported {
+                sep24Info = try await anchor.sep24.info
+            }
+        } catch {
+            let err:String = "Error loading SEP-24 info from anchor: \(error.localizedDescription)"
+            if errorMessage != nil {
+                errorMessage?.append("\n\(err)")
+            } else{
+                errorMessage = err
+            }
+        }
+    
+        state = .transferInfoLoaded
         
     }
     
@@ -186,6 +243,8 @@ struct NewTransferView: View {
         pinErrorMessage = nil
         sep10AuthToken = nil
         loadingText = "Loading"
+        sep6Info = nil
+        sep24Info = nil
         state = .initial
     }
 }
