@@ -26,6 +26,7 @@ struct NewTransferView: View {
     @State private var loadingText = "Loading"
     @State private var sep6Info:Sep6Info?
     @State private var sep24Info:Sep24Info?
+    @State private var showSep6DepositSheet = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -45,8 +46,7 @@ struct NewTransferView: View {
             if state == .loading {
                 HStack {
                     Utils.progressView
-                    Text(loadingText)
-                        .padding(.leading)
+                    Text(loadingText).padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else if state == .sep10AuthPinRequired {
                 Text("Enter your pin to authenticate with the asset's anchor.").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
@@ -54,10 +54,10 @@ struct NewTransferView: View {
                 submitAndCanelButtons
             } else if state == .transferInfoLoaded {
                 if sep6Info != nil {
-                    Text("Successfully loaded sep-6 info").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
+                    sep6TransferButtonsView
                 }
                 if sep24Info != nil {
-                    Text("Successfully loaded sep-24 info").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
+                    sep24TransferButtonsView
                 }
             }
             
@@ -77,6 +77,52 @@ struct NewTransferView: View {
     
     var anchoredAssets: [AnchoredAssetInfo] {
         dashboardData.anchoredAssets
+    }
+    
+    private var sep6TransferButtonsView : some View {
+        VStack {
+            Utils.divider
+            Text("SEP-06 Transfers").font(.subheadline).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)
+            HStack {
+                if let depositInfo = sep6Info?.deposit, let anchoredAssset = selectedAssetInfo, let assetDepositInfo = depositInfo[anchoredAssset.code], assetDepositInfo.enabled, let authToken = sep10AuthToken {
+                    Button("Deposit", action:   {
+                        showSep6DepositSheet = true
+                    }).buttonStyle(.borderedProminent).tint(.green).sheet(isPresented: $showSep6DepositSheet) {
+                        Sep6DepositStepper(anchoredAsset: anchoredAssset, depositInfo: assetDepositInfo, authToken: authToken)
+                    }
+                }
+                if sep6Info?.withdraw != nil {
+                    Button("Withdraw", action:   {
+                        Task {
+                            
+                        }
+                    }).buttonStyle(.borderedProminent).tint(.red)
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private var sep24TransferButtonsView : some View {
+        VStack {
+            Utils.divider
+            Text("SEP-24 Transfers").font(.subheadline).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)
+            HStack {
+                if sep24Info?.deposit != nil {
+                    Button("Deposit", action:   {
+                        Task {
+                            
+                        }
+                    }).buttonStyle(.borderedProminent).tint(.green)
+                }
+                if sep24Info?.withdraw != nil {
+                    Button("Withdraw", action:   {
+                        Task {
+                            
+                        }
+                    }).buttonStyle(.borderedProminent).tint(.red)
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
     
     private var assetSelectionPicker: some View {

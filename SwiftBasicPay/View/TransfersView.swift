@@ -33,8 +33,8 @@ struct TransfersView: View {
                         Utils.divider
                         HStack {
                             Utils.progressView
-                            Text("Loading anchored assets")
-                                .padding(.leading)
+                            Text("Loading anchored assets").padding(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     } else if dashboardData.anchoredAssets.isEmpty {
                         Text("No anchored assets found. Please trust an anchored asset first. You can use the Assets tab to do so. E.g. SRT")
