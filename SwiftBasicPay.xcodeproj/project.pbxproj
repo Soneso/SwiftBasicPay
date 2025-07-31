@@ -33,6 +33,7 @@
 		837398162E129CF20032FDAA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398152E129CF20032FDAA /* SettingsView.swift */; };
 		8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8376983A2E269C1400867095 /* AssetsFetcher.swift */; };
 		837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */; };
+		837CC65C2E3BB09800B42033 /* Sep6TransferResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
 		83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */; };
 		83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */; };
@@ -118,6 +119,7 @@
 		837398152E129CF20032FDAA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8376983A2E269C1400867095 /* AssetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsFetcher.swift; sourceTree = "<group>"; };
 		837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6DepositStepper.swift; sourceTree = "<group>"; };
+		837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6TransferResponseView.swift; sourceTree = "<group>"; };
 		83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
 		83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPaymentsBox.swift; sourceTree = "<group>"; };
 		83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesBox.swift; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 				8304E7B92E391B9300D31614 /* NewTransferView.swift */,
 				8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */,
 				837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */,
+				837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -538,6 +541,7 @@
 				83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */,
 				837397F82E0D7AEE0032FDAA /* DemoError.swift in Sources */,
 				8373980A2E0F2B2C0032FDAA /* TransfersView.swift in Sources */,
+				837CC65C2E3BB09800B42033 /* Sep6TransferResponseView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -35,6 +35,9 @@ struct Sep6DepositStepper: View {
     @State private var isLoadingFee = false
     @State private var feeError:String?
     @State private var fee:Double?
+    @State private var isSubmitting = false
+    @State private var submissionError:String?
+    @State private var submissionResponse:Sep6TransferResponse?
 
     var body: some View {
         NavigationStack {
@@ -102,7 +105,32 @@ struct Sep6DepositStepper: View {
                         }
                     }
                 } else if currentStep == 4 {
-                    Text("Summary")
+                    
+                    if isSubmitting {
+                        HStack {
+                            Utils.progressView
+                            Text("Submitting data to anchor").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    } else if let response = submissionResponse {
+                        Sep6TransferResponseView(response: response)
+                    }
+                    else {
+                        let depositAmountStr = Utils.removeTrailingZerosFormAmount(amount: transferAmount)
+                        Text("Deposit: \(depositAmountStr) \(anchoredAsset.code)").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        if let anchorFee = fee {
+                            let feeStr = Utils.removeTrailingZerosFormAmount(amount: String(anchorFee))
+                            Text("Fee: \(feeStr) \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("Fee: unknown").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
+                        if let error = submissionError {
+                            Utils.divider
+                            Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    
                 }
                 Utils.divider
                 navigationButtons
@@ -136,12 +164,14 @@ struct Sep6DepositStepper: View {
     
     private var navigationButtons: some View {
         HStack {
-            Button("Previous") {
-                if currentStep > 1 {
-                    currentStep -= 1
+            if submissionResponse == nil {
+                Button("Previous") {
+                    if currentStep > 1 {
+                        currentStep -= 1
+                    }
                 }
+                .disabled(currentStep == 1)
             }
-            .disabled(currentStep == 1)
 
             Spacer()
 
@@ -164,13 +194,21 @@ struct Sep6DepositStepper: View {
                             }
                         }
                     }
-                    else if currentStep > 2 && currentStep < 4 {
+                    else {
                         currentStep += 1
                     }
                 }
             } else {
-                Button("Submit") {
-                    // Handle submission logic here
+                if submissionResponse == nil {
+                    Button("Submit") {
+                        Task {
+                            await submitTransfer()
+                        }
+                    }
+                } else {
+                    Button("Close") {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -479,6 +517,26 @@ struct Sep6DepositStepper: View {
             }
         }
         isLoadingFee = false
+    }
+    
+    private func submitTransfer() async {
+        isSubmitting = true
+        submissionError = nil
+        submissionResponse = nil
+        do {
+            let destinationAsset = anchoredAsset.asset
+            let sep6 = anchoredAsset.anchor.sep6
+            let params = Sep6DepositParams(assetCode: destinationAsset.code,
+                                           account: authToken.account,
+                                           amount: transferAmount,
+                                           extraFields: preparedTransferData)
+            
+            submissionResponse = try await sep6.deposit(params: params, authToken: authToken)
+            
+        } catch {
+            submissionError = "Your request has been submitted to the Anchor but following error occurred: \(error.localizedDescription). Please close this window and try again."
+        }
+        isSubmitting = false
     }
 }
 

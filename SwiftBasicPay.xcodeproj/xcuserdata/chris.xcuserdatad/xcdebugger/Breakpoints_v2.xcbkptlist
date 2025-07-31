@@ -3,4 +3,22 @@
    uuid = "3F95A787-9058-4299-B2C5-E11F9666B59A"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "87382605-E853-4909-A5E8-74541452CA2C"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../Library/Developer/Xcode/DerivedData/SwiftBasicPay-czurovhjgjkwavfakjbeunozddaw/SourcePackages/checkouts/stellar-swift-wallet-sdk/Sources/stellar-wallet-sdk/anchor/Sep6.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "332"
+            endingLineNumber = "332"
+            landmarkName = "transferService()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>
