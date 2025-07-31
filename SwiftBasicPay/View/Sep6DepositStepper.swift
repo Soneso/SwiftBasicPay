@@ -6,27 +6,35 @@ struct Sep6DepositStepper: View {
     private let anchoredAsset:AnchoredAssetInfo
     private let depositInfo:Sep6DepositInfo
     private let authToken:AuthToken
+    private let anchorHasEnabledFeeEndpoint:Bool
     private let stepTitles = ["Transfer details", "KYC Data", "Fee", "Summary"]
     private let selectItem = "select"
     
-    internal init(anchoredAsset: AnchoredAssetInfo, depositInfo: Sep6DepositInfo, authToken: AuthToken) {
+    internal init(anchoredAsset: AnchoredAssetInfo,
+                  depositInfo: Sep6DepositInfo, 
+                  authToken: AuthToken,
+                  anchorHasEnabledFeeEndpoint:Bool) {
         self.anchoredAsset = anchoredAsset
         self.depositInfo = depositInfo
         self.authToken = authToken
+        self.anchorHasEnabledFeeEndpoint = anchorHasEnabledFeeEndpoint
     }
     
     @Environment(\.dismiss) private var dismiss // Environment property for dismissing the sheet
     
     @State private var currentStep = 1
-    @State private var anchorHasEnabledFeeEndpoint = false
+
     @State private var collectedTransferDetails:[String] = []
     @State private var transferAmount:String = ""
-    @State private var transferFieldsError:String? = nil
+    @State private var transferFieldsError:String?
     @State private var isLoadingKyc = false
     @State private var kycLoadingText:String = ""
-    @State private var kycInfo:GetCustomerResponse? = nil
-    @State private var kycFieldsError:String? = nil
+    @State private var kycInfo:GetCustomerResponse?
+    @State private var kycFieldsError:String?
     @State private var collectedKycDetails:[String] = []
+    @State private var isLoadingFee = false
+    @State private var feeError:String?
+    @State private var fee:Double?
 
     var body: some View {
         NavigationStack {
@@ -54,7 +62,7 @@ struct Sep6DepositStepper: View {
                             Text(kycLoadingText).padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    else if let info = kycInfo, !isLoadingKyc {
+                    else if let info = kycInfo {
                         if info.sep12Status == Sep12Status.neesdInfo {
                             Text("The anchor needs following of your KYC data:").font(.subheadline)
                             kycFields
@@ -76,7 +84,23 @@ struct Sep6DepositStepper: View {
                         }
                     }
                 } else if currentStep == 3 {
-                    Text("Fee")
+                    if isLoadingFee {
+                        HStack {
+                            Utils.progressView
+                            Text("Loading fee data").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    } else {
+                        if let anchorFee = fee {
+                            let feeStr = Utils.removeTrailingZerosFormAmount(amount: String(anchorFee))
+                            Text("The Anchor will charge a fee of \(feeStr) \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("The Anchor provides no fee info for the asset \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if let error = feeError {
+                            Utils.divider
+                            Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                 } else if currentStep == 4 {
                     Text("Summary")
                 }
@@ -135,6 +159,9 @@ struct Sep6DepositStepper: View {
                             }
                         } else if (kycInfo?.sep12Status == Sep12Status.accepted) {
                             currentStep += 1
+                            Task {
+                                await loadFeeInfo()
+                            }
                         }
                     }
                     else if currentStep > 2 && currentStep < 4 {
@@ -403,11 +430,55 @@ struct Sep6DepositStepper: View {
         if let dinfo = kycInfo?.fields, !collectedKycDetails.isEmpty {
             for (index, key) in dinfo.keys.enumerated() {
                 if (collectedKycDetails.count > index) {
-                    result[key] = collectedKycDetails[index]
+                    let val = collectedKycDetails[index]
+                    if !val.isEmpty && val != selectItem {
+                        result[key] = collectedKycDetails[index]
+                    }
                 }
             }
         }
         return result
+    }
+    
+    private var preparedTransferData : [String:String] {
+        var result:[String:String]  = [:]
+        if let dinfo = depositInfo.fieldsInfo, !collectedTransferDetails.isEmpty {
+            for (index, key) in dinfo.keys.enumerated() {
+                if (collectedTransferDetails.count > index) {
+                    let val = collectedTransferDetails[index]
+                    if !val.isEmpty && val != selectItem {
+                        result[key] = collectedTransferDetails[index]
+                    }
+                }
+            }
+        }
+        return result
+    }
+    
+    private func loadFeeInfo() async {
+        isLoadingFee = true
+        fee = nil
+        if let feeFixed = depositInfo.feeFixed {
+            fee = feeFixed
+        } else {
+            guard let amount = Double(transferAmount) else {
+                feeError = "Missing transfer amount"
+                isLoadingFee = false
+                return
+            }
+            if let feePercent = depositInfo.feePercent {
+                fee = amount * feePercent / 100
+            } else if anchorHasEnabledFeeEndpoint {
+                do {
+                    fee = try await anchoredAsset.anchor.sep6.fee(assetCode: anchoredAsset.code,
+                                                                  amount: amount,
+                                                                  operation: "deposit")
+                } catch {
+                    feeError = "Error loading fee from anchor: \(error.localizedDescription)"
+                }
+            }
+        }
+        isLoadingFee = false
     }
 }
 

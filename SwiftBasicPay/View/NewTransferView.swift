@@ -88,7 +88,10 @@ struct NewTransferView: View {
                     Button("Deposit", action:   {
                         showSep6DepositSheet = true
                     }).buttonStyle(.borderedProminent).tint(.green).sheet(isPresented: $showSep6DepositSheet) {
-                        Sep6DepositStepper(anchoredAsset: anchoredAssset, depositInfo: assetDepositInfo, authToken: authToken)
+                        Sep6DepositStepper(anchoredAsset: anchoredAssset, 
+                                           depositInfo: assetDepositInfo,
+                                           authToken: authToken,
+                                           anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false)
                     }
                 }
                 if sep6Info?.withdraw != nil {
