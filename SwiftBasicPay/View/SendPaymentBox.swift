@@ -107,7 +107,7 @@ struct SendPaymentBox: View {
     }
     
     private var amountInputField: some View  {
-        TextField("Enter amount (max. \(Utils.removeTrailingZerosFormAmount(amount: String(maxAmount()))) )", text: $amountToSend).keyboardType(.decimalPad) .textFieldStyle(.roundedBorder)
+        TextField("Enter amount (max. \(maxAmount().toStringWithoutTrailingZeros) )", text: $amountToSend).keyboardType(.decimalPad) .textFieldStyle(.roundedBorder)
             .onChange(of: self.amountToSend, { oldValue, value in
                 if value != "" && Double(value) == nil {
                     self.amountToSend = oldValue

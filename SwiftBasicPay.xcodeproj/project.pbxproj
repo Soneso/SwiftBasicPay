@@ -34,6 +34,8 @@
 		8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8376983A2E269C1400867095 /* AssetsFetcher.swift */; };
 		837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */; };
 		837CC65C2E3BB09800B42033 /* Sep6TransferResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */; };
+		837CC65F2E3CB80800B42033 /* String+BasicPay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC65E2E3CB80800B42033 /* String+BasicPay.swift */; };
+		837CC6612E3CB97C00B42033 /* Double+BasicPay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC6602E3CB97C00B42033 /* Double+BasicPay.swift */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
 		83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */; };
 		83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */; };
@@ -120,6 +122,8 @@
 		8376983A2E269C1400867095 /* AssetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsFetcher.swift; sourceTree = "<group>"; };
 		837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6DepositStepper.swift; sourceTree = "<group>"; };
 		837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6TransferResponseView.swift; sourceTree = "<group>"; };
+		837CC65E2E3CB80800B42033 /* String+BasicPay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+BasicPay.swift"; sourceTree = "<group>"; };
+		837CC6602E3CB97C00B42033 /* Double+BasicPay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+BasicPay.swift"; sourceTree = "<group>"; };
 		83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
 		83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPaymentsBox.swift; sourceTree = "<group>"; };
 		83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesBox.swift; sourceTree = "<group>"; };
@@ -220,6 +224,7 @@
 				83F5B2CA2E301AE000920FF1 /* View */,
 				837397F92E0D8FD00032FDAA /* common */,
 				837397EC2E0D6A270032FDAA /* services */,
+				837CC65D2E3CB7E600B42033 /* extensions */,
 				837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */,
 				837397D92E0D55E20032FDAA /* Assets.xcassets */,
 				837397DB2E0D55E20032FDAA /* Preview Content */,
@@ -253,6 +258,15 @@
 				837397F72E0D7AEE0032FDAA /* DemoError.swift */,
 			);
 			path = common;
+			sourceTree = "<group>";
+		};
+		837CC65D2E3CB7E600B42033 /* extensions */ = {
+			isa = PBXGroup;
+			children = (
+				837CC65E2E3CB80800B42033 /* String+BasicPay.swift */,
+				837CC6602E3CB97C00B42033 /* Double+BasicPay.swift */,
+			);
+			path = extensions;
 			sourceTree = "<group>";
 		};
 		83F5B2C72E2FC49E00920FF1 /* Model */ = {
@@ -517,6 +531,7 @@
 			files = (
 				83F5B2D02E30CD5400920FF1 /* SendPaymentBox.swift in Sources */,
 				837398062E0F2A800032FDAA /* PaymentsView.swift in Sources */,
+				837CC65F2E3CB80800B42033 /* String+BasicPay.swift in Sources */,
 				8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */,
 				837398042E0F29E80032FDAA /* Overview.swift in Sources */,
 				837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */,
@@ -528,6 +543,7 @@
 				8373980C2E0F2B9B0032FDAA /* KycView.swift in Sources */,
 				837397F02E0D6A830032FDAA /* SecureStorage.swift in Sources */,
 				83F632392E1411C800C5A38E /* PinSheet.swift in Sources */,
+				837CC6612E3CB97C00B42033 /* Double+BasicPay.swift in Sources */,
 				837398122E1000D90032FDAA /* Utils.swift in Sources */,
 				83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */,
 				837398082E0F2AE50032FDAA /* AssetsView.swift in Sources */,

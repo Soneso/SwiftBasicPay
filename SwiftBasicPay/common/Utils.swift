@@ -25,22 +25,4 @@ public class Utils {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-    
-    public static func removeTrailingZerosFormAmount(amount:String) -> String {
-        if let doubleAmount = Double(amount) {
-            let formatter = NumberFormatter()
-            let number = NSNumber(value: Double(doubleAmount))
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 16
-            return String(formatter.string(from: number) ?? amount)
-        }
-        return amount
-    }
-    
-    public static func shortAddress(address:String) -> String {
-        if address.count == 56 {
-            return "\(address.prefix(4))...\(address.suffix(4))"
-        }
-        return address
-    }
 }

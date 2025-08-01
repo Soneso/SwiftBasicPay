@@ -94,7 +94,7 @@ struct Sep6DepositStepper: View {
                         }
                     } else {
                         if let anchorFee = fee {
-                            let feeStr = Utils.removeTrailingZerosFormAmount(amount: String(anchorFee))
+                            let feeStr = anchorFee.toStringWithoutTrailingZeros
                             Text("The Anchor will charge a fee of \(feeStr) \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             Text("The Anchor provides no fee info for the asset \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
@@ -115,11 +115,11 @@ struct Sep6DepositStepper: View {
                         Sep6TransferResponseView(response: response)
                     }
                     else {
-                        let depositAmountStr = Utils.removeTrailingZerosFormAmount(amount: transferAmount)
+                        let depositAmountStr = transferAmount.amountWithoutTrailingZeros
                         Text("Deposit: \(depositAmountStr) \(anchoredAsset.code)").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                         
                         if let anchorFee = fee {
-                            let feeStr = Utils.removeTrailingZerosFormAmount(amount: String(anchorFee))
+                            let feeStr = anchorFee.toStringWithoutTrailingZeros
                             Text("Fee: \(feeStr) \(anchoredAsset.code).").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             Text("Fee: unknown").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
@@ -216,8 +216,8 @@ struct Sep6DepositStepper: View {
     }
     
     private var amountInputField: some View  {
-        let min = Utils.removeTrailingZerosFormAmount(amount: String(minAmount))
-        let max = maxAmount != nil ? " max: \(Utils.removeTrailingZerosFormAmount(amount: String(maxAmount!)))" : ""
+        let min = minAmount.toStringWithoutTrailingZeros
+        let max = maxAmount != nil ? " max: \(maxAmount!.toStringWithoutTrailingZeros)" : ""
 
         return VStack {
             TextField("Enter amount", text: $transferAmount).keyboardType(.decimalPad) .textFieldStyle(.roundedBorder)

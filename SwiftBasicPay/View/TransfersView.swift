@@ -252,7 +252,6 @@ struct TransfersView: View {
         
     }
     
-    
     private func resetState() {
         errorMessage = nil
         selectedAssetItem = TransfersView.selectAsset

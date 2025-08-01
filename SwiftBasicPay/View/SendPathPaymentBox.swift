@@ -114,10 +114,10 @@ struct SendPathPaymentBox: View {
         guard let selectedPath = selectedPath else {
             return nil
         }
-        let sourceAmountStr = Utils.removeTrailingZerosFormAmount(amount: selectedPath.sourceAmount)
+        let sourceAmountStr = selectedPath.sourceAmount.amountWithoutTrailingZeros
         let sourceAssetStr = selectedPath.sourceAsset.id == "native" ? "XLM" : (selectedPath.sourceAsset as! IssuedAssetId).code
         let sendEstimated = strictSend ? "" : "(estimated)"
-        let destinationAmountStr = Utils.removeTrailingZerosFormAmount(amount: selectedPath.destinationAmount)
+        let destinationAmountStr = selectedPath.destinationAmount.amountWithoutTrailingZeros
         let destinationAssetStr = selectedPath.destinationAsset.id == "native" ? "XLM" : (selectedPath.destinationAsset as! IssuedAssetId).code
         let receiveEstimated = strictSend ? "(estimated)" : ""
         return "You send \(sourceAmountStr) \(sourceAssetStr) \(sendEstimated) and the recipient receives \(destinationAmountStr) \(destinationAssetStr) \(receiveEstimated)"
@@ -268,7 +268,7 @@ struct SendPathPaymentBox: View {
     }
     
     private var recipientAccountIdView: some View {
-        Text("\(Utils.shortAddress(address: recipientAccountId))").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic().foregroundColor(.blue)
+        Text("\(recipientAccountId.shortAddress)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic().foregroundColor(.blue)
     }
     
     private var recipientSelectionPicker: some View {
@@ -304,7 +304,7 @@ struct SendPathPaymentBox: View {
     }
     
     private var amountInputField: some View  {
-        let max = strictSend ? "(max. \(Utils.removeTrailingZerosFormAmount(amount: String(maxAmount()))) )" : ""
+        let max = strictSend ? "(max. \(maxAmount().toStringWithoutTrailingZeros) )" : ""
         return TextField("Enter amount \(max)", text: $amountToSend).keyboardType(.decimalPad) .textFieldStyle(.roundedBorder)
             .onChange(of: self.amountToSend, { oldValue, value in
                 if value != "" && Double(value) == nil {

@@ -357,7 +357,7 @@ public class StellarService {
     
     private static func paymentInfoFromAccountCreatedOperationResponse(payment: AccountCreatedOperationResponse) -> PaymentInfo{
         
-        let amount = Utils.removeTrailingZerosFormAmount(amount: payment.startingBalance.description)
+        let amount = payment.startingBalance.description.amountWithoutTrailingZeros
         return PaymentInfo(asset: NativeAssetId(), amount: amount, direction: PaymentDirection.received, address: payment.funder)
     }
     
@@ -416,7 +416,7 @@ public class AssetInfo: Hashable, Identifiable {
     }
     
     public var formattedBalance:String {
-        Utils.removeTrailingZerosFormAmount(amount: self.balance)
+        self.balance.amountWithoutTrailingZeros
     }
     
     public static func == (lhs: AssetInfo, rhs: AssetInfo) -> Bool {
@@ -445,10 +445,10 @@ public class PaymentInfo: Hashable, Identifiable {
     }
     
     public var description:String {
-        let strAmount = Utils.removeTrailingZerosFormAmount(amount: amount)
+        let strAmount = amount.amountWithoutTrailingZeros
         let id = asset.id == "native" ? "XLM" : (asset is IssuedAssetId ? (asset as! IssuedAssetId).code : asset.id)
         let dir = direction.rawValue
-        let name = contactName ?? Utils.shortAddress(address: address)
+        let name = contactName ?? address.shortAddress
         return "\(strAmount) \(id) \(dir) \(name)"
     }
     
@@ -501,7 +501,7 @@ public class AnchoredAssetInfo: Hashable, Identifiable {
     }
     
     public var formattedBalance:String {
-        Utils.removeTrailingZerosFormAmount(amount: self.balance)
+        self.balance.amountWithoutTrailingZeros
     }
     
     public func hash(into hasher: inout Hasher) {
