@@ -23,7 +23,6 @@ struct NewTransferView: View {
     }
 
     @State private var errorMessage:String?
-    @State private var loadingText = "Loading"
     @State private var showSep6DepositSheet = false
     
     var body: some View {

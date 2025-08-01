@@ -53,9 +53,7 @@ struct TransfersView: View {
 
                 if isLoadingAssets {
                     Utils.divider
-                    HStack {
-                        Utils.progressViewWithLabel("Loading anchored assets")
-                    }
+                    Utils.progressViewWithLabel("Loading anchored assets")
                 } else if anchoredAssets.isEmpty {
                     Text("No anchored assets found. Please trust an anchored asset first. You can use the Assets tab to do so. E.g. SRT")
                 } else if let error = dashboardData.userAnchoredAssetsLoadingError {
@@ -81,12 +79,17 @@ struct TransfersView: View {
                         pinInputField
                         submitAndCanelButtons
                     } else if state == .transferInfoLoaded {
-                        if mode == 1 {
-                            NewTransferView(assetInfo: selectedAssetInfo!,
-                                            authToken: sep10AuthToken!,
-                                            sep6Info: sep6Info,
-                                            sep24Info: sep24Info).frame(maxWidth: .infinity, alignment: .leading)
+                        if let assetInfo = selectedAssetInfo, let authToken = sep10AuthToken {
+                            if mode == 1 {
+                                NewTransferView(assetInfo: assetInfo,
+                                                authToken: authToken,
+                                                sep6Info: sep6Info,
+                                                sep24Info: sep24Info).frame(maxWidth: .infinity, alignment: .leading)
+                            } else if (mode == 2) {
+                                TransferHistoryView(assetInfo: assetInfo, authToken: authToken)
+                            }
                         }
+                        
                     }
                 }
             }
