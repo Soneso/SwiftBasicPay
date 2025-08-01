@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Soneso/stellar-ios-mac-sdk",
       "state" : {
-        "revision" : "d5df0870d8279abf1b2b3455376609e6b4302d6e",
-        "version" : "3.2.0"
+        "revision" : "3c5c73fc5c7b2994bd373fee76195ed3c41d0ef9",
+        "version" : "3.2.1"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Soneso/stellar-swift-wallet-sdk",
       "state" : {
-        "revision" : "38b46cb99dc42914f6507ba5173a7847fef91ebf",
-        "version" : "0.6.4"
+        "revision" : "994ae689404af4bde16513ab5099e53ac5d56e84",
+        "version" : "0.6.5"
       }
     }
   ],
