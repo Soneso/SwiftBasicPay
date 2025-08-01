@@ -18,6 +18,14 @@ public class Utils {
         return ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .blue))
     }
     
+    public static func progressViewWithLabel(_ label:String) -> some View {
+        return HStack {
+            Utils.progressView
+            Text(label).padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
     public static func removeTrailingZerosFormAmount(amount:String) -> String {
         if let doubleAmount = Double(amount) {
             let formatter = NumberFormatter()
