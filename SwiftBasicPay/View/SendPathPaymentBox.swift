@@ -49,7 +49,7 @@ struct SendPathPaymentBox: View {
                 recipientSelectionView
                 
                 if state == .loadingDestinationAssets {
-                    progressView(text: "Loading destination assets")
+                    Utils.progressViewWithLabel("Loading destination assets")
                 }
                 if state.rawValue >=  PathPaymentBoxState.destinationAssetsLoaded.rawValue {
                     if state == .pathSelected {
@@ -59,7 +59,7 @@ struct SendPathPaymentBox: View {
                     }
                 }
             } else {
-                progressView(text: "Sending payment")
+                Utils.progressViewWithLabel("Sending payment")
             }
         }
     }
@@ -159,7 +159,7 @@ struct SendPathPaymentBox: View {
                 Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
             }
             if state == .loadingPath {
-                progressView(text: "Searching payment path")
+                Utils.progressViewWithLabel("Searching payment path")
             } else {
                 Button("Find path", action:   {
                     Task {
@@ -238,14 +238,6 @@ struct SendPathPaymentBox: View {
             }
         }
         return true
-    }
-    
-    private func progressView(text:String) -> some View {
-        HStack {
-            Utils.progressView
-            Spacer()
-            Text(text).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
     
     private var recipientSelectionView: some View {

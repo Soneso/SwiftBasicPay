@@ -1,5 +1,5 @@
 {
-  "originHash" : "11b05ffc4196e52349c30450b627a2c86ec1bfddb7fb9a3f94848186dcc9df95",
+  "originHash" : "d69b48e21a86a1e6ed9a254809e956e4ffb6b45581eac7c8f4c8ceee40ae402f",
   "pins" : [
     {
       "identity" : "alerttoast",
@@ -26,6 +26,24 @@
       "state" : {
         "revision" : "776c4a6db74d5c6c143974be91c383680d468630",
         "version" : "1.3.0"
+      }
+    },
+    {
+      "identity" : "stellar-ios-mac-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Soneso/stellar-ios-mac-sdk",
+      "state" : {
+        "revision" : "d5df0870d8279abf1b2b3455376609e6b4302d6e",
+        "version" : "3.2.0"
+      }
+    },
+    {
+      "identity" : "stellar-swift-wallet-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Soneso/stellar-swift-wallet-sdk",
+      "state" : {
+        "revision" : "38b46cb99dc42914f6507ba5173a7847fef91ebf",
+        "version" : "0.6.4"
       }
     }
   ],

@@ -60,10 +60,7 @@ struct Sep6DepositStepper: View {
                     
                 } else if currentStep == 2 {
                     if isLoadingKyc {
-                        HStack {
-                            Utils.progressView
-                            Text(kycLoadingText).padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        Utils.progressViewWithLabel(kycLoadingText)
                     }
                     else if let info = kycInfo {
                         if info.sep12Status == Sep12Status.neesdInfo {
@@ -88,10 +85,7 @@ struct Sep6DepositStepper: View {
                     }
                 } else if currentStep == 3 {
                     if isLoadingFee {
-                        HStack {
-                            Utils.progressView
-                            Text("Loading fee data").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        Utils.progressViewWithLabel("Loading fee data")
                     } else {
                         if let anchorFee = fee {
                             let feeStr = anchorFee.toStringWithoutTrailingZeros
@@ -107,10 +101,7 @@ struct Sep6DepositStepper: View {
                 } else if currentStep == 4 {
                     
                     if isSubmitting {
-                        HStack {
-                            Utils.progressView
-                            Text("Submitting data to anchor").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                        Utils.progressViewWithLabel("Submitting data to anchor")
                     } else if let response = submissionResponse {
                         Sep6TransferResponseView(response: response)
                     }

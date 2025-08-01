@@ -37,11 +37,7 @@ struct SendPaymentBox: View {
     var body: some View {
         GroupBox ("Send payment"){
             if isSendingPayment {
-               HStack {
-                   Utils.progressView
-                   Spacer()
-                   Text("Sending payment").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
-               }
+            Utils.progressViewWithLabel("Sending payment")
             } else {
                 HStack {
                     Text("Asset:").font(.subheadline)

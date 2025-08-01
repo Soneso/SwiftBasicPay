@@ -71,9 +71,7 @@ struct TransfersView: View {
                         Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                     }
                     if state == .loading {
-                        HStack {
-                            Utils.progressViewWithLabel(loadingText)
-                        }
+                        Utils.progressViewWithLabel(loadingText)
                     } else if state == .sep10AuthPinRequired {
                         Text("Enter your pin to authenticate with the asset's anchor.").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
                         pinInputField

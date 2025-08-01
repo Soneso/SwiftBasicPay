@@ -63,17 +63,9 @@ struct AssetsView: View {
             }.padding(.vertical, 20)
             
             if isAddingAsset {
-                HStack {
-                    Utils.progressView
-                    Spacer()
-                    Text("Adding asset").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
-                }
+                Utils.progressViewWithLabel("Adding asset")
             } else if dashboardData.isLoadingAssets {
-                HStack {
-                    Utils.progressView
-                    Spacer()
-                    Text("Loading assets").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
-                }
+                Utils.progressViewWithLabel("Loading assets")
             }
             else {
                 if selectedAsset == AssetsView.customAssetItem {
