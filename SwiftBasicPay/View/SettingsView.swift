@@ -22,6 +22,20 @@ struct SettingsView: View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
                 Text("Settings").foregroundColor(Color.blue).multilineTextAlignment(.leading).bold().font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                GroupBox ("Sign out"){
+                    Utils.divider
+                    Spacer()
+                    Text("Exit to the login screen.").italic().foregroundColor(.black).frame(maxWidth: .infinity, alignment: .leading)
+                    HStack {
+                        Spacer()
+                        Button("Sign out") {
+                            signOut()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Spacer()
+                    }
+                    .padding(.vertical, 20.0)
+                }
                 GroupBox ("Reset demo app"){
                     Utils.divider
                     Spacer()
@@ -53,6 +67,10 @@ struct SettingsView: View {
             resetAppError = error.localizedDescription
         }
         isResettingApp = false
+        logoutUser()
+    }
+    
+    private func signOut() {
         logoutUser()
     }
 }
