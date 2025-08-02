@@ -38,10 +38,13 @@ struct Overview: View {
             }
         }.onAppear() {
             Task {
+                await dashboardData.fetchStellarData()
                 if (dashboardData.userContacts.isEmpty) {
                     await dashboardData.loadUserContacts()
                 }
-                await dashboardData.fetchStellarData()
+                if (dashboardData.userKycData.isEmpty) {
+                    await dashboardData.loadUserKycData()
+                }
             }
         }
     }

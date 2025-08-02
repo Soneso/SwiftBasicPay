@@ -27,11 +27,15 @@ class DashboardData: ObservableObject {
     /// The list of anchored assets currently hold by the user
     @Published var anchoredAssets: [AnchoredAssetInfo] = []
     
+    /// The list of kyc entris of the user stored locally.
+    @Published var userKycData: [KycEntry] = []
+    
 
     @Published var isLoadingAssets: Bool = false
     @Published var isLoadingContacts: Bool = false
     @Published var isLoadingRecentPayments: Bool = false
     @Published var isLoadingAnchoredAssets: Bool = false
+    @Published var isLoadingKycData: Bool = false
     @Published var userAssetsLoadingError: DashboardDataError? = nil
     @Published var recentPaymentsLoadingError: DashboardDataError? = nil
     @Published var userAnchoredAssetsLoadingError: DashboardDataError? = nil
@@ -84,6 +88,17 @@ class DashboardData: ObservableObject {
         Task { @MainActor in
             self.userContacts = contacts
             self.isLoadingContacts = false
+        }
+    }
+    
+    func loadUserKycData() async  {
+        Task { @MainActor in
+            self.isLoadingKycData = true
+        }
+        let kycData = SecureStorage.getKycData()
+        Task { @MainActor in
+            self.userKycData = kycData
+            self.isLoadingKycData = false
         }
     }
     
@@ -157,8 +172,6 @@ enum DashboardDataError: Error {
     case accountNotFound(accountId:String)
     case fetchingError(message:String)
 }
-
-
 
 extension DashboardDataError: LocalizedError {
     public var errorDescription: String? {
