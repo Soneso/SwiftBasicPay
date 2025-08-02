@@ -1,17 +1,19 @@
 //
-//  Sep6DepositStepper.swift
+//  Sep6WithdrawalStepper.swift
 //  SwiftBasicPay
 //
-//  Created by Christian Rogobete on 29.07.25.
+//  Created by Christian Rogobete on 02.08.25.
 //
+
 
 import SwiftUI
 import stellar_wallet_sdk
+import AlertToast
 
-struct Sep6DepositStepper: View {
+struct Sep6WithdrawalStepper: View {
 
     private let anchoredAsset:AnchoredAssetInfo
-    private let depositInfo:Sep6DepositInfo
+    private let withdrawInfo:Sep6WithdrawInfo
     private let authToken:AuthToken
     private let anchorHasEnabledFeeEndpoint:Bool
     private let stepTitles = ["Transfer details", "KYC Data", "Fee", "Summary"]
@@ -19,12 +21,12 @@ struct Sep6DepositStepper: View {
     private let savedKycData:[KycEntry]
     
     internal init(anchoredAsset: AnchoredAssetInfo,
-                  depositInfo: Sep6DepositInfo, 
+                  withdrawInfo: Sep6WithdrawInfo,
                   authToken: AuthToken,
                   anchorHasEnabledFeeEndpoint:Bool,
                   savedKycData:[KycEntry] = []) {
         self.anchoredAsset = anchoredAsset
-        self.depositInfo = depositInfo
+        self.withdrawInfo = withdrawInfo
         self.authToken = authToken
         self.anchorHasEnabledFeeEndpoint = anchorHasEnabledFeeEndpoint
         self.savedKycData = savedKycData
@@ -116,8 +118,8 @@ struct Sep6DepositStepper: View {
                         Sep6TransferResponseView(response: response)
                     }
                     else {
-                        let depositAmountStr = transferAmount.amountWithoutTrailingZeros
-                        Text("Deposit: \(depositAmountStr) \(anchoredAsset.code)").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
+                        let withdrawalAmountStr = transferAmount.amountWithoutTrailingZeros
+                        Text("Withdraw: \(withdrawalAmountStr) \(anchoredAsset.code)").padding(.leading).frame(maxWidth: .infinity, alignment: .leading)
                         
                         if let anchorFee = fee {
                             let feeStr = anchorFee.toStringWithoutTrailingZeros
@@ -149,9 +151,10 @@ struct Sep6DepositStepper: View {
                 }
             }.navigationBarTitleDisplayMode(.inline).navigationTitle("")
         }.onAppear(perform: {
-            if let dinfo = depositInfo.fieldsInfo {
-                for key in dinfo.keys {
-                    if let val = dinfo[key] {
+            // in a real app let the user choose the type.
+            if let winfo = withdrawInfo.types?.first?.value {
+                for key in winfo.keys {
+                    if let val = winfo[key] {
                         if val.choices != nil && !val.choices!.isEmpty {
                             self.collectedTransferDetails.append(selectItem)
                         } else {
@@ -235,18 +238,18 @@ struct Sep6DepositStepper: View {
     }
     
     private var minAmount : Double {
-        return depositInfo.minAmount ?? 0
+        return withdrawInfo.minAmount ?? 0
     }
     
     private var maxAmount : Double? {
-        return depositInfo.maxAmount
+        return withdrawInfo.maxAmount
     }
     
     var transferFieldInfos: [TransferFieldInfo] {
         var info:[TransferFieldInfo] = []
-        if let dinfo = depositInfo.fieldsInfo {
-            for key in dinfo.keys {
-                if let val = dinfo[key] {
+        if let winfo = withdrawInfo.types?.first?.value {
+            for key in winfo.keys {
+                if let val = winfo[key] {
                     info.append(TransferFieldInfo(key: key, info: val))
                 }
             }
@@ -255,8 +258,8 @@ struct Sep6DepositStepper: View {
     }
         
     private func indexForTransferFieldKey(key:String) -> Int {
-        if let dinfo = depositInfo.fieldsInfo {
-            for (index, infoKey) in dinfo.keys.enumerated() {
+        if let winfo = withdrawInfo.types?.first?.value {
+            for (index, infoKey) in winfo.keys.enumerated() {
                 if key == infoKey {
                     return index
                 }
@@ -312,9 +315,9 @@ struct Sep6DepositStepper: View {
             return false
         }
         
-        if let dinfo = depositInfo.fieldsInfo {
-            for (index, infoKey) in dinfo.keys.enumerated() {
-                let field = dinfo[infoKey]
+        if let winfo = withdrawInfo.types?.first?.value {
+            for (index, infoKey) in winfo.keys.enumerated() {
+                let field = winfo[infoKey]
                 let optional = field?.optional ?? false
                 if !optional {
                     let val = collectedTransferDetails[index]
@@ -485,8 +488,8 @@ struct Sep6DepositStepper: View {
     
     private var preparedTransferData : [String:String] {
         var result:[String:String]  = [:]
-        if let dinfo = depositInfo.fieldsInfo, !collectedTransferDetails.isEmpty {
-            for (index, key) in dinfo.keys.enumerated() {
+        if let winfo = withdrawInfo.types?.first?.value, !collectedTransferDetails.isEmpty {
+            for (index, key) in winfo.keys.enumerated() {
                 if (collectedTransferDetails.count > index) {
                     let val = collectedTransferDetails[index]
                     if !val.isEmpty && val != selectItem {
@@ -501,7 +504,7 @@ struct Sep6DepositStepper: View {
     private func loadFeeInfo() async {
         isLoadingFee = true
         fee = nil
-        if let feeFixed = depositInfo.feeFixed {
+        if let feeFixed = withdrawInfo.feeFixed {
             fee = feeFixed
         } else {
             guard let amount = Double(transferAmount) else {
@@ -509,13 +512,13 @@ struct Sep6DepositStepper: View {
                 isLoadingFee = false
                 return
             }
-            if let feePercent = depositInfo.feePercent {
+            if let feePercent = withdrawInfo.feePercent {
                 fee = amount * feePercent / 100
             } else if anchorHasEnabledFeeEndpoint {
                 do {
                     fee = try await anchoredAsset.anchor.sep6.fee(assetCode: anchoredAsset.code,
                                                                   amount: amount,
-                                                                  operation: "deposit",
+                                                                  operation: "withdraw",
                                                                   type: preparedTransferData["type"])
                 } catch {
                     feeError = "Error loading fee from anchor: \(error.localizedDescription)"
@@ -532,12 +535,13 @@ struct Sep6DepositStepper: View {
         do {
             let destinationAsset = anchoredAsset.asset
             let sep6 = anchoredAsset.anchor.sep6
-            let params = Sep6DepositParams(assetCode: destinationAsset.code,
-                                           account: authToken.account,
-                                           amount: transferAmount,
-                                           extraFields: preparedTransferData)
+            let params = Sep6WithdrawParams(assetCode: destinationAsset.code, 
+                                            type: withdrawInfo.types!.first!.key,
+                                            account: authToken.account,
+                                            amount: transferAmount,
+                                            extraFields: preparedTransferData)
             
-            submissionResponse = try await sep6.deposit(params: params, authToken: authToken)
+            submissionResponse = try await sep6.withdraw(params: params, authToken: authToken)
             
         } catch {
             submissionError = "Your request has been submitted to the Anchor but following error occurred: \(error.localizedDescription). Please close this window and try again."

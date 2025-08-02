@@ -18,6 +18,8 @@ struct Sep6TransferResponseView: View {
     }
     
     @State private var depositInstructions:[DepositInstruction] = []
+    @State private var showToast = false
+    @State private var toastMessage:String = ""
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -27,7 +29,7 @@ struct Sep6TransferResponseView: View {
             case .pending(let status, let moreInfoUrl, let eta):
                 pendingInfoView(status: status, moreInfoUrl: moreInfoUrl, eta: eta)
             case .withdrawSuccess(let accountId, let memoType, let memo, let id, let eta, let minAmount, let maxAmount, let feeFixed, let feePercent, let extraInfo):
-                Text("TODO")
+                withdrawalSuccess(accountId: accountId, memoType: memoType, memo: memo, id: id, eta: eta, minAmount: minAmount, maxAmount: maxAmount, feeFixed: feeFixed, feePercent: feePercent, extraInfo: extraInfo)
             case .depositSuccess(let how, let id, let eta, let minAmount, let maxAmount, let feeFixed, let feePercent, let extraInfo, let instructions):
                 depositSuccess(how: how, id: id, eta: eta, minAmount: minAmount, maxAmount: maxAmount, feeFixed: feeFixed, feePercent: feePercent, extraInfo: extraInfo, instructions: instructions)
             }
@@ -54,6 +56,7 @@ struct Sep6TransferResponseView: View {
             }
         }
     }
+    
     private func depositSuccess(how:String?, id:String?, eta:Int?, minAmount:Double?, maxAmount:Double?, feeFixed:Double?, feePercent:Double?, extraInfo:Sep6ExtraInfo?, instructions:[String:Sep6DepositInstruction]?) -> some View {
         depositInstructions = []
         if let instructions = instructions {
@@ -94,6 +97,48 @@ struct Sep6TransferResponseView: View {
             }
         }
     }
+    
+    private func withdrawalSuccess(accountId:String?, memoType:String?, memo:String?, id:String?, eta:Int?, minAmount:Double?, maxAmount:Double?, feeFixed:Double?, feePercent:Double?, extraInfo:Sep6ExtraInfo?) -> some View {
+        return VStack {
+            Text("You may not be finished yet. We have submitted your transfer to the anchor, and any further details and/or instructions are listed below. You may need to initiate a transfer to/from your bank.").font(.subheadline)
+            Utils.divider
+            if let id = id {
+                Text("Transfer id: \(id)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let accountId = accountId {
+                HStack {
+                    Text("Account id: \(accountId)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                    Button("", systemImage: "doc.on.doc") {
+                        copyToClipboard(text: accountId)
+                    }
+                }
+            }
+            if let memo = memo {
+                HStack {
+                    Text("Memo: \(memo)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                    Button("", systemImage: "doc.on.doc") {
+                        copyToClipboard(text: memo)
+                    }
+                }
+            }
+            if let memoType = memoType {
+                Text("Memo type: \(memoType)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let eta = eta {
+                Text("Eta: \(eta)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let extraInfo = extraInfo?.message {
+                Text("Extra info: \(extraInfo)").font(.subheadline)
+            }
+        }
+    }
+    
+    private func copyToClipboard(text:String) {
+        let pasteboard = UIPasteboard.general
+        pasteboard.string = text
+        toastMessage = "Copied to clipboard"
+        showToast = true
+    }
 }
 
 public class DepositInstruction: Hashable, Identifiable {
@@ -117,6 +162,3 @@ public class DepositInstruction: Hashable, Identifiable {
         lhs.key == rhs.key && lhs.value == rhs.value && lhs.description == rhs.description
     }
 }
-/*#Preview {
-    Sep6TransferResponseView()
-}*/

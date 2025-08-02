@@ -38,6 +38,9 @@
 		837CC66C2E3CD4D800B42033 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 837CC66B2E3CD4D800B42033 /* stellar-wallet-sdk */; };
 		83C0AA572E3D0D8B00D279C7 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83C0AA562E3D0D8B00D279C7 /* stellar-wallet-sdk */; };
 		83C0AA5A2E3D12C800D279C7 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83C0AA592E3D12C800D279C7 /* stellar-wallet-sdk */; };
+		83C0AA5C2E3E434400D279C7 /* Sep6WithdrawalStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5B2E3E434400D279C7 /* Sep6WithdrawalStepper.swift */; };
+		83C0AA5E2E3E43D300D279C7 /* TransferFieldInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5D2E3E43D300D279C7 /* TransferFieldInfo.swift */; };
+		83C0AA602E3E442000D279C7 /* KycFieldInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5F2E3E442000D279C7 /* KycFieldInfo.swift */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
 		83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */; };
 		83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */; };
@@ -125,6 +128,9 @@
 		837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6TransferResponseView.swift; sourceTree = "<group>"; };
 		837CC65E2E3CB80800B42033 /* String+BasicPay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+BasicPay.swift"; sourceTree = "<group>"; };
 		837CC6602E3CB97C00B42033 /* Double+BasicPay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+BasicPay.swift"; sourceTree = "<group>"; };
+		83C0AA5B2E3E434400D279C7 /* Sep6WithdrawalStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6WithdrawalStepper.swift; sourceTree = "<group>"; };
+		83C0AA5D2E3E43D300D279C7 /* TransferFieldInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferFieldInfo.swift; sourceTree = "<group>"; };
+		83C0AA5F2E3E442000D279C7 /* KycFieldInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KycFieldInfo.swift; sourceTree = "<group>"; };
 		83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
 		83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPaymentsBox.swift; sourceTree = "<group>"; };
 		83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesBox.swift; sourceTree = "<group>"; };
@@ -275,6 +281,8 @@
 			isa = PBXGroup;
 			children = (
 				83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */,
+				83C0AA5D2E3E43D300D279C7 /* TransferFieldInfo.swift */,
+				83C0AA5F2E3E442000D279C7 /* KycFieldInfo.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -300,6 +308,7 @@
 				8304E7B92E391B9300D31614 /* NewTransferView.swift */,
 				8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */,
 				837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */,
+				83C0AA5B2E3E434400D279C7 /* Sep6WithdrawalStepper.swift */,
 				837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */,
 			);
 			path = View;
@@ -532,14 +541,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83C0AA5C2E3E434400D279C7 /* Sep6WithdrawalStepper.swift in Sources */,
 				83F5B2D02E30CD5400920FF1 /* SendPaymentBox.swift in Sources */,
 				837398062E0F2A800032FDAA /* PaymentsView.swift in Sources */,
 				837CC65F2E3CB80800B42033 /* String+BasicPay.swift in Sources */,
+				83C0AA602E3E442000D279C7 /* KycFieldInfo.swift in Sources */,
 				8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */,
 				837398042E0F29E80032FDAA /* Overview.swift in Sources */,
 				837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */,
 				837398162E129CF20032FDAA /* SettingsView.swift in Sources */,
 				8373980E2E0F2BD90032FDAA /* ContactsView.swift in Sources */,
+				83C0AA5E2E3E43D300D279C7 /* TransferFieldInfo.swift in Sources */,
 				8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */,
 				837397D62E0D55E10032FDAA /* ContentView.swift in Sources */,
 				8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */,

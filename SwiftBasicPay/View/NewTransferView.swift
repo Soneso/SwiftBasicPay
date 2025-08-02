@@ -30,6 +30,7 @@ struct NewTransferView: View {
 
     @State private var errorMessage:String?
     @State private var showSep6DepositSheet = false
+    @State private var showSep6WithdrawalSheet = false
     
     var body: some View {
         VStack {
@@ -64,12 +65,16 @@ struct NewTransferView: View {
                                            savedKycData: savedKycData)
                     }
                 }
-                if sep6Info?.withdraw != nil {
+                if let withdrawInfo = sep6Info?.withdraw, let assetWithdrawInfo = withdrawInfo[assetInfo.code], assetWithdrawInfo.enabled {
                     Button("Withdraw", action:   {
-                        Task {
-                            
-                        }
-                    }).buttonStyle(.borderedProminent).tint(.red)
+                        showSep6WithdrawalSheet = true
+                    }).buttonStyle(.borderedProminent).tint(.red).sheet(isPresented: $showSep6WithdrawalSheet) {
+                        Sep6WithdrawalStepper(anchoredAsset: assetInfo,
+                                              withdrawInfo: assetWithdrawInfo,
+                                              authToken: authToken,
+                                              anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false,
+                                              savedKycData: savedKycData)
+                    }
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
