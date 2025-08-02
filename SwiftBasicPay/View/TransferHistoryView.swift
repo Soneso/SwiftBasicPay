@@ -121,6 +121,20 @@ struct TransferHistoryView: View {
             Utils.divider
             getRow("Id", tx.id)
             getRow("Kind", tx.kind)
+            if tx.transactionStatus == TransactionStatus.pendingCustomerInfoUpdate {
+                HStack {
+                    Text("Status: \(tx.transactionStatus.rawValue)").font(.subheadline).foregroundStyle(.red)
+                        .fontWeight(.light).italic().frame(maxWidth: .infinity, alignment: .leading)
+                    Button("", systemImage: "square.and.arrow.up") {
+                        Task {
+                            await getCustomerInfo(txId: tx.id)
+                        }
+                    }
+                }.padding(.vertical, 5.0)
+            } else {
+                getRow("Status", tx.transactionStatus.rawValue)
+            }
+            
             if let message = tx.message {
                 getRow("Msg.", message)
             }
@@ -202,6 +216,27 @@ struct TransferHistoryView: View {
             if let moreInfoUrl = tx.moreInfoUrl {
                 getRow("More info url", moreInfoUrl)
             }
+        }
+    }
+    
+    private func getCustomerInfo(txId:String) async {
+        do {
+            let sep12 = try await assetInfo.anchor.sep12(authToken: authToken)
+            let response = try await sep12.get(transactionId: txId)
+            if let fields = response.fields {
+                for key in fields.keys {
+                    let field = fields[key]!
+                    if let optional = field.optional {
+                        if !optional {
+                            print(" \(key):  not optional")
+                        }
+                    } else {
+                        print("\(key): optional is null")
+                    }
+                }
+            }
+        } catch {
+            print(error.localizedDescription)
         }
     }
     

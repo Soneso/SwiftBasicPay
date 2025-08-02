@@ -127,7 +127,7 @@ public class SecureStorage {
             }
         }
         if data.isEmpty {
-            data = emtpyKycData
+            data = demoKycData
         }
         return data
     }
@@ -152,15 +152,23 @@ public class SecureStorage {
         return newEntry
     }
     
-    public static var emtpyKycData:[KycEntry] {
-        // some example etries, in a real app you should add more
+    public static var demoKycData:[KycEntry] {
+        // some example etries needed by the test anchor
         var data:[KycEntry] = []
         data.append(KycEntry(id: Sep9PersonKeys.lastName, val: ""))
         data.append(KycEntry(id: Sep9PersonKeys.firstName, val: ""))
         data.append(KycEntry(id: Sep9PersonKeys.emailAddress, val: ""))
-        data.append(KycEntry(id: Sep9PersonKeys.mobileNumber, val: ""))
-        data.append(KycEntry(id: Sep9PersonKeys.taxId, val: ""))
-        data.append(KycEntry(id: Sep9FinancialKeys.bankAccountNumber, val: ""))
+        data.append(KycEntry(id: Sep9PersonKeys.birthDate, val: "1999-09-09"))
+        data.append(KycEntry(id: Sep9PersonKeys.idType, val: "passport"))
+        data.append(KycEntry(id: Sep9PersonKeys.idIssueDate, val: "2022-12-11"))
+        data.append(KycEntry(id: Sep9PersonKeys.idExpirationDate, val: "2032-12-11"))
+        data.append(KycEntry(id: Sep9PersonKeys.idNumber, val: "GE7182733361226333"))
+        data.append(KycEntry(id: Sep9PersonKeys.idCountryCode, val: "DE"))
+        data.append(KycEntry(id: Sep9PersonKeys.address, val: "Lange Strasse 12, 80803 Hundsdorf, Germany"))
+        data.append(KycEntry(id: Sep9FinancialKeys.bankBranchNumber, val: "972837"))
+        data.append(KycEntry(id: Sep9FinancialKeys.bankNumber, val: "12030000"))
+        data.append(KycEntry(id: Sep9FinancialKeys.bankAccountType, val: "IBAN"))
+        data.append(KycEntry(id: Sep9FinancialKeys.bankAccountNumber, val: "DE02100500000054540402"))
     
         return data
     }

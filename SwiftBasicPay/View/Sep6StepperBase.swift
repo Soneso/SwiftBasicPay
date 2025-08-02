@@ -94,7 +94,6 @@ class Sep6StepperViewModel: ObservableObject {
         do {
             let sep12 = try await anchoredAsset.anchor.sep12(authToken: authToken)
             let kycResponse = try await sep12.getByAuthTokenOnly()
-            print("kyc status: \(kycResponse.sep12Status.rawValue)")
             
             await MainActor.run {
                 kycInfo = kycResponse
@@ -106,6 +105,10 @@ class Sep6StepperViewModel: ObservableObject {
                     var newKycDetails: [String] = []
                     for key in dinfo.keys {
                         if let val = dinfo[key] {
+                            if val.optional == true {
+                                continue
+                            }
+                            print("p: \(key)")
                             if val.choices != nil && !val.choices!.isEmpty {
                                 newKycDetails.append(selectItem)
                             } else {
@@ -176,12 +179,12 @@ class Sep6StepperViewModel: ObservableObject {
     
     var preparedKycData: [String: String] {
         var result: [String: String] = [:]
-        if let dinfo = kycInfo?.fields, !collectedKycDetails.isEmpty {
-            for (index, key) in dinfo.keys.enumerated() {
+        if !collectedKycDetails.isEmpty {
+            for (index, field) in kycFieldInfos.enumerated() {
                 if collectedKycDetails.count > index {
                     let val = collectedKycDetails[index]
                     if !val.isEmpty && val != selectItem {
-                        result[key] = collectedKycDetails[index]
+                        result[field.key] = collectedKycDetails[index]
                     }
                 }
             }
@@ -213,16 +216,12 @@ class Sep6StepperViewModel: ObservableObject {
     
     func validateKycFields() -> Bool {
         kycFieldsError = nil
-        if let dinfo = kycInfo?.fields {
-            for (index, infoKey) in dinfo.keys.enumerated() {
-                let field = dinfo[infoKey]
-                let optional = field?.optional ?? false
-                if !optional {
-                    let val = collectedKycDetails[index]
-                    if val.isEmpty || val == selectItem {
-                        kycFieldsError = "\(infoKey) is not optional"
-                        return false
-                    }
+        for (index, field) in kycFieldInfos.enumerated() {
+            if !field.optional {
+                let val = collectedKycDetails[index]
+                if val.isEmpty || val == selectItem {
+                    kycFieldsError = "\(field.key) is not optional"
+                    return false
                 }
             }
         }
@@ -288,7 +287,10 @@ class Sep6StepperViewModel: ObservableObject {
         if let dinfo = kycInfo?.fields {
             for key in dinfo.keys {
                 if let val = dinfo[key] {
-                    info.append(KycFieldInfo(key: key, info: val))
+                    // show only required fields
+                    if !(val.optional ?? false) {
+                        info.append(KycFieldInfo(key: key, info: val))
+                    }
                 }
             }
         }
@@ -296,11 +298,9 @@ class Sep6StepperViewModel: ObservableObject {
     }
     
     func indexForKycFieldKey(key: String) -> Int {
-        if let dinfo = kycInfo?.fields {
-            for (index, infoKey) in dinfo.keys.enumerated() {
-                if key == infoKey {
-                    return index
-                }
+        for (index, infoKey) in kycFieldInfos.enumerated() {
+            if key == infoKey.key {
+                return index
             }
         }
         return -1
