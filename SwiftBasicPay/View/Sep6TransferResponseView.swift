@@ -58,7 +58,6 @@ struct Sep6TransferResponseView: View {
     }
     
     private func depositSuccess(how:String?, id:String?, eta:Int?, minAmount:Double?, maxAmount:Double?, feeFixed:Double?, feePercent:Double?, extraInfo:Sep6ExtraInfo?, instructions:[String:Sep6DepositInstruction]?) -> some View {
-        depositInstructions = []
         if let instructions = instructions {
             for key in instructions.keys {
                 depositInstructions.append(DepositInstruction(key: key,
