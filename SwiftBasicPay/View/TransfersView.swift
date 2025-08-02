@@ -82,7 +82,8 @@ struct TransfersView: View {
                                 NewTransferView(assetInfo: assetInfo,
                                                 authToken: authToken,
                                                 sep6Info: sep6Info,
-                                                sep24Info: sep24Info).frame(maxWidth: .infinity, alignment: .leading)
+                                                sep24Info: sep24Info,
+                                                savedKycData: dashboardData.userKycData).frame(maxWidth: .infinity, alignment: .leading)
                             } else if (mode == 2) {
                                 TransferHistoryView(assetInfo: assetInfo, authToken: authToken)
                             }
@@ -196,6 +197,8 @@ struct TransfersView: View {
             return
         }
         
+        self.pin = ""
+        
         let signingKeyPair = userKeyPair!
         guard let selectedAsset = selectedAssetInfo else {
             resetState()
@@ -261,6 +264,7 @@ struct TransfersView: View {
         sep10AuthToken = nil
         loadingText = "Loading"
         tomlInfo = nil
+        pin = ""
         state = .initial
     }
     

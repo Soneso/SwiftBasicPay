@@ -14,12 +14,18 @@ struct NewTransferView: View {
     private var authToken:AuthToken
     private var sep6Info:Sep6Info?
     private var sep24Info:Sep24Info?
+    private var savedKycData:[KycEntry]
     
-    internal init(assetInfo: AnchoredAssetInfo, authToken: AuthToken, sep6Info: Sep6Info? = nil, sep24Info: Sep24Info? = nil) {
+    internal init(assetInfo: AnchoredAssetInfo, 
+                  authToken: AuthToken,
+                  sep6Info: Sep6Info? = nil,
+                  sep24Info: Sep24Info? = nil,
+                  savedKycData:[KycEntry] = []) {
         self.assetInfo = assetInfo
         self.authToken = authToken
         self.sep6Info = sep6Info
         self.sep24Info = sep24Info
+        self.savedKycData = savedKycData
     }
 
     @State private var errorMessage:String?
@@ -54,7 +60,8 @@ struct NewTransferView: View {
                         Sep6DepositStepper(anchoredAsset: assetInfo,
                                            depositInfo: assetDepositInfo,
                                            authToken: authToken,
-                                           anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false)
+                                           anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false,
+                                           savedKycData: savedKycData)
                     }
                 }
                 if sep6Info?.withdraw != nil {

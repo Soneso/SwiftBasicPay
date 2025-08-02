@@ -9,15 +9,18 @@ struct Sep6DepositStepper: View {
     private let anchorHasEnabledFeeEndpoint:Bool
     private let stepTitles = ["Transfer details", "KYC Data", "Fee", "Summary"]
     private let selectItem = "select"
+    private let savedKycData:[KycEntry]
     
     internal init(anchoredAsset: AnchoredAssetInfo,
                   depositInfo: Sep6DepositInfo, 
                   authToken: AuthToken,
-                  anchorHasEnabledFeeEndpoint:Bool) {
+                  anchorHasEnabledFeeEndpoint:Bool,
+                  savedKycData:[KycEntry] = []) {
         self.anchoredAsset = anchoredAsset
         self.depositInfo = depositInfo
         self.authToken = authToken
         self.anchorHasEnabledFeeEndpoint = anchorHasEnabledFeeEndpoint
+        self.savedKycData = savedKycData
     }
     
     @Environment(\.dismiss) private var dismiss // Environment property for dismissing the sheet
@@ -408,7 +411,11 @@ struct Sep6DepositStepper: View {
                         if val.choices != nil && !val.choices!.isEmpty {
                             self.collectedKycDetails.append(selectItem)
                         } else {
-                            self.collectedKycDetails.append("")
+                            var value = ""
+                            if let saved = savedKycData.filter({$0.id == key}).first {
+                                value = saved.val
+                            }
+                            self.collectedKycDetails.append(value)
                         }
                     }
                 }

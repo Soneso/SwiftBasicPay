@@ -31,7 +31,7 @@ struct Dashboard: View {
             PaymentsView().environmentObject(dashboardData).tabItem { Label("Payments", systemImage: "dollarsign.circle") }
             AssetsView().environmentObject(dashboardData).tabItem { Label("Assets", systemImage: "bitcoinsign.arrow.circlepath") }
             TransfersView().environmentObject(dashboardData).tabItem { Label("Transfers", systemImage: "paperplane") }
-            KycView().environmentObject(dashboardData).tabItem { Label("KYC", systemImage: "shield.lefthalf.filled.badge.checkmark") }
+            KycView().environmentObject(dashboardData).tabItem { Label("My KYC data", systemImage: "shield.lefthalf.filled.badge.checkmark") }
             ContactsView().environmentObject(dashboardData).tabItem { Label("Contacts", systemImage: "person") }
             SettingsView(logoutUser: logoutUser).tabItem { Label("Settings", systemImage: "gearshape") }
         }
