@@ -66,20 +66,23 @@ struct Sep6TransferResponseView: View {
             }
         }
         return VStack {
-            Text("You may not be finished yet. We have submitted your transfer to the anchor, and any further details and/or instructions are listed below. You may need to initiate a transfer to/from your bank.").font(.subheadline)
+            Text("You may not be finished yet. We have submitted your transfer to the anchor, but you may need to provide additional data. Switch to the transaction history section to check the current transaction status.").font(.subheadline)
             Utils.divider
+            if id != nil || how != nil || eta != nil || !depositInstructions.isEmpty {
+                Text("Info provided by the anchor: ").font(.subheadline).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)
+            }
             if let id = id {
-                Text("Transfer id: \(id)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Text("Transfer id: \(id)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).padding(.top)
             }
             if let how = how {
-                Text("How: \(how)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Text("How: \(how)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).padding(.top)
             }
             if let eta = eta {
-                Text("Eta: \(eta)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                Text("Eta: \(eta)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).padding(.top)
             }
             if !depositInstructions.isEmpty {
                 ForEach($depositInstructions, id: \.key) { info in
-                    Text("\(info.key) Instructions").font(.subheadline).font(.caption)
+                    Text("\(info.key) Instructions").font(.subheadline).font(.caption).padding(.top)
                         .fontWeight(.light).italic()
                         .foregroundColor(.secondary ).frame(maxWidth: .infinity, alignment: .leading)
                     Text("Value: \(info.value)").font(.subheadline).font(.caption)
@@ -99,7 +102,7 @@ struct Sep6TransferResponseView: View {
     
     private func withdrawalSuccess(accountId:String?, memoType:String?, memo:String?, id:String?, eta:Int?, minAmount:Double?, maxAmount:Double?, feeFixed:Double?, feePercent:Double?, extraInfo:Sep6ExtraInfo?) -> some View {
         return VStack {
-            Text("You may not be finished yet. We have submitted your transfer to the anchor, and any further details and/or instructions are listed below. You may need to initiate a transfer to/from your bank.").font(.subheadline)
+            Text("You may not be finished yet. We have submitted your transfer to the anchor, but you may need to provide additional data. Switch to the transaction history section to check the current transaction status.").font(.subheadline)
             Utils.divider
             if let id = id {
                 Text("Transfer id: \(id)").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)

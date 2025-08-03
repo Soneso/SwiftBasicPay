@@ -28,16 +28,18 @@ struct NewTransferView: View {
         self.savedKycData = savedKycData
     }
 
-    @State private var errorMessage:String?
     @State private var showSep6DepositSheet = false
     @State private var showSep6WithdrawalSheet = false
+    @State private var showSep24InteractiveUrlSheet = false
+    @State private var isLoadingSep24InteractiveUrl = false
+    @State private var loadingSep24InteractiveUrlErrorMessage: String?
+    @State private var sep24InteractiveUrl: String?
+    @State private var sep24OperationMode: String?
     
     var body: some View {
         VStack {
             
-            if let error = errorMessage {
-                Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-            }
+           
             if sep6Info != nil {
                 sep6TransferButtonsView
             }
@@ -84,22 +86,73 @@ struct NewTransferView: View {
         VStack {
             Utils.divider
             Text("SEP-24 Transfers").font(.subheadline).fontWeight(.bold).frame(maxWidth: .infinity, alignment: .leading)
-            HStack {
-                if sep24Info?.deposit != nil {
-                    Button("Deposit", action:   {
-                        Task {
-                            
-                        }
-                    }).buttonStyle(.borderedProminent).tint(.green)
+            if isLoadingSep24InteractiveUrl {
+                Utils.progressViewWithLabel("Requesting interactive URL")
+            } else {
+                if let error = loadingSep24InteractiveUrlErrorMessage {
+                    Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
                 }
-                if sep24Info?.withdraw != nil {
-                    Button("Withdraw", action:   {
-                        Task {
-                            
-                        }
-                    }).buttonStyle(.borderedProminent).tint(.red)
+                
+                HStack {
+                    if let depositInfo = sep24Info?.deposit[assetInfo.code], depositInfo.enabled {
+                        Button("Deposit", action: {
+                            Task {
+                                await initiateSep24Transfer(mode: "deposit")
+                            }
+                        }).buttonStyle(.borderedProminent).tint(.green)
+                    }
+                    if let withdrawInfo = sep24Info?.withdraw[assetInfo.code], withdrawInfo.enabled {
+                        Button("Withdraw", action: {
+                            Task {
+                                await initiateSep24Transfer(mode: "withdraw")
+                            }
+                        }).buttonStyle(.borderedProminent).tint(.red)
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading).sheet(isPresented: $showSep24InteractiveUrlSheet) {
+                    if let url = sep24InteractiveUrl, let mode = sep24OperationMode {
+                        let title = "SEP-24 \(mode.capitalized)"
+                        InteractiveWebViewSheet(url: url, title: title, isPresented: $showSep24InteractiveUrlSheet)
+                    }
                 }
-            }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+    
+    private func initiateSep24Transfer(mode: String) async {
+        await MainActor.run {
+            isLoadingSep24InteractiveUrl = true
+            loadingSep24InteractiveUrlErrorMessage = nil
+        }
+        
+        do {
+            let sep24 = assetInfo.anchor.sep24
+            let interactiveUrl: String?
+            
+            if mode == "deposit" {
+                let response = try await sep24.deposit(assetId: assetInfo.asset, authToken: authToken)
+                interactiveUrl = response.url
+                //print(interactiveUrl)
+            } else if mode == "withdraw" {
+                let response = try await sep24.withdraw(assetId: assetInfo.asset, authToken: authToken)
+                interactiveUrl = response.url
+            } else {
+                interactiveUrl = nil
+            }
+            
+            await MainActor.run {
+                if let url = interactiveUrl {
+                    sep24InteractiveUrl = url
+                    sep24OperationMode = mode
+                    showSep24InteractiveUrlSheet = true
+                }
+                isLoadingSep24InteractiveUrl = false
+            }
+            
+        } catch {
+            await MainActor.run {
+                loadingSep24InteractiveUrlErrorMessage = "Error requesting SEP-24 interactive url: \(error.localizedDescription)"
+                isLoadingSep24InteractiveUrl = false
+            }
         }
     }
 }
