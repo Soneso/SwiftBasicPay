@@ -54,9 +54,7 @@ struct TransferHistoryView: View {
                     }
                     ScrollView {
                         ForEach(sep24History, id: \.id) { info in
-                            Text("\(info.id)").font(.subheadline).font(.caption)
-                                .fontWeight(.light).italic().frame(maxWidth: .infinity, alignment: .leading)
-                            Spacer(minLength: 10)
+                            sep24TransactionBox(info.raw)
                         }
                     }.padding(.top)
                     
@@ -119,7 +117,7 @@ struct TransferHistoryView: View {
         title.append(" \(assetInfo.code)")
         return GroupBox (title){
             Utils.divider
-            getRow("Id", tx.id)
+            getRow("Id", "\(tx.id.prefix(6))...\(tx.id.suffix(4))", showCopyButton: true, stringToCopy: tx.id)
             getRow("Kind", tx.kind)
             if tx.transactionStatus == TransactionStatus.pendingCustomerInfoUpdate {
                 HStack {
@@ -136,7 +134,7 @@ struct TransferHistoryView: View {
             }
             
             if let message = tx.message {
-                getRow("Msg.", message)
+                getRow("Msg.", message, showCopyButton: true)
             }
             if let eta = tx.statusEta {
                 getRow("Status Eta.", "\(eta)")
@@ -163,43 +161,43 @@ struct TransferHistoryView: View {
                 sep6ChargedFeeDetails(chargedFeeInfo)
             }
             if let quoteId = tx.quoteId {
-                getRow("Quote id", quoteId)
+                getRow("Quote id", quoteId, showCopyButton: true)
             }
             if let from = tx.from {
-                getRow("From", from)
+                getRow("From", from.shortAddress, showCopyButton: true, stringToCopy: from)
             }
             if let to = tx.to {
-                getRow("To", to)
+                getRow("To", to.shortAddress, showCopyButton: true, stringToCopy: to)
             }
             if let externalExtra = tx.externalExtra {
-                getRow("External extra", externalExtra)
+                getRow("External extra", externalExtra, showCopyButton: true)
             }
             if let externalExtraText = tx.externalExtraText {
-                getRow("External extra text", externalExtraText)
+                getRow("External extra text", externalExtraText, showCopyButton: true)
             }
             if let depositMemo = tx.depositMemo {
-                getRow("Deposit memo", depositMemo)
+                getRow("Deposit memo", depositMemo, showCopyButton: true)
             }
             if let depositMemoType = tx.depositMemoType {
                 getRow("Deposit memo type", depositMemoType)
             }
             if let withdrawAnchorAccount = tx.withdrawAnchorAccount {
-                getRow("Withdraw anchor account", withdrawAnchorAccount)
+                getRow("Withdraw anchor account", withdrawAnchorAccount.shortAddress, showCopyButton: true, stringToCopy: withdrawAnchorAccount)
             }
             if let startedAt = tx.startedAt {
-                getRow("Started at", "\(startedAt)")
+                getRow("Started at", formatDateString("\(startedAt)"))
             }
             if let updatedAt = tx.updatedAt {
-                getRow("Updated at", "\(updatedAt)")
+                getRow("Updated at", formatDateString("\(updatedAt)"))
             }
             if let completedAt = tx.completedAt {
-                getRow("Completed at", "\(completedAt)")
+                getRow("Completed at", formatDateString("\(completedAt)"))
             }
             if let stellarTransactionId = tx.stellarTransactionId {
-                getRow("Stellar transaction id", stellarTransactionId)
+                getRow("Stellar transaction id", stellarTransactionId, showCopyButton: true)
             }
             if let externalTransactionId = tx.externalTransactionId {
-                getRow("External transaction id", externalTransactionId)
+                getRow("External transaction id", externalTransactionId, showCopyButton: true)
             }
             if let refunded = tx.refunded {
                 getRow("Refunded", "\(refunded)")
@@ -208,15 +206,244 @@ struct TransferHistoryView: View {
                 sep6RefundsDetails(refunds)
             }
             if let requiredInfoMessage = tx.requiredInfoMessage {
-                getRow("Required info msg.", requiredInfoMessage)
+                getRow("Required info msg.", requiredInfoMessage, showCopyButton: true)
             }
             if let claimableBalanceId = tx.claimableBalanceId {
-                getRow("Claimable balance id.", claimableBalanceId)
+                getRow("Claimable balance id.", claimableBalanceId, showCopyButton: true)
             }
             if let moreInfoUrl = tx.moreInfoUrl {
-                getRow("More info url", moreInfoUrl)
+                getRow("More info url", "\(moreInfoUrl.prefix(20))...", showCopyButton: true, stringToCopy: moreInfoUrl)
             }
         }
+    }
+    
+    private func sep24TransactionBox(_ tx:InteractiveFlowTransaction) -> some View {
+        var title = getSep24TxTitle(tx)
+        if let tx  = tx as? ProcessingAnchorTransaction {
+            if let amount = tx.amountIn {
+                title.append(" in: \(amount)  \(assetInfo.code)")
+            } else if let amount = tx.amountOut {
+                title.append(" out: \(amount)  \(assetInfo.code)")
+            }
+        }
+        return GroupBox (title){
+            Utils.divider
+            getSep24TransactionBoxDetails(tx)
+        }
+    }
+    
+    private func getSep24TransactionBoxDetails(_ tx:InteractiveFlowTransaction) -> some View {
+        return VStack {
+            getRow("Id", "\(tx.id.prefix(6))...\(tx.id.suffix(4))", showCopyButton: true, stringToCopy: tx.id)
+            //getRow("Status", tx.status.rawValue)
+            
+            if let tx = tx as? ProcessingAnchorTransaction {
+                // Common ProcessingAnchorTransaction fields
+                if let tx = tx as? DepositTransaction {
+                    // Deposit-specific fields
+                    if let from = tx.from {
+                        getRow("From", from.shortAddress, showCopyButton: true, stringToCopy: from)
+                    }
+                    if let to = tx.to {
+                        getRow("To", to.shortAddress, showCopyButton: true, stringToCopy: to)
+                    }
+                    if let depositMemo = tx.depositMemo {
+                        getRow("Deposit memo", depositMemo, showCopyButton: true)
+                    }
+                    if let depositMemoType = tx.depositMemoType {
+                        getRow("Deposit memo type", depositMemoType)
+                    }
+                    if let claimableBalanceId = tx.claimableBalanceId {
+                        getRow("Claimable balance id", claimableBalanceId, showCopyButton: true)
+                    }
+                } else if let tx = tx as? WithdrawalTransaction {
+                    // Withdrawal-specific fields
+                    if let from = tx.from {
+                        getRow("From", from.shortAddress, showCopyButton: true, stringToCopy: from)
+                    }
+                    if let to = tx.to {
+                        getRow("To", to.shortAddress, showCopyButton: true, stringToCopy: to)
+                    }
+                    if let withdrawalMemo = tx.withdrawalMemo {
+                        getRow("Withdrawal memo", withdrawalMemo, showCopyButton: true)
+                    }
+                    if let withdrawalMemoType = tx.withdrawalMemoType {
+                        getRow("Withdrawal memo type", withdrawalMemoType)
+                    }
+                    if let withdrawAnchorAccount = tx.withdrawAnchorAccount {
+                        getRow("Withdrawal anchor account", withdrawAnchorAccount.shortAddress, showCopyButton: true, stringToCopy: withdrawAnchorAccount)
+                    }
+                }
+                
+                // Common fields for ProcessingAnchorTransaction
+                if let statusEta = tx.statusEta {
+                    getRow("Status Eta", "\(statusEta)")
+                }
+                if let kycVerified = tx.kycVerified {
+                    getRow("KYC verified", "\(kycVerified)")
+                }
+                if let amountIn = tx.amountIn {
+                    getRow("Amount in", amountIn)
+                }
+                if let amountInAsset = tx.amountInAsset {
+                    getRow("Amount in asset", amountInAsset)
+                }
+                if let amountOut = tx.amountOut {
+                    getRow("Amount out", amountOut)
+                }
+                if let amountOutAsset = tx.amountOutAsset {
+                    getRow("Amount out asset", amountOutAsset)
+                }
+                if let amountFee = tx.amountFee {
+                    getRow("Amount fee", amountFee)
+                }
+                if let amountFeeAsset = tx.amountFeeAsset {
+                    getRow("Amount fee asset", amountFeeAsset)
+                }
+                if let completedAt = tx.completedAt {
+                    getRow("Completed at", formatDateString("\(completedAt)"))
+                }
+                if let updatedAt = tx.updatedAt {
+                    getRow("Updated at", formatDateString("\(updatedAt)"))
+                }
+                if let stellarTransactionId = tx.stellarTransactionId {
+                    getRow("Stellar transaction id", stellarTransactionId, showCopyButton: true)
+                }
+                if let externalTransactionId = tx.externalTransactionId {
+                    getRow("External transaction id", externalTransactionId, showCopyButton: true)
+                }
+                if let refunds = tx.refunds {
+                    sep24RefundsDetails(refunds)
+                }
+            } else if let tx = tx as? IncompleteAnchorTransaction {
+                // Incomplete transaction fields
+                if let tx = tx as? IncompleteDepositTransaction {
+                    if let to = tx.to {
+                        getRow("To", to.shortAddress, showCopyButton: true, stringToCopy: to)
+                    }
+                } else if let tx = tx as? IncompleteWithdrawalTransaction {
+                    if let from = tx.from {
+                        getRow("From", from.shortAddress, showCopyButton: true, stringToCopy: from)
+                    }
+                }
+            } else if let tx = tx as? ErrorTransaction {
+                // Error transaction fields
+                if let statusEta = tx.statusEta {
+                    getRow("Status Eta", "\(statusEta)")
+                }
+                if let kycVerified = tx.kycVerified {
+                    getRow("KYC verified", "\(kycVerified)")
+                }
+                if let amountIn = tx.amountIn {
+                    getRow("Amount in", amountIn)
+                }
+                if let amountInAsset = tx.amountInAsset {
+                    getRow("Amount in asset", amountInAsset)
+                }
+                if let amountOut = tx.amountOut {
+                    getRow("Amount out", amountOut)
+                }
+                if let amountOutAsset = tx.amountOutAsset {
+                    getRow("Amount out asset", amountOutAsset)
+                }
+                if let amountFee = tx.amountFee {
+                    getRow("Amount fee", amountFee)
+                }
+                if let amountFeeAsset = tx.amountFeeAsset {
+                    getRow("Amount fee asset", amountFeeAsset)
+                }
+                if let quoteId = tx.quoteId {
+                    getRow("Quote id", quoteId, showCopyButton: true)
+                }
+                if let completedAt = tx.completedAt {
+                    getRow("Completed at", formatDateString("\(completedAt)"))
+                }
+                if let updatedAt = tx.updatedAt {
+                    getRow("Updated at", formatDateString("\(updatedAt)"))
+                }
+                if let stellarTransactionId = tx.stellarTransactionId {
+                    getRow("Stellar transaction id", stellarTransactionId, showCopyButton: true)
+                }
+                if let externalTransactionId = tx.externalTransactionId {
+                    getRow("External transaction id", externalTransactionId, showCopyButton: true)
+                }
+                if let refunded = tx.refunded {
+                    getRow("Refunded", "\(refunded)")
+                }
+                if let refunds = tx.refunds {
+                    sep24RefundsDetails(refunds)
+                }
+                if let from = tx.from {
+                    getRow("From", from.shortAddress, showCopyButton: true, stringToCopy: from)
+                }
+                if let to = tx.to {
+                    getRow("To", to.shortAddress, showCopyButton: true, stringToCopy: to)
+                }
+                if let depositMemo = tx.depositMemo {
+                    getRow("Deposit memo", depositMemo, showCopyButton: true)
+                }
+                if let depositMemoType = tx.depositMemoType {
+                    getRow("Deposit memo type", depositMemoType)
+                }
+                if let claimableBalanceId = tx.claimableBalanceId {
+                    getRow("Claimable balance id", claimableBalanceId, showCopyButton: true)
+                }
+                if let withdrawalMemo = tx.withdrawalMemo {
+                    getRow("Withdrawal memo", withdrawalMemo, showCopyButton: true)
+                }
+                if let withdrawalMemoType = tx.withdrawalMemoType {
+                    getRow("Withdrawal memo type", withdrawalMemoType)
+                }
+                if let withdrawAnchorAccount = tx.withdrawAnchorAccount {
+                    getRow("Withdrawal anchor account", withdrawAnchorAccount.shortAddress, showCopyButton: true, stringToCopy: withdrawAnchorAccount)
+                }
+            }
+            
+            // Common fields for all transaction types
+            getRow("Started at", formatDateString("\(tx.startedAt)"))
+            if let message = tx.message {
+                getRow("Message", message, showCopyButton: true)
+            }
+            if let moreInfoUrl = tx.moreInfoUrl {
+                getRow("More info url", "\(moreInfoUrl.prefix(20))...", showCopyButton: true, stringToCopy: moreInfoUrl)
+            }
+        }
+    }
+    
+    private func sep24RefundsDetails(_ refunds: Refunds) -> some View {
+        var paymentInfos: [Sep24RefundPaymentInfo] = []
+        for payment in refunds.payments {
+            paymentInfos.append(Sep24RefundPaymentInfo(raw: payment))
+        }
+        return VStack {
+            getRow("Refunds - amount refunded", refunds.amountRefunded)
+            getRow("Refunds - amount fee", refunds.amountFee)
+            ForEach(paymentInfos, id: \.id) { info in
+                getRow("Refunds - payment id", info.id, showCopyButton: true)
+                getRow("Refunds - payment id type", info.idType)
+                getRow("Refunds - payment \(info.id) amount", info.amount)
+                getRow("Refunds - payment \(info.id) fee", info.fee)
+            }
+        }
+    }
+    
+    private func getSep24TxTitle(_ tx: InteractiveFlowTransaction) -> String {
+        if let _ = tx as? DepositTransaction {
+            return "Deposit"
+        }
+        if let _ = tx as? WithdrawalTransaction {
+            return "Withdrawal"
+        }
+        if let _ = tx as? IncompleteDepositTransaction {
+            return "Deposit (incomplete)"
+        }
+        if let _ = tx as? IncompleteWithdrawalTransaction {
+            return "Withdrawal (incomplete)"
+        }
+        if let _ = tx as? ErrorTransaction {
+            return "Error"
+        }
+        return tx.id
     }
     
     private func getCustomerInfo(txId:String) async {
@@ -271,7 +498,7 @@ struct TransferHistoryView: View {
             getRow("Refunds - amount refunded", refunds.amountRefunded)
             getRow("Refunds - amount fee", refunds.amountFee)
             ForEach(paymentInfos, id: \.id) { info in
-                getRow("Refunds - payment id", info.id)
+                getRow("Refunds - payment id", info.id, showCopyButton: true)
                 getRow("Refunds - payment id type:", info.idType)
                 getRow("Refunds - payment \(info.id) amount", info.amount )
                 getRow("Refunds - payment \(info.id) fee", info.fee )
@@ -279,14 +506,21 @@ struct TransferHistoryView: View {
         }
     }
     
-    private func getRow(_ label:String, _ txt:String) -> some View {
+    private func getRow(_ title:String, _ txt:String, showCopyButton:Bool = false, stringToCopy:String? = nil) -> some View {
         HStack {
-            Text("\(label): \(txt)").font(.subheadline).font(.caption)
-                .fontWeight(.light).italic().frame(maxWidth: .infinity, alignment: .leading)
-            Button("", systemImage: "doc.on.doc") {
-                copyToClipboard(text: txt)
+            HStack(spacing: 0) {
+                Text("\(title):").font(.subheadline).font(.caption)
+                    .fontWeight(.bold)
+                Text(" \(txt)").font(.subheadline).font(.caption)
+                    .fontWeight(.light).italic()
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            if showCopyButton {
+                Button("", systemImage: "doc.on.doc") {
+                    let copyText = stringToCopy ?? txt
+                    copyToClipboard(text: copyText)
+                }
             }
-        }.padding(.vertical, 5.0)
+        }.padding(.vertical, 3.0)
     }
     
     private func copyToClipboard(text:String) {
@@ -294,6 +528,10 @@ struct TransferHistoryView: View {
         pasteboard.string = text
         toastMessage = "Copied to clipboard"
         showToast = true
+    }
+    
+    private func formatDateString(_ dateString: String) -> String {
+        return dateString.replacingOccurrences(of: " +0000", with: "")
     }
 }
 
@@ -395,6 +633,39 @@ public class Sep6RefundPaymentInfo: Hashable, Identifiable {
     }
     
     public static func == (lhs: Sep6RefundPaymentInfo, rhs: Sep6RefundPaymentInfo) -> Bool {
+        lhs.raw.id == rhs.raw.id
+    }
+}
+
+public class Sep24RefundPaymentInfo: Hashable, Identifiable {
+
+    public let raw:Payment
+    
+    internal init(raw: Payment) {
+        self.raw = raw
+    }
+    
+    public var id:String {
+        return raw.id
+    }
+    
+    public var idType:String {
+        return raw.idType
+    }
+
+    public var amount:String {
+        return raw.amount
+    }
+    
+    public var fee:String {
+        return raw.fee
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(raw.id)
+    }
+    
+    public static func == (lhs: Sep24RefundPaymentInfo, rhs: Sep24RefundPaymentInfo) -> Bool {
         lhs.raw.id == rhs.raw.id
     }
 }
