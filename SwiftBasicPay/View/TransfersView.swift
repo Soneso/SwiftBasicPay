@@ -85,7 +85,7 @@ struct TransfersView: View {
                                                 sep24Info: sep24Info,
                                                 savedKycData: dashboardData.userKycData).frame(maxWidth: .infinity, alignment: .leading)
                             } else if (mode == 2) {
-                                TransferHistoryView(assetInfo: assetInfo, authToken: authToken)
+                                TransferHistoryView(assetInfo: assetInfo, authToken: authToken, savedKycData: dashboardData.userKycData)
                             }
                         }
                         

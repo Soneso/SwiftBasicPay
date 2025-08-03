@@ -108,7 +108,7 @@ class Sep6StepperViewModel: ObservableObject {
                             if val.optional == true {
                                 continue
                             }
-                            print("p: \(key)")
+                            //print("p: \(key)")
                             if val.choices != nil && !val.choices!.isEmpty {
                                 newKycDetails.append(selectItem)
                             } else {

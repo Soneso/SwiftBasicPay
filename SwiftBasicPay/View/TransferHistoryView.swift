@@ -13,25 +13,35 @@ struct TransferHistoryView: View {
     
     private var assetInfo:AnchoredAssetInfo
     private var authToken:AuthToken
+    private var savedKycData: [KycEntry] = []
     
-    internal init(assetInfo: AnchoredAssetInfo, authToken: AuthToken) {
+    internal init(assetInfo: AnchoredAssetInfo, authToken: AuthToken, savedKycData: [KycEntry] = []) {
         self.assetInfo = assetInfo
         self.authToken = authToken
+        self.savedKycData = savedKycData
     }
     
     @State private var mode: Int = 1 // 1 = sep6, 2 = sep24
     @State private var isLoadingTransfers = false
+    @State private var isGettingRequiredSep12Data = false
+    @State private var isUpdatingSep12Data = false
     @State private var sep6ErrorMessage:String?
     @State private var sep24ErrorMessage:String?
     @State private var rawSep6Transactions:[Sep6Transaction] = []
     @State private var rawSep24Transactions:[InteractiveFlowTransaction] = []
     @State private var showToast = false
     @State private var toastMessage:String = ""
+    @State private var showKycFormSheet = false
+    @State private var kycCustomerId: String?
+    @State private var kycRequiredFields: [String: Field] = [:]
+    @State private var kycTransactionId: String = ""
     
     var body: some View {
         VStack() {
             if isLoadingTransfers {
                 Utils.progressViewWithLabel("Loading transfers")
+            } else if isUpdatingSep12Data {
+                Utils.progressViewWithLabel("Sending SEP-12 data to anchor")
             } else {
                 Picker(selection: $mode, label: Text("Select")) {
                     Text("SEP-06 Transfers").tag(1)
@@ -57,20 +67,32 @@ struct TransferHistoryView: View {
                             sep24TransactionBox(info.raw)
                         }
                     }.padding(.top)
-                    
                 }
             }
             
         }.onAppear() {
             Task {
-                isLoadingTransfers = true
-                await loadSep6Transfers()
-                await loadSep24Transfers()
-                isLoadingTransfers = false
+               await loadTransfers()
             }
         }.toast(isPresenting: $showToast){
             AlertToast(type: .regular, title: "\(toastMessage)")
+        }.sheet(isPresented: $showKycFormSheet) {
+            Sep12KycFormSheet(
+                customerId: kycCustomerId,
+                requiredFields: kycRequiredFields,
+                savedKycData: savedKycData,
+                txId: kycTransactionId,
+                onSubmit: uploadSep12CustomerData,
+                isPresented: $showKycFormSheet
+            )
         }
+    }
+    
+    private func loadTransfers() async {
+        isLoadingTransfers = true
+        await loadSep6Transfers()
+        await loadSep24Transfers()
+        isLoadingTransfers = false
     }
     
     private func loadSep6Transfers() async {
@@ -123,9 +145,13 @@ struct TransferHistoryView: View {
                 HStack {
                     Text("Status: \(tx.transactionStatus.rawValue)").font(.subheadline).foregroundStyle(.red)
                         .fontWeight(.light).italic().frame(maxWidth: .infinity, alignment: .leading)
-                    Button("", systemImage: "square.and.arrow.up") {
-                        Task {
-                            await getCustomerInfo(txId: tx.id)
+                    if isGettingRequiredSep12Data {
+                        Utils.progressView
+                    } else {
+                        Button("", systemImage: "square.and.arrow.up") {
+                            Task {
+                                await getCustomerInfo(txId: tx.id)
+                            }
                         }
                     }
                 }.padding(.vertical, 5.0)
@@ -446,24 +472,82 @@ struct TransferHistoryView: View {
         return tx.id
     }
     
-    private func getCustomerInfo(txId:String) async {
+    private func getCustomerInfo(txId: String) async {
+        await MainActor.run {
+            isGettingRequiredSep12Data = true
+        }
+        
         do {
             let sep12 = try await assetInfo.anchor.sep12(authToken: authToken)
             let response = try await sep12.get(transactionId: txId)
-            if let fields = response.fields {
-                for key in fields.keys {
-                    let field = fields[key]!
-                    if let optional = field.optional {
-                        if !optional {
-                            print(" \(key):  not optional")
+            
+            let requiredFields: [String: Field] = {
+                var fields: [String: Field] = [:]
+                if let responseFields = response.fields {
+                    for key in responseFields.keys {
+                        let field = responseFields[key]!
+                        if let optional = field.optional {
+                            if !optional {
+                                fields[key] = field
+                            }
+                        } else {
+                            fields[key] = field
                         }
-                    } else {
-                        print("\(key): optional is null")
                     }
                 }
+                return fields
+            }()
+            
+            await MainActor.run {
+                if !requiredFields.isEmpty {
+                    kycCustomerId = response.id
+                    kycRequiredFields = requiredFields
+                    kycTransactionId = txId
+                    showKycFormSheet = true
+                } else {
+                    toastMessage = "No KYC information required"
+                    showToast = true
+                }
+            }
+            
+        } catch {
+            await MainActor.run {
+                sep6ErrorMessage = "Error getting required SEP-12 info: \(error.localizedDescription)"
+            }
+        }
+        
+        await MainActor.run {
+            isGettingRequiredSep12Data = false
+        }
+    }
+    
+    private func uploadSep12CustomerData(customerId: String? = nil, requestedFieldsData: [String: String], txId: String) async {
+        await MainActor.run {
+            isUpdatingSep12Data = true
+        }
+        
+        do {
+            let sep12 = try await assetInfo.anchor.sep12(authToken: authToken)
+            if let customerId = customerId {
+                let _ = try await sep12.update(id: customerId, sep9Info: requestedFieldsData, transactionId: txId)
+            } else {
+                let _ = try await sep12.add(sep9Info: requestedFieldsData, transactionId: txId)
+            }
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+            await loadTransfers()
+            
+            await MainActor.run {
+                toastMessage = "KYC information updated successfully"
+                showToast = true
             }
         } catch {
-            print(error.localizedDescription)
+            await MainActor.run {
+                sep6ErrorMessage = "Error updating required SEP-12 info: \(error.localizedDescription)"
+            }
+        }
+        
+        await MainActor.run {
+            isUpdatingSep12Data = false
         }
     }
     

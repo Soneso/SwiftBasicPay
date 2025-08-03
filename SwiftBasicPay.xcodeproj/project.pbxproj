@@ -10,6 +10,7 @@
 		8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7B92E391B9300D31614 /* NewTransferView.swift */; };
 		8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */; };
 		836E660D2E3F4BA200D68F6A /* InteractiveWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */; };
+		836E660F2E3F7DB400D68F6A /* Sep12KycFormSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */; };
 		837397D42E0D55E10032FDAA /* SwiftBasicPayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */; };
 		837397D62E0D55E10032FDAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D52E0D55E10032FDAA /* ContentView.swift */; };
 		837397DA2E0D55E20032FDAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 837397D92E0D55E20032FDAA /* Assets.xcassets */; };
@@ -110,6 +111,7 @@
 		8304E7B92E391B9300D31614 /* NewTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTransferView.swift; sourceTree = "<group>"; };
 		8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferHistoryView.swift; sourceTree = "<group>"; };
 		836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InteractiveWebView.swift; sourceTree = "<group>"; };
+		836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep12KycFormSheet.swift; sourceTree = "<group>"; };
 		837397D02E0D55E10032FDAA /* SwiftBasicPay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftBasicPay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftBasicPayApp.swift; sourceTree = "<group>"; };
 		837397D52E0D55E10032FDAA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -318,6 +320,7 @@
 				8304E7B92E391B9300D31614 /* NewTransferView.swift */,
 				836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */,
 				8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */,
+				836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */,
 				83C0AA622E3E586B00D279C7 /* Sep6StepperBase.swift */,
 				83C0AA612E3E586B00D279C7 /* Sep6StepperViews.swift */,
 				83C0AA632E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift */,
@@ -593,6 +596,7 @@
 				837397F82E0D7AEE0032FDAA /* DemoError.swift in Sources */,
 				8373980A2E0F2B2C0032FDAA /* TransfersView.swift in Sources */,
 				837CC65C2E3BB09800B42033 /* Sep6TransferResponseView.swift in Sources */,
+				836E660F2E3F7DB400D68F6A /* Sep12KycFormSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
