@@ -106,9 +106,8 @@ class Sep6DepositStepperViewModel: Sep6StepperViewModel {
         }
         
         do {
-            let destinationAsset = anchoredAsset.asset
             let sep6 = anchoredAsset.anchor.sep6
-            let params = Sep6DepositParams(assetCode: destinationAsset.code,
+            let params = Sep6DepositParams(assetCode: anchoredAsset.code,
                                            account: authToken.account,
                                            amount: transferAmount,
                                            extraFields: preparedTransferData)

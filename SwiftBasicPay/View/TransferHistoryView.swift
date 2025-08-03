@@ -143,8 +143,13 @@ struct TransferHistoryView: View {
             getRow("Kind", tx.kind)
             if tx.transactionStatus == TransactionStatus.pendingCustomerInfoUpdate {
                 HStack {
-                    Text("Status: \(tx.transactionStatus.rawValue)").font(.subheadline).foregroundStyle(.red)
-                        .fontWeight(.light).italic().frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 0) {
+                        Text("Status:").font(.subheadline).font(.caption).foregroundStyle(.red)
+                            .fontWeight(.bold)
+                        Text(" \(tx.transactionStatus.rawValue)").font(.subheadline).font(.caption).foregroundStyle(.red)
+                            .fontWeight(.light).italic()
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    
                     if isGettingRequiredSep12Data {
                         Utils.progressView
                     } else {
@@ -261,7 +266,6 @@ struct TransferHistoryView: View {
     private func getSep24TransactionBoxDetails(_ tx:InteractiveFlowTransaction) -> some View {
         return VStack {
             getRow("Id", "\(tx.id.prefix(6))...\(tx.id.suffix(4))", showCopyButton: true, stringToCopy: tx.id)
-            //getRow("Status", tx.status.rawValue)
             
             if let tx = tx as? ProcessingAnchorTransaction {
                 // Common ProcessingAnchorTransaction fields

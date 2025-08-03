@@ -199,7 +199,6 @@ struct TransfersView: View {
         
         self.pin = ""
         
-        let signingKeyPair = userKeyPair!
         guard let selectedAsset = selectedAssetInfo else {
             resetState()
             errorMessage = "Please select an asset"
@@ -209,7 +208,7 @@ struct TransfersView: View {
         let anchor = selectedAsset.anchor
         do {
             let sep10 = try await anchor.sep10
-            sep10AuthToken = try await sep10.authenticate(userKeyPair: signingKeyPair)
+            sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)
         } catch {
             pinErrorMessage = error.localizedDescription
             state = .sep10AuthPinRequired
@@ -219,7 +218,7 @@ struct TransfersView: View {
         // load sep-06 & sep-24 info
         sep6Info = nil
         sep24Info = nil
-        loadingText = "Loading toml file from anchor"
+        loadingText = "Checking toml file from anchor"
         
         let sep6Supported = tomlInfo?.transferServer != nil
         let sep24Supported = tomlInfo?.transferServerSep24 != nil

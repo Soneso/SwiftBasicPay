@@ -131,7 +131,6 @@ struct NewTransferView: View {
             if mode == "deposit" {
                 let response = try await sep24.deposit(assetId: assetInfo.asset, authToken: authToken)
                 interactiveUrl = response.url
-                //print(interactiveUrl)
             } else if mode == "withdraw" {
                 let response = try await sep24.withdraw(assetId: assetInfo.asset, authToken: authToken)
                 interactiveUrl = response.url

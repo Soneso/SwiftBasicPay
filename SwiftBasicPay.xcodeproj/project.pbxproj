@@ -11,6 +11,20 @@
 		8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */; };
 		836E660D2E3F4BA200D68F6A /* InteractiveWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */; };
 		836E660F2E3F7DB400D68F6A /* Sep12KycFormSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */; };
+		836E661F2E3F87C700D68F6A /* anchored_assets_dropdown.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66102E3F87C700D68F6A /* anchored_assets_dropdown.png */; };
+		836E66202E3F87C700D68F6A /* history_mode.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66112E3F87C700D68F6A /* history_mode.png */; };
+		836E66212E3F87C700D68F6A /* sep_6_deposit_received.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66122E3F87C700D68F6A /* sep_6_deposit_received.png */; };
+		836E66222E3F87C700D68F6A /* sep_6_deposit_step_1.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66132E3F87C700D68F6A /* sep_6_deposit_step_1.png */; };
+		836E66232E3F87C700D68F6A /* sep_6_deposit_step_2.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66142E3F87C700D68F6A /* sep_6_deposit_step_2.png */; };
+		836E66242E3F87C700D68F6A /* sep_6_deposit_stepper.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66152E3F87C700D68F6A /* sep_6_deposit_stepper.png */; };
+		836E66252E3F87C700D68F6A /* sep_6_deposit_success.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66162E3F87C700D68F6A /* sep_6_deposit_success.png */; };
+		836E66262E3F87C700D68F6A /* sep_6_fee.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66172E3F87C700D68F6A /* sep_6_fee.png */; };
+		836E66272E3F87C700D68F6A /* sep_6_kyc_accepted.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66182E3F87C700D68F6A /* sep_6_kyc_accepted.png */; };
+		836E66282E3F87C700D68F6A /* sep_6_methods_buttons.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66192E3F87C700D68F6A /* sep_6_methods_buttons.png */; };
+		836E66292E3F87C700D68F6A /* sep_10_pin.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E661A2E3F87C700D68F6A /* sep_10_pin.png */; };
+		836E662A2E3F87C700D68F6A /* sep_24_deposit_interactive.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E661B2E3F87C700D68F6A /* sep_24_deposit_interactive.png */; };
+		836E662B2E3F87C700D68F6A /* sep_24_methods_buttons.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E661C2E3F87C700D68F6A /* sep_24_methods_buttons.png */; };
+		836E662C2E3F87C700D68F6A /* transfers_view.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E661D2E3F87C700D68F6A /* transfers_view.png */; };
 		837397D42E0D55E10032FDAA /* SwiftBasicPayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */; };
 		837397D62E0D55E10032FDAA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837397D52E0D55E10032FDAA /* ContentView.swift */; };
 		837397DA2E0D55E20032FDAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 837397D92E0D55E20032FDAA /* Assets.xcassets */; };
@@ -112,6 +126,20 @@
 		8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferHistoryView.swift; sourceTree = "<group>"; };
 		836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InteractiveWebView.swift; sourceTree = "<group>"; };
 		836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep12KycFormSheet.swift; sourceTree = "<group>"; };
+		836E66102E3F87C700D68F6A /* anchored_assets_dropdown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = anchored_assets_dropdown.png; sourceTree = "<group>"; };
+		836E66112E3F87C700D68F6A /* history_mode.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = history_mode.png; sourceTree = "<group>"; };
+		836E66122E3F87C700D68F6A /* sep_6_deposit_received.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_deposit_received.png; sourceTree = "<group>"; };
+		836E66132E3F87C700D68F6A /* sep_6_deposit_step_1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_deposit_step_1.png; sourceTree = "<group>"; };
+		836E66142E3F87C700D68F6A /* sep_6_deposit_step_2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_deposit_step_2.png; sourceTree = "<group>"; };
+		836E66152E3F87C700D68F6A /* sep_6_deposit_stepper.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_deposit_stepper.png; sourceTree = "<group>"; };
+		836E66162E3F87C700D68F6A /* sep_6_deposit_success.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_deposit_success.png; sourceTree = "<group>"; };
+		836E66172E3F87C700D68F6A /* sep_6_fee.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_fee.png; sourceTree = "<group>"; };
+		836E66182E3F87C700D68F6A /* sep_6_kyc_accepted.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_kyc_accepted.png; sourceTree = "<group>"; };
+		836E66192E3F87C700D68F6A /* sep_6_methods_buttons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_6_methods_buttons.png; sourceTree = "<group>"; };
+		836E661A2E3F87C700D68F6A /* sep_10_pin.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_10_pin.png; sourceTree = "<group>"; };
+		836E661B2E3F87C700D68F6A /* sep_24_deposit_interactive.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_24_deposit_interactive.png; sourceTree = "<group>"; };
+		836E661C2E3F87C700D68F6A /* sep_24_methods_buttons.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sep_24_methods_buttons.png; sourceTree = "<group>"; };
+		836E661D2E3F87C700D68F6A /* transfers_view.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = transfers_view.png; sourceTree = "<group>"; };
 		837397D02E0D55E10032FDAA /* SwiftBasicPay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftBasicPay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		837397D32E0D55E10032FDAA /* SwiftBasicPayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftBasicPayApp.swift; sourceTree = "<group>"; };
 		837397D52E0D55E10032FDAA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -220,6 +248,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		836E661E2E3F87C700D68F6A /* anchor */ = {
+			isa = PBXGroup;
+			children = (
+				836E66102E3F87C700D68F6A /* anchored_assets_dropdown.png */,
+				836E66112E3F87C700D68F6A /* history_mode.png */,
+				836E66122E3F87C700D68F6A /* sep_6_deposit_received.png */,
+				836E66132E3F87C700D68F6A /* sep_6_deposit_step_1.png */,
+				836E66142E3F87C700D68F6A /* sep_6_deposit_step_2.png */,
+				836E66152E3F87C700D68F6A /* sep_6_deposit_stepper.png */,
+				836E66162E3F87C700D68F6A /* sep_6_deposit_success.png */,
+				836E66172E3F87C700D68F6A /* sep_6_fee.png */,
+				836E66182E3F87C700D68F6A /* sep_6_kyc_accepted.png */,
+				836E66192E3F87C700D68F6A /* sep_6_methods_buttons.png */,
+				836E661A2E3F87C700D68F6A /* sep_10_pin.png */,
+				836E661B2E3F87C700D68F6A /* sep_24_deposit_interactive.png */,
+				836E661C2E3F87C700D68F6A /* sep_24_methods_buttons.png */,
+				836E661D2E3F87C700D68F6A /* transfers_view.png */,
+			);
+			path = anchor;
+			sourceTree = "<group>";
+		};
 		837397C72E0D55E10032FDAA = {
 			isa = PBXGroup;
 			children = (
@@ -414,6 +463,7 @@
 		83F5B3212E32848900920FF1 /* img */ = {
 			isa = PBXGroup;
 			children = (
+				836E661E2E3F87C700D68F6A /* anchor */,
 				83F5B2DF2E32848900920FF1 /* account_creation */,
 				83F5B3062E32848900920FF1 /* manage_trust */,
 				83F5B31E2E32848900920FF1 /* payment */,
@@ -497,10 +547,13 @@
 			files = (
 				83F5B3242E32848900920FF1 /* README.md in Resources */,
 				83F5B32E2E32848900920FF1 /* account_not_funded.png in Resources */,
+				836E66262E3F87C700D68F6A /* sep_6_fee.png in Resources */,
 				83F5B35A2E32848900920FF1 /* james_trust_silver_1.png in Resources */,
 				83F5B36D2E32848900920FF1 /* manage_trust.md in Resources */,
 				83F5B32A2E32848900920FF1 /* signup_and_sign_in.md in Resources */,
 				83F5B3292E32848900920FF1 /* secure_data_storage.md in Resources */,
+				836E66232E3F87C700D68F6A /* sep_6_deposit_step_2.png in Resources */,
+				836E66222E3F87C700D68F6A /* sep_6_deposit_step_1.png in Resources */,
 				837397DD2E0D55E20032FDAA /* Preview Assets.xcassets in Resources */,
 				83F5B3572E32848900920FF1 /* create_silver_offer.png in Resources */,
 				83F5B3522E32848900920FF1 /* srt_added.png in Resources */,
@@ -508,7 +561,9 @@
 				83F5B34B2E32848900920FF1 /* overview_gold_balance.png in Resources */,
 				83F5B35E2E32848900920FF1 /* recent_payments_strict_received.png in Resources */,
 				83F5B35B2E32848900920FF1 /* james_trust_silver_2.png in Resources */,
+				836E66212E3F87C700D68F6A /* sep_6_deposit_received.png in Resources */,
 				83F5B34E2E32848900920FF1 /* remove_srt_pin.png in Resources */,
+				836E661F2E3F87C700D68F6A /* anchored_assets_dropdown.png in Resources */,
 				83F5B3582E32848900920FF1 /* dropdown_james.png in Resources */,
 				83F5B3492E32848900920FF1 /* laboratory_send_gold_3.png in Resources */,
 				83F5B3282E32848900920FF1 /* payment.md in Resources */,
@@ -519,17 +574,21 @@
 				83F5B3512E32848900920FF1 /* select_custom_asset.png in Resources */,
 				83F5B3712E33988A00920FF1 /* my_data_box.png in Resources */,
 				83F5B3542E32848900920FF1 /* add_james_contact.png in Resources */,
+				836E66202E3F87C700D68F6A /* history_mode.png in Resources */,
 				83F5B35F2E32848900920FF1 /* recent_payments_updated.png in Resources */,
 				83F5B3592E32848900920FF1 /* issuer_sends_copper_and_silver.png in Resources */,
 				83F5B3652E32848900920FF1 /* strict_receive_path.png in Resources */,
 				83F5B32B2E32848900920FF1 /* dashboard_data.md in Resources */,
 				83F5B3552E32848900920FF1 /* create_copper_offer.png in Resources */,
 				83F5B3412E32848900920FF1 /* assets_page.png in Resources */,
+				836E662B2E3F87C700D68F6A /* sep_24_methods_buttons.png in Resources */,
 				83F5B35C2E32848900920FF1 /* path_payment_strict_receive_start.png in Resources */,
 				83F5B3482E32848900920FF1 /* laboratory_send_gold_2.png in Resources */,
 				83F5B3462E32848900920FF1 /* laboratory_create_issuer.png in Resources */,
 				83F5B32C2E32848900920FF1 /* path_payment.md in Resources */,
+				836E66252E3F87C700D68F6A /* sep_6_deposit_success.png in Resources */,
 				83F5B33F2E32848900920FF1 /* asset_removed.png in Resources */,
+				836E66282E3F87C700D68F6A /* sep_6_methods_buttons.png in Resources */,
 				83F5B3472E32848900920FF1 /* laboratory_send_gold_1.png in Resources */,
 				83F5B3402E32848900920FF1 /* assets_dropdown.png in Resources */,
 				83F5B3672E32848900920FF1 /* switched_2_path_payments.png in Resources */,
@@ -540,14 +599,19 @@
 				83F5B34F2E32848900920FF1 /* remove_srt_trash.png in Resources */,
 				83F5B36B2E32848900920FF1 /* signup-keys.png in Resources */,
 				83F5B35D2E32848900920FF1 /* path_payment_strict_send_start.png in Resources */,
+				836E66242E3F87C700D68F6A /* sep_6_deposit_stepper.png in Resources */,
+				836E66292E3F87C700D68F6A /* sep_10_pin.png in Resources */,
 				83F5B34D2E32848900920FF1 /* pin_input.png in Resources */,
+				836E66272E3F87C700D68F6A /* sep_6_kyc_accepted.png in Resources */,
 				837397DA2E0D55E20032FDAA /* Assets.xcassets in Resources */,
+				836E662C2E3F87C700D68F6A /* transfers_view.png in Resources */,
 				83F5B32D2E32848900920FF1 /* account_funded.png in Resources */,
 				83F5B34C2E32848900920FF1 /* overview_srt_added.png in Resources */,
 				83F5B3642E32848900920FF1 /* simple_payment.png in Resources */,
 				83F5B3692E32848900920FF1 /* trader_2_change_trust.png in Resources */,
 				83F5B3662E32848900920FF1 /* strict_receive_silver.png in Resources */,
 				83F5B3422E32848900920FF1 /* custom_asset_added.png in Resources */,
+				836E662A2E3F87C700D68F6A /* sep_24_deposit_interactive.png in Resources */,
 				83F5B36A2E32848900920FF1 /* sign_in_ui.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
