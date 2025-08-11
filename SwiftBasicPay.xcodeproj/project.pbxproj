@@ -53,7 +53,6 @@
 		837CC6612E3CB97C00B42033 /* Double+BasicPay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC6602E3CB97C00B42033 /* Double+BasicPay.swift */; };
 		837CC66C2E3CD4D800B42033 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 837CC66B2E3CD4D800B42033 /* stellar-wallet-sdk */; };
 		83C0AA572E3D0D8B00D279C7 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83C0AA562E3D0D8B00D279C7 /* stellar-wallet-sdk */; };
-		83C0AA5A2E3D12C800D279C7 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83C0AA592E3D12C800D279C7 /* stellar-wallet-sdk */; };
 		83C0AA5C2E3E434400D279C7 /* Sep6WithdrawalStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5B2E3E434400D279C7 /* Sep6WithdrawalStepper.swift */; };
 		83C0AA5E2E3E43D300D279C7 /* TransferFieldInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5D2E3E43D300D279C7 /* TransferFieldInfo.swift */; };
 		83C0AA602E3E442000D279C7 /* KycFieldInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA5F2E3E442000D279C7 /* KycFieldInfo.swift */; };
@@ -61,6 +60,7 @@
 		83C0AA662E3E586B00D279C7 /* Sep6StepperBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA622E3E586B00D279C7 /* Sep6StepperBase.swift */; };
 		83C0AA672E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA632E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift */; };
 		83C0AA682E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA642E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift */; };
+		83ED5D222E4A8F65006BD922 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83ED5D212E4A8F65006BD922 /* stellar-wallet-sdk */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
 		83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */; };
 		83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */; };
@@ -238,7 +238,7 @@
 			files = (
 				837397F32E0D6B660032FDAA /* SimpleKeychain in Frameworks */,
 				837397FE2E0E87110032FDAA /* AlertToast in Frameworks */,
-				83C0AA5A2E3D12C800D279C7 /* stellar-wallet-sdk in Frameworks */,
+				83ED5D222E4A8F65006BD922 /* stellar-wallet-sdk in Frameworks */,
 				83C0AA572E3D0D8B00D279C7 /* stellar-wallet-sdk in Frameworks */,
 				837CC66C2E3CD4D800B42033 /* stellar-wallet-sdk in Frameworks */,
 				837397F62E0D72B90032FDAA /* CryptoSwift in Frameworks */,
@@ -495,7 +495,7 @@
 				837397FD2E0E87110032FDAA /* AlertToast */,
 				837CC66B2E3CD4D800B42033 /* stellar-wallet-sdk */,
 				83C0AA562E3D0D8B00D279C7 /* stellar-wallet-sdk */,
-				83C0AA592E3D12C800D279C7 /* stellar-wallet-sdk */,
+				83ED5D212E4A8F65006BD922 /* stellar-wallet-sdk */,
 			);
 			productName = SwiftBasicPay;
 			productReference = 837397D02E0D55E10032FDAA /* SwiftBasicPay.app */;
@@ -529,7 +529,7 @@
 				837397F12E0D6B660032FDAA /* XCRemoteSwiftPackageReference "SimpleKeychain" */,
 				837397F42E0D72B90032FDAA /* XCRemoteSwiftPackageReference "CryptoSwift" */,
 				837397FC2E0E87110032FDAA /* XCRemoteSwiftPackageReference "AlertToast" */,
-				83C0AA582E3D12C800D279C7 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */,
+				83ED5D202E4A8F65006BD922 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */,
 			);
 			productRefGroup = 837397D12E0D55E10032FDAA /* Products */;
 			projectDirPath = "";
@@ -892,12 +892,12 @@
 				minimumVersion = 1.3.9;
 			};
 		};
-		83C0AA582E3D12C800D279C7 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */ = {
+		83ED5D202E4A8F65006BD922 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Soneso/stellar-swift-wallet-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.6.5;
+				minimumVersion = 0.6.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -926,9 +926,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = "stellar-wallet-sdk";
 		};
-		83C0AA592E3D12C800D279C7 /* stellar-wallet-sdk */ = {
+		83ED5D212E4A8F65006BD922 /* stellar-wallet-sdk */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 83C0AA582E3D12C800D279C7 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */;
+			package = 83ED5D202E4A8F65006BD922 /* XCRemoteSwiftPackageReference "stellar-swift-wallet-sdk" */;
 			productName = "stellar-wallet-sdk";
 		};
 /* End XCSwiftPackageProductDependency section */
