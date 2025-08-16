@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import UIKit
 import stellar_wallet_sdk
+import Observation
 
+@Observable
 class Sep6WithdrawalStepperViewModel: Sep6StepperViewModel {
     
     private var withdrawInfo: Sep6WithdrawInfo {
@@ -74,7 +77,7 @@ class Sep6WithdrawalStepperViewModel: Sep6StepperViewModel {
                 if !optional {
                     let val = collectedTransferDetails[index]
                     if val.isEmpty || val == selectItem {
-                        transferFieldsError = "\(infoKey) is not optional"
+                        transferFieldsError = "\(infoKey) is required"
                         return false
                     }
                 }
@@ -99,43 +102,47 @@ class Sep6WithdrawalStepperViewModel: Sep6StepperViewModel {
     }
     
     override func submitTransfer() async {
-        await MainActor.run {
-            isSubmitting = true
-            submissionError = nil
-            submissionResponse = nil
-        }
+        isSubmitting = true
+        submissionError = nil
+        submissionResponse = nil
         
         guard let withdrawType = withdrawInfo.types?.first?.key else {
-            await MainActor.run {
-                submissionError = "No withdrawal type provided by the anchor!"
-                isSubmitting = false
-            }
+            submissionError = "No withdrawal type provided by the anchor!"
+            isSubmitting = false
             return
         }
         
         do {
             let destinationAsset = anchoredAsset.asset
             let sep6 = anchoredAsset.anchor.sep6
-            let params = Sep6WithdrawParams(assetCode: destinationAsset.code,
-                                            type: withdrawType,
-                                            account: authToken.account,
-                                            amount: transferAmount,
-                                            extraFields: preparedTransferData)
+            let params = Sep6WithdrawParams(
+                assetCode: destinationAsset.code,
+                type: withdrawType,
+                account: authToken.account,
+                amount: transferAmount,
+                extraFields: preparedTransferData
+            )
             
             let response = try await sep6.withdraw(params: params, authToken: authToken)
             
+            submissionResponse = response
+            
+            // Success haptic feedback
             await MainActor.run {
-                submissionResponse = response
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.success)
             }
             
         } catch {
+            submissionError = "Could not submit withdrawal request: \(error.localizedDescription)"
+            
+            // Error haptic feedback
             await MainActor.run {
-                submissionError = "Your request has been submitted to the Anchor but following error occurred: \(error.localizedDescription). Please close this window and try again."
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.error)
             }
         }
         
-        await MainActor.run {
-            isSubmitting = false
-        }
+        isSubmitting = false
     }
 }

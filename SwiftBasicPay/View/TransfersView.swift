@@ -7,201 +7,175 @@
 
 import SwiftUI
 import stellar_wallet_sdk
+import AlertToast
 
-struct TransfersView: View {
+// MARK: - View Model
+
+@Observable
+@MainActor
+class TransfersViewModel {
+    // State management
+    enum ViewState: Equatable {
+        case initial
+        case loading(message: String)
+        case pinRequired
+        case transferReady
+        case error(String)
+    }
     
-    /// Holds the current user data.
-    @EnvironmentObject var dashboardData: DashboardData
-    
-    private static let selectAsset = "Select Asset"
-    
-    @State private var mode: Int = 1 // 1 = initiate new transfer, 2 = history
-    @State private var isLoadingAssets = false
-    @State private var errorMessage:String?
-    @State private var selectedAssetItem = selectAsset
-    @State private var selectedAssetInfo:AnchoredAssetInfo?
-    @State private var state:TransfersViewState = .initial
-    @State private var loadingText = "Loading"
-    @State private var pin:String = ""
-    @State private var pinErrorMessage:String?
-    @State private var sep10AuthToken:AuthToken?
-    @State private var tomlInfo:TomlInfo?
-    @State private var sep6Info:Sep6Info?
-    @State private var sep24Info:Sep24Info?
-    
-    enum TransfersViewState : Int {
-        typealias RawValue = Int
+    enum TransferMode: Int, CaseIterable {
+        case newTransfer = 1
+        case history = 2
         
-        case initial = 0
-        case loading = 1
-        case sep10AuthPinRequired = 3
-        case transferInfoLoaded = 4
+        var title: String {
+            switch self {
+            case .newTransfer: return "New"
+            case .history: return "History"
+            }
+        }
     }
     
-    var body: some View {
-        VStack(spacing: 20) {
-            Label("Transfers", systemImage: "paperplane")
-            Utils.divider
-            if dashboardData.userAssets.isEmpty {
-                // user account not funded
-                BalancesBox().environmentObject(dashboardData)
-            } else {
-                Picker(selection: $mode, label: Text("Select")) {
-                    Text("New").tag(1)
-                    Text("History").tag(2)
-                }.pickerStyle(.segmented)
-
-                if isLoadingAssets {
-                    Utils.divider
-                    Utils.progressViewWithLabel("Loading anchored assets")
-                } else if anchoredAssets.isEmpty {
-                    Text("No anchored assets found. Please trust an anchored asset first. You can use the Assets tab to do so. E.g. SRT")
-                } else if let error = dashboardData.userAnchoredAssetsLoadingError {
-                    Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-                } else {
-                    let info = mode == 1 ? "Here you can initiate a transfer with an anchor for your assets which have the needed infrastructure available." :
-                    "Here you can see a history of your transactions with their details."
-                    Text(info).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic().foregroundColor(.black)
-                    Utils.divider
-                    HStack {
-                        Text("Asset:").font(.subheadline)
-                        assetSelectionPicker
-                    }
-                    if let error = errorMessage {
-                        Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    if state == .loading {
-                        Utils.progressViewWithLabel(loadingText)
-                    } else if state == .sep10AuthPinRequired {
-                        Text("Enter your pin to authenticate with the asset's anchor.").font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).italic()
-                        pinInputField
-                        submitAndCanelButtons
-                    } else if state == .transferInfoLoaded {
-                        if let assetInfo = selectedAssetInfo, let authToken = sep10AuthToken {
-                            if mode == 1 {
-                                NewTransferView(assetInfo: assetInfo,
-                                                authToken: authToken,
-                                                sep6Info: sep6Info,
-                                                sep24Info: sep24Info,
-                                                savedKycData: dashboardData.userKycData).frame(maxWidth: .infinity, alignment: .leading)
-                            } else if (mode == 2) {
-                                TransferHistoryView(assetInfo: assetInfo, authToken: authToken, savedKycData: dashboardData.userKycData)
-                            }
-                        }
-                        
-                    }
-                }
-            }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear() {
-            Task {
-                isLoadingAssets = true
-                await dashboardData.fetchAnchoredAssets()
+    // Observable properties
+    var mode: TransferMode = .newTransfer
+    var state: ViewState = .initial
+    var isLoadingAssets = false
+    var selectedAssetId = "Select Asset"
+    var selectedAssetInfo: AnchoredAssetInfo?
+    var pin = ""
+    var pinError: String?
+    
+    // Transfer data
+    var sep10AuthToken: AuthToken?
+    var tomlInfo: TomlInfo?
+    var sep6Info: Sep6Info?
+    var sep24Info: Sep24Info?
+    
+    // Anchored assets loaded directly
+    var anchoredAssets: [AnchoredAssetInfo] = []
+    var anchoredAssetsError: String?
+    
+    // Toast notifications
+    var showToast = false
+    var toastMessage = ""
+    var toastType: AlertToast.AlertType = .regular
+    
+    // Constants
+    static let selectAssetPlaceholder = "Select Asset"
+    
+    // Dependencies
+    private let dashboardData: DashboardData
+    
+    init(dashboardData: DashboardData) {
+        self.dashboardData = dashboardData
+    }
+    
+    var hasAnchoredAssets: Bool {
+        !anchoredAssets.isEmpty
+    }
+    
+    var isAccountFunded: Bool {
+        !dashboardData.userAssets.isEmpty
+    }
+    
+    // MARK: - Actions
+    
+    func loadAnchoredAssets() async {
+        isLoadingAssets = true
+        anchoredAssetsError = nil
+        
+        do {
+            // Check if account exists
+            let accountExists = try await StellarService.accountExists(address: dashboardData.userAddress)
+            if !accountExists {
+                anchoredAssetsError = "Account not found on the network"
+                anchoredAssets = []
                 isLoadingAssets = false
-            }
-        }
-    }
-    
-    var anchoredAssets: [AnchoredAssetInfo] {
-        dashboardData.anchoredAssets
-    }
-    
-    private var assetSelectionPicker: some View {
-        Picker("select asset", selection: $selectedAssetItem) {
-            ForEach(anchoredAssets, id: \.self) { issuedAsset in
-                Text("\(issuedAsset.code)").italic().foregroundColor(.black).tag(issuedAsset.id)
-            }
-            Text(TransfersView.selectAsset).italic().foregroundColor(.black).tag(TransfersView.selectAsset)
-        }.frame(maxWidth: .infinity, alignment: .leading).onChange(of: selectedAssetItem, initial: true) { oldVal, newVal in Task {
-            await selectedAssetChanged(oldValue:oldVal, newValue:newVal)
-        }}
-    }
-    
-    private func selectedAssetChanged(oldValue:String, newValue:String) async {
-        selectedAssetInfo = nil
-        errorMessage = nil
-        state = .initial
-        if newValue == TransfersView.selectAsset {
-            errorMessage = nil
-            return
-        }
-        else {
-            guard let asset = anchoredAssets.filter({$0.id == newValue}).first else {
-                errorMessage = "Could not find selected asset"
                 return
             }
-            selectedAssetInfo = asset
-            await checkWebAuth(anchor: selectedAssetInfo!.anchor)
+            
+            // Get anchored assets directly
+            let loadedAssets = try await StellarService.getAnchoredAssets(fromAssets: dashboardData.userAssets)
+            anchoredAssets = loadedAssets
+            
+        } catch {
+            anchoredAssetsError = "Error loading anchored assets: \(error.localizedDescription)"
+            anchoredAssets = []
+        }
+        
+        isLoadingAssets = false
+    }
+    
+    func selectAsset(_ assetId: String) {
+        let impact = UISelectionFeedbackGenerator()
+        impact.selectionChanged()
+        
+        selectedAssetId = assetId
+        selectedAssetInfo = nil
+        pinError = nil
+        state = .initial
+        
+        guard assetId != Self.selectAssetPlaceholder else {
+            return
+        }
+        
+        guard let asset = anchoredAssets.first(where: { $0.id == assetId }) else {
+            state = .error("Could not find selected asset")
+            return
+        }
+        
+        selectedAssetInfo = asset
+        Task {
+            await checkWebAuth(anchor: asset.anchor)
         }
     }
     
-    private func checkWebAuth(anchor:stellar_wallet_sdk.Anchor) async {
-        state = .loading
-        loadingText = "Loading toml file from anchor"
+    private func checkWebAuth(anchor: stellar_wallet_sdk.Anchor) async {
+        state = .loading(message: "Loading anchor configuration")
         tomlInfo = nil
+        
         do {
             tomlInfo = try await anchor.sep1
         } catch {
-            errorMessage = "Could not load toml data from anchor: \(error.localizedDescription)"
-            state = .initial
+            state = .error("Could not load anchor data: \(error.localizedDescription)")
             return
         }
         
-        if tomlInfo?.webAuthEndpoint == nil {
-            errorMessage = "The anchor does not provide an authentication service (SEP-10)"
-            state = .initial
+        guard tomlInfo?.webAuthEndpoint != nil else {
+            state = .error("The anchor does not provide authentication service (SEP-10)")
             return
         }
-        state = .sep10AuthPinRequired
+        
+        state = .pinRequired
     }
     
-    private var pinInputField: some View {
-        VStack {
-            SecureField("Enter your pin", text: $pin).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                .onChange(of: self.pin, { oldValue, value in
-                    if value.count > 6 {
-                        self.pin = String(value.prefix(6))
-                   }
-            })
-            if let error = pinErrorMessage {
-                Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-            }
+    func authenticateWithPin() async {
+        let feedback = UINotificationFeedbackGenerator()
+        
+        guard !pin.isEmpty else {
+            pinError = "Please enter your PIN"
+            feedback.notificationOccurred(.error)
+            return
         }
-    }
-    
-    private var submitAndCanelButtons : some View {
-        HStack {
-            Button("Submit", action:   {
-                Task {
-                    if state == .sep10AuthPinRequired {
-                        await handlePinSetForSep10Auth()
-                    }
-                }
-            }).buttonStyle(.borderedProminent).tint(.green)
-            Button("Cancel", action:   {
-                resetState()
-            }).buttonStyle(.borderedProminent).tint(.red)
-        }
-    }
-    
-    private func handlePinSetForSep10Auth() async {
-        state = .loading
-        loadingText = "Authenticating with anchor"
-        var userKeyPair:SigningKeyPair?
+        
+        state = .loading(message: "Authenticating with anchor")
+        pinError = nil
+        
+        var userKeyPair: SigningKeyPair?
         do {
             let authService = AuthService()
-            userKeyPair = try authService.userKeyPair(pin: self.pin)
+            userKeyPair = try authService.userKeyPair(pin: pin)
         } catch {
-            pinErrorMessage = error.localizedDescription
-            state = .sep10AuthPinRequired
+            pinError = error.localizedDescription
+            state = .pinRequired
+            feedback.notificationOccurred(.error)
             return
         }
         
-        self.pin = ""
+        pin = ""
         
         guard let selectedAsset = selectedAssetInfo else {
             resetState()
-            errorMessage = "Please select an asset"
+            state = .error("Please select an asset")
             return
         }
         
@@ -210,65 +184,423 @@ struct TransfersView: View {
             let sep10 = try await anchor.sep10
             sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)
         } catch {
-            pinErrorMessage = error.localizedDescription
-            state = .sep10AuthPinRequired
+            pinError = error.localizedDescription
+            state = .pinRequired
+            feedback.notificationOccurred(.error)
             return
         }
+        
+        // Load SEP-6 & SEP-24 info
+        await loadTransferInfo()
+    }
     
-        // load sep-06 & sep-24 info
+    private func loadTransferInfo() async {
         sep6Info = nil
         sep24Info = nil
-        loadingText = "Checking toml file from anchor"
+        
+        state = .loading(message: "Loading transfer services")
         
         let sep6Supported = tomlInfo?.transferServer != nil
         let sep24Supported = tomlInfo?.transferServerSep24 != nil
-        if (!sep6Supported && !sep24Supported) {
-            errorMessage = "The anchor does not support SEP-06 & SEP-24 transfers."
-            state = .initial
+        
+        guard sep6Supported || sep24Supported else {
+            state = .error("The anchor does not support SEP-6 or SEP-24 transfers")
             return
         }
         
-        loadingText = "Loading SEP-6 info"
+        var errorMessages: [String] = []
         
-        do {
-            if sep6Supported {
-                sep6Info = try await anchor.sep6.info(authToken: sep10AuthToken)
-            }
-        } catch {
-            errorMessage = "Error loading SEP-06 info from anchor: \(error.localizedDescription)."
-        }
-        
-        loadingText = "Loading SEP-24 info"
-        do {
-            if sep24Supported {
-                sep24Info = try await anchor.sep24.info
-            }
-        } catch {
-            let err:String = "Error loading SEP-24 info from anchor: \(error.localizedDescription)"
-            if errorMessage != nil {
-                errorMessage?.append("\n\(err)")
-            } else{
-                errorMessage = err
+        if sep6Supported {
+            do {
+                sep6Info = try await selectedAssetInfo?.anchor.sep6.info(authToken: sep10AuthToken)
+            } catch {
+                errorMessages.append("SEP-6: \(error.localizedDescription)")
             }
         }
-        state = .transferInfoLoaded
         
+        if sep24Supported {
+            do {
+                sep24Info = try await selectedAssetInfo?.anchor.sep24.info
+            } catch {
+                errorMessages.append("SEP-24: \(error.localizedDescription)")
+            }
+        }
+        
+        if !errorMessages.isEmpty && sep6Info == nil && sep24Info == nil {
+            state = .error(errorMessages.joined(separator: "\n"))
+        } else {
+            state = .transferReady
+            let feedback = UINotificationFeedbackGenerator()
+            feedback.notificationOccurred(.success)
+        }
     }
     
-    private func resetState() {
-        errorMessage = nil
-        selectedAssetItem = TransfersView.selectAsset
+    func cancelAuthentication() {
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+        resetState()
+    }
+    
+    func resetState() {
+        selectedAssetId = Self.selectAssetPlaceholder
         selectedAssetInfo = nil
-        pinErrorMessage = nil
+        pinError = nil
         sep10AuthToken = nil
-        loadingText = "Loading"
         tomlInfo = nil
+        sep6Info = nil
+        sep24Info = nil
         pin = ""
         state = .initial
     }
     
+    func showToast(message: String, type: AlertToast.AlertType = .regular) {
+        toastMessage = message
+        toastType = type
+        showToast = true
+    }
+}
+
+// MARK: - Main View
+
+struct TransfersView: View {
+    
+    @EnvironmentObject var dashboardData: DashboardData
+    @State private var viewModel: TransfersViewModel
+    
+    init() {
+        // Will be properly initialized in onAppear
+        _viewModel = State(initialValue: TransfersViewModel(dashboardData: DashboardData(userAddress: "")))
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Modern header with gradient
+            headerView
+            
+            if !viewModel.isAccountFunded {
+                // Account not funded
+                VStack(spacing: 16) {
+                    TransferEmptyState(type: .noAssets)
+                        .padding()
+                }
+                .padding(.top, 16)
+            } else {
+                contentView
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color(.systemGroupedBackground))
+        .onAppear {
+            // Re-initialize with proper dashboardData
+            viewModel = TransfersViewModel(dashboardData: dashboardData)
+            Task {
+                await viewModel.loadAnchoredAssets()
+            }
+        }
+        .refreshable {
+            await viewModel.loadAnchoredAssets()
+        }
+        .toast(isPresenting: .init(
+            get: { viewModel.showToast },
+            set: { viewModel.showToast = $0 }
+        )) {
+            AlertToast(
+                type: viewModel.toastType,
+                title: viewModel.toastMessage
+            )
+        }
+    }
+    
+    // MARK: - Header View
+    
+    @ViewBuilder
+    private var headerView: some View {
+        VStack(spacing: 0) {
+            // Gradient header background
+            LinearGradient(
+                colors: [Color.blue.opacity(0.85), Color.blue.opacity(0.5)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .frame(height: 80)
+            .overlay(
+                HStack(alignment: .bottom) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.left.arrow.right.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.white)
+                            .symbolRenderingMode(.hierarchical)
+                        
+                        Text("Transfers")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    // Tab selector in header
+                    HStack(spacing: 4) {
+                        ForEach(TransfersViewModel.TransferMode.allCases, id: \.rawValue) { mode in
+                            Button(action: {
+                                let impact = UISelectionFeedbackGenerator()
+                                impact.selectionChanged()
+                                withAnimation(.spring(response: 0.3)) {
+                                    viewModel.mode = mode
+                                }
+                            }) {
+                                Text(mode.title)
+                                    .font(.system(size: 14, weight: viewModel.mode == mode ? .semibold : .medium))
+                                    .foregroundStyle(viewModel.mode == mode ? .white : .white.opacity(0.7))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(viewModel.mode == mode ? Color.white.opacity(0.25) : Color.clear)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.black.opacity(0.2))
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+                , alignment: .bottom
+            )
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        VStack(spacing: 0) {
+            // Info banner with better styling
+            if viewModel.mode == .newTransfer && !viewModel.anchoredAssets.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.blue)
+                    
+                    Text("Initiate transfers with anchors for your anchored assets")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.05), Color.blue.opacity(0.02)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+            } else if viewModel.mode == .history && !viewModel.anchoredAssets.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.subheadline)
+                        .foregroundStyle(.purple)
+                    
+                    Text("View your transaction history and details")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    LinearGradient(
+                        colors: [Color.purple.opacity(0.05), Color.purple.opacity(0.02)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+            }
+            
+            // Main content area
+            ScrollView {
+                VStack(spacing: 20) {
+                    if viewModel.isLoadingAssets {
+                        TransferProgressIndicator(message: "Loading anchored assets", progress: nil)
+                            .padding(.top, 40)
+                    } else if let error = viewModel.anchoredAssetsError {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.orange)
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                            Button(action: {
+                                Task { await viewModel.loadAnchoredAssets() }
+                            }) {
+                                Label("Retry", systemImage: "arrow.clockwise")
+                                    .fontWeight(.medium)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.top, 40)
+                    } else if viewModel.anchoredAssets.isEmpty {
+                        TransferEmptyState(type: .noAnchoredAssets)
+                            .padding(.top, 40)
+                    } else {
+                        VStack(spacing: 20) {
+                            // Modern asset selector card
+                            TransferAssetSelector(
+                                selectedAsset: .init(
+                                    get: { viewModel.selectedAssetId },
+                                    set: { viewModel.selectAsset($0) }
+                                ),
+                                assets: viewModel.anchoredAssets,
+                                placeholder: TransfersViewModel.selectAssetPlaceholder
+                            )
+                            
+                            // State-based content
+                            Group {
+                                switch viewModel.state {
+                                case .initial:
+                                    EmptyView()
+                                    
+                                case .loading(let message):
+                                    TransferProgressIndicator(message: message, progress: nil)
+                                        .padding(.top, 20)
+                                    
+                                case .pinRequired:
+                                    pinAuthenticationView
+                                        .padding(.top, 20)
+                                    
+                                case .transferReady:
+                                    transferReadyView
+                                    
+                                case .error(let message):
+                                    VStack(spacing: 16) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.system(size: 48))
+                                            .foregroundStyle(.red)
+                                        Text(message)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal)
+                                        Button(action: {
+                                            viewModel.resetState()
+                                        }) {
+                                            Label("Dismiss", systemImage: "xmark.circle")
+                                                .fontWeight(.medium)
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(.red)
+                                    }
+                                    .padding(.top, 20)
+                                }
+                            }
+                            .animation(.spring(response: 0.3), value: viewModel.state)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var pinAuthenticationView: some View {
+        VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Authentication Required")
+                        .font(.headline)
+                    Text("Enter your PIN to authenticate with the anchor")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                VStack(spacing: 8) {
+                    SecureField("Enter PIN", text: .init(
+                        get: { viewModel.pin },
+                        set: { newValue in
+                            viewModel.pin = String(newValue.prefix(6))
+                            viewModel.pinError = nil
+                        }
+                    ))
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.roundedBorder)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(viewModel.pinError != nil ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                    
+                    if let error = viewModel.pinError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                
+                HStack(spacing: 12) {
+                    Button(action: {
+                        Task { await viewModel.authenticateWithPin() }
+                    }) {
+                        Label("Authenticate", systemImage: "lock.open")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    
+                    Button(action: viewModel.cancelAuthentication) {
+                        Label("Cancel", systemImage: "xmark")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: .black.opacity(0.05), radius: 3, y: 2)
+            )
+            .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private var transferReadyView: some View {
+        if let assetInfo = viewModel.selectedAssetInfo,
+           let authToken = viewModel.sep10AuthToken {
+            ScrollView {
+                if viewModel.mode == .newTransfer {
+                    NewTransferView(
+                        assetInfo: assetInfo,
+                        authToken: authToken,
+                        sep6Info: viewModel.sep6Info,
+                        sep24Info: viewModel.sep24Info,
+                        savedKycData: dashboardData.userKycData
+                    )
+                    .padding(.horizontal)
+                } else {
+                    TransferHistoryView(
+                        assetInfo: assetInfo,
+                        authToken: authToken,
+                        savedKycData: dashboardData.userKycData
+                    )
+                    .padding(.horizontal)
+                }
+            }
+        }
+    }
 }
 
 #Preview {
-    TransfersView().environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+    TransfersView()
+        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

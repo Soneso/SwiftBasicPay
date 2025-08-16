@@ -8,269 +8,722 @@
 import SwiftUI
 import stellar_wallet_sdk
 import stellarsdk
+import AlertToast
+import Observation
 
-/// For sending standard payments
-struct SendPaymentBox: View {
+// MARK: - View Model
+
+@Observable
+@MainActor
+final class SendPaymentViewModel {
+    // Form State
+    var selectedAsset = "native"
+    var selectedRecipient = "Select"
+    var recipientAccountId = ""
+    var pin = ""
+    var amountToSend = ""
+    var memoToSend = ""
     
-    /// Holds the current user data.
-    @EnvironmentObject var dashboardData: DashboardData
+    // UI State
+    var errorMessage: String?
+    var isSendingPayment = false
+    var showSuccessToast = false
+    var toastMessage = ""
+    var isFormExpanded = false
     
-    /// Static picker items
-    private static let xlmAssetItem = "native"
-    private static let selectRecipient = "Select"
-    private static let otherRecipient = "Other"
+    // Validation State
+    var recipientError: String?
+    var amountError: String?
+    var pinError: String?
     
-    /// Fetcher used to fetch the recipients assets from the Stellar Network.
-    @StateObject var recipientAssetsFetcher = AssetsFetcher()
+    // Constants
+    static let xlmAssetItem = "native"
+    static let selectRecipient = "Select"
+    static let otherRecipient = "Other"
     
-    /// State variable used to update the UI
-    @State private var pathPaymentMode:Bool = false
-    @State private var selectedAsset = xlmAssetItem
-    @State private var selectedRecipient = selectRecipient
-    @State private var recipientAccountId:String = ""
-    @State private var pin:String = ""
-    @State private var amountToSend:String = ""
-    @State private var memoToSend:String = ""
-    @State private var errorMessage:String?
-    @State private var isSendingPayment:Bool = false
+    // Haptic Feedback
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+    private let notificationFeedback = UINotificationFeedbackGenerator()
+    private let selectionFeedback = UISelectionFeedbackGenerator()
     
-    var body: some View {
-        GroupBox ("Send payment"){
-            if isSendingPayment {
-            Utils.progressViewWithLabel("Sending payment")
-            } else {
-                HStack {
-                    Text("Asset:").font(.subheadline)
-                    assetSelectionPicker
-                    Text("To:").font(.subheadline)
-                    recipientSelectionPicker
-                }
-                
-                if selectedRecipient != SendPaymentBox.selectRecipient {
-                    if selectedRecipient == SendPaymentBox.otherRecipient {
-                        recipientAccountIdInputField
-                    }
-                    amountInputField
-                    memoInputField
-                    pinInputField
-                    
-                    if let error = errorMessage {
-                        Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    submitAndCanelButtons
-                }
-            }
-        }
+    init() {
+        impactFeedback.prepare()
+        notificationFeedback.prepare()
+        selectionFeedback.prepare()
     }
     
-    var userAssets: [AssetInfo] {
-        dashboardData.userAssets
-    }
+    // MARK: - Form Management
     
-    var userContacts: [ContactInfo] {
-        dashboardData.userContacts
-    }
-    
-    private var assetSelectionPicker: some View {
-        Picker("select asset", selection: $selectedAsset) {
-            ForEach(userAssets, id: \.self) { asset in
-                if let _ = asset.asset as? NativeAssetId {
-                    Text("XLM").italic().foregroundColor(.black).tag(asset.id)
-                } else if let issuedAsset = asset.asset as? IssuedAssetId {
-                    Text("\(issuedAsset.code)").italic().foregroundColor(.black).tag(asset.id)
-                }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    private var recipientSelectionPicker: some View {
-        Picker("select recipient", selection: $selectedRecipient) {
-            Text(SendPaymentBox.selectRecipient).italic().foregroundColor(.black).tag(SendPaymentBox.selectRecipient)
-            ForEach(userContacts, id: \.self) { contact in
-                Text("\(contact.name)").italic().foregroundColor(.black).tag(contact.id as String).tag(contact.name)
-            }
-            Text(SendPaymentBox.otherRecipient).italic().foregroundColor(.black).tag(SendPaymentBox.otherRecipient)
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    private var recipientAccountIdInputField : some View {
-        TextField("Enter recipient account id", text: $recipientAccountId).textFieldStyle(.roundedBorder)
-            .onChange(of: self.recipientAccountId, { oldValue, value in
-                if value.count > 56 {
-                    self.recipientAccountId = String(value.prefix(56))
-               }
-            })
-    }
-    
-    private var amountInputField: some View  {
-        TextField("Enter amount (max. \(maxAmount().toStringWithoutTrailingZeros) )", text: $amountToSend).keyboardType(.decimalPad) .textFieldStyle(.roundedBorder)
-            .onChange(of: self.amountToSend, { oldValue, value in
-                if value != "" && Double(value) == nil {
-                    self.amountToSend = oldValue
-               }
-            })
-    }
-    
-    private var memoInputField: some View {
-        TextField("Enter text memo (optional)", text: $memoToSend).textFieldStyle(.roundedBorder)
-            .onChange(of: self.memoToSend, { oldValue, value in
-                if value.count > 28 {
-                    self.memoToSend = String(value.prefix(28))
-               }
-            })
-    }
-    
-    private var pinInputField: some View {
-        SecureField("Enter your pin", text: $pin).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-            .padding(.top, 10.0).onChange(of: self.pin, { oldValue, value in
-                if value.count > 6 {
-                    self.pin = String(value.prefix(6))
-               }
-            })
-    }
-    
-    private var submitAndCanelButtons : some View {
-        HStack {
-            Button("Submit", action:   {
-                Task {
-                    await sendStandardPayment()
-                }
-            }).buttonStyle(.borderedProminent).tint(.green).padding(.vertical, 20.0)
-            Button("Cancel", action:   {
-                resetState()
-            }).buttonStyle(.borderedProminent).tint(.red)
-        }
-    }
-    
-    private func resetState() {
-        errorMessage = ""
+    func resetForm() {
+        errorMessage = nil
+        recipientError = nil
+        amountError = nil
+        pinError = nil
         recipientAccountId = ""
         amountToSend = ""
         memoToSend = ""
         pin = ""
-        selectedRecipient = SendPaymentBox.selectRecipient
-        selectedAsset = SendPaymentBox.xlmAssetItem
+        selectedRecipient = SendPaymentViewModel.selectRecipient
+        selectedAsset = SendPaymentViewModel.xlmAssetItem
+        isFormExpanded = false
     }
     
-    private func sendStandardPayment() async {
+    func expandForm() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            isFormExpanded = true
+        }
+        selectionFeedback.selectionChanged()
+    }
+    
+    func collapseForm() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            resetForm()
+        }
+        selectionFeedback.selectionChanged()
+    }
+    
+    // MARK: - Validation
+    
+    func validateRecipient() -> Bool {
+        recipientError = nil
         
-        if !checkPaymentFormData() {
+        if recipientAccountId.isEmpty {
+            recipientError = "Recipient address is required"
+            return false
+        }
+        
+        if !recipientAccountId.isValidEd25519PublicKey() {
+            recipientError = "Invalid Stellar address"
+            return false
+        }
+        
+        return true
+    }
+    
+    func validateAmount(maxAmount: Double) -> Bool {
+        amountError = nil
+        
+        if amountToSend.isEmpty {
+            amountError = "Amount is required"
+            return false
+        }
+        
+        guard let amount = Double(amountToSend) else {
+            amountError = "Invalid amount format"
+            return false
+        }
+        
+        if amount <= 0 {
+            amountError = "Amount must be greater than 0"
+            return false
+        }
+        
+        if amount > maxAmount {
+            amountError = "Insufficient balance (max: \(maxAmount.toStringWithoutTrailingZeros))"
+            return false
+        }
+        
+        return true
+    }
+    
+    func validatePin() -> Bool {
+        pinError = nil
+        
+        if pin.isEmpty {
+            pinError = "PIN is required"
+            return false
+        }
+        
+        if pin.count != 6 {
+            pinError = "PIN must be 6 digits"
+            return false
+        }
+        
+        return true
+    }
+    
+    // MARK: - Payment Execution
+    
+    func sendPayment(userAssets: [AssetInfo], userContacts: [ContactInfo], dashboardData: DashboardData) async {
+        // Clear previous errors
+        errorMessage = nil
+        
+        // Set recipient from contact if needed
+        if selectedRecipient != SendPaymentViewModel.selectRecipient &&
+           selectedRecipient != SendPaymentViewModel.otherRecipient {
+            guard let contact = userContacts.first(where: { $0.id == selectedRecipient }) else {
+                errorMessage = "Selected contact not found"
+                notificationFeedback.notificationOccurred(.error)
+                return
+            }
+            recipientAccountId = contact.accountId
+        }
+        
+        // Find selected asset
+        guard let asset = userAssets.first(where: { $0.id == selectedAsset }) else {
+            errorMessage = "Selected asset not found"
+            notificationFeedback.notificationOccurred(.error)
+            return
+        }
+        
+        // Calculate max amount
+        let maxAmount = calculateMaxAmount(for: asset)
+        
+        // Validate all fields
+        guard validateRecipient() && validateAmount(maxAmount: maxAmount) && validatePin() else {
+            notificationFeedback.notificationOccurred(.error)
             return
         }
         
         isSendingPayment = true
+        impactFeedback.impactOccurred()
         
         do {
+            // Verify PIN and get user keypair
             let authService = AuthService()
-            let userKeyPair = try authService.userKeyPair(pin: self.pin)
+            let userKeyPair = try authService.userKeyPair(pin: pin)
+            
+            // Check if destination account exists
             let destinationExists = try await StellarService.accountExists(address: recipientAccountId)
             
-            // if the destination account does not exist on the testnet, let's fund it with friendbot!
-            // alternatively we can use the create account operation:
-            // StellarService.createAccount(...)
+            // Fund destination if it doesn't exist (testnet only)
             if !destinationExists {
                 try await StellarService.fundTestnetAccount(address: recipientAccountId)
             }
             
-            // find out if the recipient can receive the asset that
-            // the user wants to send
-            guard let asset = userAssets.filter({$0.id == selectedAsset}).first else {
-                errorMessage = "Error finding selected asset"
-                isSendingPayment = false
-                return
-            }
-            // check if the recipient can receive the asset the user wants to send
+            // Verify recipient can receive the asset
             if let issuedAsset = asset.asset as? IssuedAssetId, issuedAsset.issuer != recipientAccountId {
                 let recipientAssets = try await StellarService.loadAssetsForAddress(address: recipientAccountId)
-                guard let _ = recipientAssets.filter({$0.id == selectedAsset}).first else {
-                    errorMessage = "Recipient can not receive \(selectedAsset)"
+                if !recipientAssets.contains(where: { $0.id == selectedAsset }) {
+                    errorMessage = "Recipient cannot receive \(asset.code)"
                     isSendingPayment = false
+                    notificationFeedback.notificationOccurred(.error)
                     return
                 }
             }
             
-            // send payment
+            // Prepare stellar asset
             guard let stellarAssetId = asset.asset as? StellarAssetId else {
-                errorMessage = "Error: asset is not a stellar asset"
+                errorMessage = "Invalid asset type"
                 isSendingPayment = false
+                notificationFeedback.notificationOccurred(.error)
                 return
             }
             
-            var memo:Memo? = nil
+            // Prepare memo if provided
+            var memo: Memo?
             if !memoToSend.isEmpty {
                 memo = try Memo(text: memoToSend)
             }
             
+            // Send payment
             let result = try await StellarService.sendPayment(
                 destinationAddress: recipientAccountId,
                 assetId: stellarAssetId,
                 amount: Decimal(Double(amountToSend)!),
                 memo: memo,
-                userKeyPair: userKeyPair)
-            if !result {
-                errorMessage = "Error sending payment"
-                isSendingPayment = false
-                return
-            } else {
-                resetState()
+                userKeyPair: userKeyPair
+            )
+            
+            if result {
+                // Success
+                toastMessage = "Payment sent successfully!"
+                showSuccessToast = true
+                notificationFeedback.notificationOccurred(.success)
+                
+                // Reset form
+                resetForm()
+                
+                // Refresh data
                 await dashboardData.fetchStellarData()
+            } else {
+                errorMessage = "Payment failed. Please try again."
+                notificationFeedback.notificationOccurred(.error)
             }
         } catch {
             errorMessage = error.localizedDescription
+            notificationFeedback.notificationOccurred(.error)
         }
+        
         isSendingPayment = false
     }
     
-    private func checkPaymentFormData() -> Bool {
-        if selectedRecipient != SendPaymentBox.selectRecipient &&
-            selectedRecipient != SendPaymentBox.otherRecipient {
-            guard let contact = userContacts.filter({$0.id == selectedRecipient}).first else {
-                errorMessage = "Could not find recipient"
-                return false
-            }
-            recipientAccountId = contact.accountId
+    func calculateMaxAmount(for asset: AssetInfo) -> Double {
+        guard let balance = Double(asset.balance) else { return 0 }
+        
+        // Reserve 2 XLM for fees if sending XLM
+        if asset.id == SendPaymentViewModel.xlmAssetItem {
+            return max(0, balance - 2.0)
         }
         
-        if recipientAccountId.isEmpty {
-            errorMessage = "Missing recipient account id"
-            return false
-        }
-        if !recipientAccountId.isValidEd25519PublicKey() {
-            errorMessage = "Invalid recipient account id"
-            return false
-        }
-        if amountToSend.isEmpty {
-            errorMessage = "Missing amount"
-            return false
-        }
-        guard let amount = Double(amountToSend) else {
-            errorMessage = "Invalid amount"
-            return false
-        }
-        if amount > maxAmount() {
-            errorMessage = "Not enough funds"
-            return false
-        }
-        if pin.isEmpty {
-            errorMessage = "Missing pin"
-            return false
-        }
-        return true
+        return balance
     }
     
-    private func maxAmount() -> Double {
-        if let asset = userAssets.filter({$0.id == selectedAsset}).first, let max = Double(asset.balance) {
-            if asset.id == SendPaymentBox.xlmAssetItem  {
-                return max > 2.0 ? max - 2.0 : 0
+    // MARK: - UI Helpers
+    
+    func handleAssetSelection(_ newValue: String) {
+        selectionFeedback.selectionChanged()
+        selectedAsset = newValue
+    }
+    
+    func handleRecipientSelection(_ newValue: String) {
+        selectionFeedback.selectionChanged()
+        selectedRecipient = newValue
+        
+        if newValue != SendPaymentViewModel.selectRecipient {
+            expandForm()
+        } else {
+            collapseForm()
+        }
+    }
+}
+
+// MARK: - Main View
+
+struct SendPaymentBox: View {
+    @EnvironmentObject var dashboardData: DashboardData
+    @State private var viewModel = SendPaymentViewModel()
+    @FocusState private var focusedField: PaymentField?
+    
+    enum PaymentField {
+        case recipient, amount, memo, pin
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerSection
+            
+            Divider()
+                .padding(.vertical, 16)
+            
+            if viewModel.isSendingPayment {
+                sendingView
             } else {
-                return max
+                formContent
             }
         }
-        return 0
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+        .toast(isPresenting: $viewModel.showSuccessToast) {
+            AlertToast(
+                displayMode: .banner(.slide),
+                type: .complete(.green),
+                title: viewModel.toastMessage
+            )
+        }
     }
     
+    // MARK: - Header Section
+    
+    private var headerSection: some View {
+        HStack {
+            Image(systemName: "paperplane.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(.blue)
+                .frame(width: 32, height: 32)
+            
+            Text("Send Payment")
+                .font(.system(size: 20, weight: .semibold))
+            
+            Spacer()
+            
+            if viewModel.isFormExpanded {
+                Button(action: viewModel.collapseForm) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Sending View
+    
+    private var sendingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+            
+            Text("Sending payment...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.secondary)
+            
+            Text("Please wait while we process your transaction")
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+    
+    // MARK: - Form Content
+    
+    @ViewBuilder
+    private var formContent: some View {
+        VStack(spacing: 20) {
+            // Asset and Recipient Selection
+            selectionSection
+            
+            // Expanded Form Fields
+            if viewModel.isFormExpanded {
+                expandedFormFields
+            }
+        }
+    }
+    
+    // MARK: - Selection Section
+    
+    private var selectionSection: some View {
+        VStack(spacing: 16) {
+            // Asset Picker
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Asset", systemImage: "dollarsign.circle")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                
+                Menu {
+                    ForEach(dashboardData.userAssets, id: \.id) { asset in
+                        Button(action: { viewModel.handleAssetSelection(asset.id) }) {
+                            Label {
+                                Text(asset.code)
+                            } icon: {
+                                Image(systemName: asset.id == "native" ? "star.circle" : "dollarsign.circle")
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        if let selectedAsset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAsset }) {
+                            Image(systemName: selectedAsset.id == "native" ? "star.circle.fill" : "dollarsign.circle.fill")
+                                .foregroundStyle(selectedAsset.id == "native" ? .orange : .green)
+                            
+                            Text(selectedAsset.code)
+                                .font(.system(size: 16, weight: .medium))
+                            
+                            Text("(\(selectedAsset.formattedBalance))")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                }
+            }
+            
+            // Recipient Picker
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Recipient", systemImage: "person.circle")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                
+                Menu {
+                    ForEach(dashboardData.userContacts, id: \.id) { contact in
+                        Button(action: { viewModel.handleRecipientSelection(contact.id) }) {
+                            Label(contact.name, systemImage: "person.fill")
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    Button(action: { viewModel.handleRecipientSelection(SendPaymentViewModel.otherRecipient) }) {
+                        Label("Other Address", systemImage: "plus.circle")
+                    }
+                } label: {
+                    HStack {
+                        if viewModel.selectedRecipient == SendPaymentViewModel.selectRecipient {
+                            Text("Select Recipient")
+                                .foregroundColor(.secondary)
+                        } else if viewModel.selectedRecipient == SendPaymentViewModel.otherRecipient {
+                            Label("Other Address", systemImage: "plus.circle")
+                                .foregroundColor(.primary)
+                        } else if let contact = dashboardData.userContacts.first(where: { $0.id == viewModel.selectedRecipient }) {
+                            Label(contact.name, systemImage: "person.fill")
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Expanded Form Fields
+    
+    @ViewBuilder
+    private var expandedFormFields: some View {
+        VStack(spacing: 20) {
+            // Recipient Address Field (for "Other")
+            if viewModel.selectedRecipient == SendPaymentViewModel.otherRecipient {
+                recipientAddressField
+            }
+            
+            // Amount Field
+            amountField
+            
+            // Memo Field
+            memoField
+            
+            // PIN Field
+            pinField
+            
+            // Error Message
+            if let error = viewModel.errorMessage {
+                errorMessageView(error)
+            }
+            
+            // Action Buttons
+            actionButtons
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity),
+            removal: .move(edge: .top).combined(with: .opacity)
+        ))
+    }
+    
+    // MARK: - Form Fields
+    
+    private var recipientAddressField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Recipient Address", systemImage: "qrcode")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            TextField("G...", text: $viewModel.recipientAccountId)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14, design: .monospaced))
+                .padding(12)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(viewModel.recipientError != nil ? Color.red : Color.clear, lineWidth: 1)
+                )
+                .focused($focusedField, equals: .recipient)
+                .onChange(of: viewModel.recipientAccountId) { _, newValue in
+                    if newValue.count > 56 {
+                        viewModel.recipientAccountId = String(newValue.prefix(56))
+                    }
+                    viewModel.recipientError = nil
+                }
+            
+            if let error = viewModel.recipientError {
+                Label(error, systemImage: "exclamationmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.red)
+            }
+        }
+    }
+    
+    private var amountField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Amount", systemImage: "number.circle")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                
+                Spacer()
+                
+                if let asset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAsset }) {
+                    Text("Max: \(viewModel.calculateMaxAmount(for: asset).toStringWithoutTrailingZeros)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            HStack {
+                TextField("0.00", text: $viewModel.amountToSend)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: .amount)
+                    .onChange(of: viewModel.amountToSend) { oldValue, newValue in
+                        if newValue != "" && Double(newValue) == nil {
+                            viewModel.amountToSend = oldValue
+                        }
+                        viewModel.amountError = nil
+                    }
+                
+                if let asset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAsset }) {
+                    Text(asset.code)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(12)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(viewModel.amountError != nil ? Color.red : Color.clear, lineWidth: 1)
+            )
+            
+            if let error = viewModel.amountError {
+                Label(error, systemImage: "exclamationmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.red)
+            }
+        }
+    }
+    
+    private var memoField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Memo (Optional)", systemImage: "text.quote")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            TextField("Add a note...", text: $viewModel.memoToSend)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14))
+                .padding(12)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .focused($focusedField, equals: .memo)
+                .onChange(of: viewModel.memoToSend) { _, newValue in
+                    if newValue.count > 28 {
+                        viewModel.memoToSend = String(newValue.prefix(28))
+                    }
+                }
+            
+            Text("\(viewModel.memoToSend.count)/28 characters")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+    
+    private var pinField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("PIN", systemImage: "lock.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            SecureField("Enter 6-digit PIN", text: $viewModel.pin)
+                .textFieldStyle(.plain)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .keyboardType(.numberPad)
+                .padding(12)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(viewModel.pinError != nil ? Color.red : Color.clear, lineWidth: 1)
+                )
+                .focused($focusedField, equals: .pin)
+                .onChange(of: viewModel.pin) { _, newValue in
+                    if newValue.count > 6 {
+                        viewModel.pin = String(newValue.prefix(6))
+                    }
+                    viewModel.pin = viewModel.pin.filter { $0.isNumber }
+                    viewModel.pinError = nil
+                }
+            
+            if let error = viewModel.pinError {
+                Label(error, systemImage: "exclamationmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.red)
+            }
+        }
+    }
+    
+    // MARK: - Error Message View
+    
+    private func errorMessageView(_ message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14))
+            
+            Text(message)
+                .font(.system(size: 14))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
+        }
+        .foregroundColor(.white)
+        .padding(12)
+        .background(Color.red)
+        .cornerRadius(10)
+    }
+    
+    // MARK: - Action Buttons
+    
+    private var actionButtons: some View {
+        HStack(spacing: 12) {
+            Button(action: viewModel.collapseForm) {
+                Text("Cancel")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(12)
+            }
+            
+            Button(action: submitPayment) {
+                HStack {
+                    Image(systemName: "paperplane.fill")
+                    Text("Send")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(
+                    LinearGradient(
+                        colors: [.blue, .blue.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(12)
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func submitPayment() {
+        focusedField = nil
+        
+        Task {
+            await viewModel.sendPayment(
+                userAssets: dashboardData.userAssets,
+                userContacts: dashboardData.userContacts,
+                dashboardData: dashboardData
+            )
+        }
+    }
 }
+
+// MARK: - Preview
 
 #Preview {
     SendPaymentBox()
+        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .padding()
 }

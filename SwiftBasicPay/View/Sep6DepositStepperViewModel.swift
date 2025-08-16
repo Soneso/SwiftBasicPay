@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import UIKit
 import stellar_wallet_sdk
+import Observation
 
+@Observable
 class Sep6DepositStepperViewModel: Sep6StepperViewModel {
     
     private var depositInfo: Sep6DepositInfo {
@@ -74,7 +77,7 @@ class Sep6DepositStepperViewModel: Sep6StepperViewModel {
                 if !optional {
                     let val = collectedTransferDetails[index]
                     if val.isEmpty || val == selectItem {
-                        transferFieldsError = "\(infoKey) is not optional"
+                        transferFieldsError = "\(infoKey) is required"
                         return false
                     }
                 }
@@ -99,33 +102,39 @@ class Sep6DepositStepperViewModel: Sep6StepperViewModel {
     }
     
     override func submitTransfer() async {
-        await MainActor.run {
-            isSubmitting = true
-            submissionError = nil
-            submissionResponse = nil
-        }
+        isSubmitting = true
+        submissionError = nil
+        submissionResponse = nil
         
         do {
             let sep6 = anchoredAsset.anchor.sep6
-            let params = Sep6DepositParams(assetCode: anchoredAsset.code,
-                                           account: authToken.account,
-                                           amount: transferAmount,
-                                           extraFields: preparedTransferData)
+            let params = Sep6DepositParams(
+                assetCode: anchoredAsset.code,
+                account: authToken.account,
+                amount: transferAmount,
+                extraFields: preparedTransferData
+            )
             
             let response = try await sep6.deposit(params: params, authToken: authToken)
             
+            submissionResponse = response
+            
+            // Success haptic feedback
             await MainActor.run {
-                submissionResponse = response
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.success)
             }
             
         } catch {
+            submissionError = "Could not submit deposit request: \(error.localizedDescription)"
+            
+            // Error haptic feedback
             await MainActor.run {
-                submissionError = "Your request has been submitted to the Anchor but following error occurred: \(error.localizedDescription). Please close this window and try again."
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.error)
             }
         }
         
-        await MainActor.run {
-            isSubmitting = false
-        }
+        isSubmitting = false
     }
 }

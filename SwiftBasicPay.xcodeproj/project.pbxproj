@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7B92E391B9300D31614 /* NewTransferView.swift */; };
-		8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */; };
 		836E660D2E3F4BA200D68F6A /* InteractiveWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */; };
 		836E660F2E3F7DB400D68F6A /* Sep12KycFormSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */; };
 		836E661F2E3F87C700D68F6A /* anchored_assets_dropdown.png in Resources */ = {isa = PBXBuildFile; fileRef = 836E66102E3F87C700D68F6A /* anchored_assets_dropdown.png */; };
@@ -46,7 +45,6 @@
 		837398122E1000D90032FDAA /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398112E1000D90032FDAA /* Utils.swift */; };
 		837398142E10047A0032FDAA /* StellarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398132E10047A0032FDAA /* StellarService.swift */; };
 		837398162E129CF20032FDAA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837398152E129CF20032FDAA /* SettingsView.swift */; };
-		8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8376983A2E269C1400867095 /* AssetsFetcher.swift */; };
 		837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */; };
 		837CC65C2E3BB09800B42033 /* Sep6TransferResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */; };
 		837CC65F2E3CB80800B42033 /* String+BasicPay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837CC65E2E3CB80800B42033 /* String+BasicPay.swift */; };
@@ -61,9 +59,9 @@
 		83C0AA672E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA632E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift */; };
 		83C0AA682E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C0AA642E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift */; };
 		83ED5D222E4A8F65006BD922 /* stellar-wallet-sdk in Frameworks */ = {isa = PBXBuildFile; productRef = 83ED5D212E4A8F65006BD922 /* stellar-wallet-sdk */; };
+		83ED5D292E4FCFEB006BD922 /* TransferComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83ED5D272E4FCFEB006BD922 /* TransferComponents.swift */; };
+		83ED5D2A2E4FCFEB006BD922 /* TransferHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83ED5D282E4FCFEB006BD922 /* TransferHistoryView.swift */; };
 		83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */; };
-		83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */; };
-		83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */; };
 		83F5B2D02E30CD5400920FF1 /* SendPaymentBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2CF2E30CD5400920FF1 /* SendPaymentBox.swift */; };
 		83F5B2D22E30D48E00920FF1 /* SendPathPaymentBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F5B2D12E30D48E00920FF1 /* SendPathPaymentBox.swift */; };
 		83F5B3242E32848900920FF1 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B2D42E32848800920FF1 /* README.md */; };
@@ -118,12 +116,10 @@
 		83F5B36D2E32848900920FF1 /* manage_trust.md in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B3232E32848900920FF1 /* manage_trust.md */; };
 		83F5B3702E33988A00920FF1 /* custom_asset_form.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B36E2E33988A00920FF1 /* custom_asset_form.png */; };
 		83F5B3712E33988A00920FF1 /* my_data_box.png in Resources */ = {isa = PBXBuildFile; fileRef = 83F5B36F2E33988A00920FF1 /* my_data_box.png */; };
-		83F632392E1411C800C5A38E /* PinSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F632382E1411C800C5A38E /* PinSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		8304E7B92E391B9300D31614 /* NewTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTransferView.swift; sourceTree = "<group>"; };
-		8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferHistoryView.swift; sourceTree = "<group>"; };
 		836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InteractiveWebView.swift; sourceTree = "<group>"; };
 		836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep12KycFormSheet.swift; sourceTree = "<group>"; };
 		836E66102E3F87C700D68F6A /* anchored_assets_dropdown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = anchored_assets_dropdown.png; sourceTree = "<group>"; };
@@ -159,7 +155,6 @@
 		837398112E1000D90032FDAA /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		837398132E10047A0032FDAA /* StellarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StellarService.swift; sourceTree = "<group>"; };
 		837398152E129CF20032FDAA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		8376983A2E269C1400867095 /* AssetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetsFetcher.swift; sourceTree = "<group>"; };
 		837CC6592E3A2C3300B42033 /* Sep6DepositStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6DepositStepper.swift; sourceTree = "<group>"; };
 		837CC65B2E3BB09800B42033 /* Sep6TransferResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sep6TransferResponseView.swift; sourceTree = "<group>"; };
 		837CC65E2E3CB80800B42033 /* String+BasicPay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+BasicPay.swift"; sourceTree = "<group>"; };
@@ -171,9 +166,9 @@
 		83C0AA622E3E586B00D279C7 /* Sep6StepperBase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep6StepperBase.swift; sourceTree = "<group>"; };
 		83C0AA632E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep6DepositStepperViewModel.swift; sourceTree = "<group>"; };
 		83C0AA642E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep6WithdrawalStepperViewModel.swift; sourceTree = "<group>"; };
+		83ED5D272E4FCFEB006BD922 /* TransferComponents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferComponents.swift; sourceTree = "<group>"; };
+		83ED5D282E4FCFEB006BD922 /* TransferHistoryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TransferHistoryView.swift; sourceTree = "<group>"; };
 		83F5B2C82E2FC4E200920FF1 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
-		83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPaymentsBox.swift; sourceTree = "<group>"; };
-		83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesBox.swift; sourceTree = "<group>"; };
 		83F5B2CF2E30CD5400920FF1 /* SendPaymentBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPaymentBox.swift; sourceTree = "<group>"; };
 		83F5B2D12E30D48E00920FF1 /* SendPathPaymentBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPathPaymentBox.swift; sourceTree = "<group>"; };
 		83F5B2D42E32848800920FF1 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -228,7 +223,6 @@
 		83F5B3232E32848900920FF1 /* manage_trust.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = manage_trust.md; sourceTree = "<group>"; };
 		83F5B36E2E33988A00920FF1 /* custom_asset_form.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = custom_asset_form.png; sourceTree = "<group>"; };
 		83F5B36F2E33988A00920FF1 /* my_data_box.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = my_data_box.png; sourceTree = "<group>"; };
-		83F632382E1411C800C5A38E /* PinSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -325,7 +319,6 @@
 				83C0AA5D2E3E43D300D279C7 /* TransferFieldInfo.swift */,
 				83C0AA5F2E3E442000D279C7 /* KycFieldInfo.swift */,
 				837398112E1000D90032FDAA /* Utils.swift */,
-				8376983A2E269C1400867095 /* AssetsFetcher.swift */,
 				837397F72E0D7AEE0032FDAA /* DemoError.swift */,
 			);
 			path = common;
@@ -363,12 +356,10 @@
 				837398092E0F2B2C0032FDAA /* TransfersView.swift */,
 				8373980B2E0F2B9B0032FDAA /* KycView.swift */,
 				837398152E129CF20032FDAA /* SettingsView.swift */,
-				83F632382E1411C800C5A38E /* PinSheet.swift */,
-				83F5B2CB2E30342600920FF1 /* RecentPaymentsBox.swift */,
-				83F5B2CD2E30C6B100920FF1 /* BalancesBox.swift */,
 				8304E7B92E391B9300D31614 /* NewTransferView.swift */,
 				836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */,
-				8304E7BB2E391BA400D31614 /* TransferHistoryView.swift */,
+				83ED5D272E4FCFEB006BD922 /* TransferComponents.swift */,
+				83ED5D282E4FCFEB006BD922 /* TransferHistoryView.swift */,
 				836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */,
 				83C0AA622E3E586B00D279C7 /* Sep6StepperBase.swift */,
 				83C0AA612E3E586B00D279C7 /* Sep6StepperViews.swift */,
@@ -629,22 +620,20 @@
 				837CC65F2E3CB80800B42033 /* String+BasicPay.swift in Sources */,
 				83C0AA602E3E442000D279C7 /* KycFieldInfo.swift in Sources */,
 				8304E7BA2E391B9300D31614 /* NewTransferView.swift in Sources */,
+				83ED5D292E4FCFEB006BD922 /* TransferComponents.swift in Sources */,
 				837398042E0F29E80032FDAA /* Overview.swift in Sources */,
+				83ED5D2A2E4FCFEB006BD922 /* TransferHistoryView.swift in Sources */,
 				837CC65A2E3A2C3300B42033 /* Sep6DepositStepper.swift in Sources */,
 				837398162E129CF20032FDAA /* SettingsView.swift in Sources */,
 				8373980E2E0F2BD90032FDAA /* ContactsView.swift in Sources */,
 				83C0AA5E2E3E43D300D279C7 /* TransferFieldInfo.swift in Sources */,
-				8304E7BC2E391BA400D31614 /* TransferHistoryView.swift in Sources */,
 				837397D62E0D55E10032FDAA /* ContentView.swift in Sources */,
-				8376983B2E269C1400867095 /* AssetsFetcher.swift in Sources */,
 				836E660D2E3F4BA200D68F6A /* InteractiveWebView.swift in Sources */,
 				8373980C2E0F2B9B0032FDAA /* KycView.swift in Sources */,
 				837397F02E0D6A830032FDAA /* SecureStorage.swift in Sources */,
-				83F632392E1411C800C5A38E /* PinSheet.swift in Sources */,
 				837CC6612E3CB97C00B42033 /* Double+BasicPay.swift in Sources */,
 				83C0AA652E3E586B00D279C7 /* Sep6StepperViews.swift in Sources */,
 				837398122E1000D90032FDAA /* Utils.swift in Sources */,
-				83F5B2CE2E30C6B100920FF1 /* BalancesBox.swift in Sources */,
 				837398082E0F2AE50032FDAA /* AssetsView.swift in Sources */,
 				83C0AA672E3E586B00D279C7 /* Sep6DepositStepperViewModel.swift in Sources */,
 				83C0AA682E3E586B00D279C7 /* Sep6WithdrawalStepperViewModel.swift in Sources */,
@@ -655,7 +644,6 @@
 				83C0AA662E3E586B00D279C7 /* Sep6StepperBase.swift in Sources */,
 				837397EE2E0D6A3F0032FDAA /* AuthService.swift in Sources */,
 				837398142E10047A0032FDAA /* StellarService.swift in Sources */,
-				83F5B2CC2E30342600920FF1 /* RecentPaymentsBox.swift in Sources */,
 				83F5B2C92E2FC4E200920FF1 /* DashboardData.swift in Sources */,
 				837397F82E0D7AEE0032FDAA /* DemoError.swift in Sources */,
 				8373980A2E0F2B2C0032FDAA /* TransfersView.swift in Sources */,

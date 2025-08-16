@@ -7,18 +7,21 @@
 
 import SwiftUI
 import stellar_wallet_sdk
+import AlertToast
 
 struct Sep6DepositStepper: View {
     
-    @StateObject private var viewModel: Sep6DepositStepperViewModel
+    @State private var viewModel: Sep6DepositStepperViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showError = false
+    @State private var errorMessage = ""
     
     internal init(anchoredAsset: AnchoredAssetInfo,
-                  depositInfo: Sep6DepositInfo, 
+                  depositInfo: Sep6DepositInfo,
                   authToken: AuthToken,
                   anchorHasEnabledFeeEndpoint: Bool,
                   savedKycData: [KycEntry] = []) {
-        self._viewModel = StateObject(wrappedValue: Sep6DepositStepperViewModel(
+        self._viewModel = State(wrappedValue: Sep6DepositStepperViewModel(
             anchoredAsset: anchoredAsset,
             depositInfo: depositInfo,
             authToken: authToken,
@@ -29,124 +32,297 @@ struct Sep6DepositStepper: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                
-                Text("Asset: \(viewModel.anchoredAsset.code)").font(.subheadline)
-                Text("Step \(viewModel.currentStep) of 4 - \(viewModel.stepTitles[viewModel.currentStep - 1])")
-                    .font(.subheadline).fontWeight(.bold)
-                
-
-                if viewModel.currentStep == 1 {
-                    Text("The anchor requested following information about your transfer:").font(.subheadline)
-                    Sep6AmountInputField(
-                        transferAmount: $viewModel.transferAmount,
-                        minAmount: viewModel.minAmount,
-                        maxAmount: viewModel.maxAmount,
-                        assetCode: viewModel.anchoredAsset.code
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Progress indicator
+                    Sep6StepProgressBar(currentStep: viewModel.currentStep)
+                        .padding(.horizontal)
+                    
+                    // Asset info card
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.green)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Deposit")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(viewModel.anchoredAsset.code)
+                                .font(.headline)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("Step \(viewModel.currentStep.rawValue) of 4")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(Color(.systemGray6))
+                            )
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
                     )
+                    .padding(.horizontal)
+                    
+                    // Step content
+                    VStack(spacing: 20) {
+                        switch viewModel.currentStep {
+                        case .transferDetails:
+                            transferDetailsStep
+                        case .kycData:
+                            kycDataStep
+                        case .fee:
+                            feeStep
+                        case .summary:
+                            summaryStep
+                        }
+                    }
+                    .padding(.horizontal)
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
+                    
+                    // Navigation buttons
+                    Sep6NavigationButtons(
+                        currentStep: viewModel.currentStep,
+                        submissionResponse: viewModel.submissionResponse,
+                        onPrevious: {
+                            viewModel.goToPreviousStep()
+                        },
+                        onNext: {
+                            handleNextStep()
+                        },
+                        onSubmit: {
+                            Task {
+                                await viewModel.submitTransfer()
+                            }
+                        },
+                        onClose: {
+                            dismiss()
+                        }
+                    )
+                    .padding()
+                }
+                .padding(.vertical)
+            }
+            .background(Color(.systemGroupedBackground))
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(.blue)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("SEP-6 Deposit")
+                        .font(.headline)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .toast(isPresenting: $showError) {
+            AlertToast(
+                displayMode: .banner(.pop),
+                type: .error(.red),
+                title: errorMessage
+            )
+        }
+    }
+    
+    // MARK: - Step Views
+    
+    @ViewBuilder
+    private var transferDetailsStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Enter deposit details")
+                .font(.title3)
+                .fontWeight(.semibold)
+            
+            Text("Please provide the required information for your deposit")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Sep6AmountInputField(
+                transferAmount: $viewModel.transferAmount,
+                minAmount: viewModel.minAmount,
+                maxAmount: viewModel.maxAmount,
+                assetCode: viewModel.anchoredAsset.code
+            )
+            
+            if !viewModel.transferFieldInfos.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Additional Information")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
                     Sep6TransferFields(
                         transferFieldInfos: viewModel.transferFieldInfos,
                         collectedTransferDetails: $viewModel.collectedTransferDetails,
                         selectItem: viewModel.selectItem,
                         indexForTransferFieldKey: viewModel.indexForTransferFieldKey
                     )
-                    if let error = viewModel.transferFieldsError {
-                        Utils.divider
-                        Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
-                } else if viewModel.currentStep == 2 {
-                    if viewModel.isLoadingKyc {
-                        Utils.progressViewWithLabel(viewModel.kycLoadingText)
-                    } else if let info = viewModel.kycInfo {
-                        Sep6KycStatusView(kycInfo: info) {
-                            Task {
-                                await viewModel.deleteKYCData()
-                            }
-                        }
-                        if info.sep12Status == Sep12Status.neesdInfo {
-                            Sep6KycFields(
-                                kycFieldInfos: viewModel.kycFieldInfos,
-                                collectedKycDetails: $viewModel.collectedKycDetails,
-                                selectItem: viewModel.selectItem,
-                                indexForKycFieldKey: viewModel.indexForKycFieldKey
-                            )
-                        }
-                        if let error = viewModel.kycFieldsError {
-                            Utils.divider
-                            Text("\(error)").font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                } else if viewModel.currentStep == 3 {
-                    Sep6FeeView(
-                        isLoadingFee: viewModel.isLoadingFee,
-                        fee: viewModel.fee,
-                        feeError: viewModel.feeError,
-                        assetCode: viewModel.anchoredAsset.code
-                    )
-                } else if viewModel.currentStep == 4 {
-                    Sep6SummaryView(
-                        isSubmitting: viewModel.isSubmitting,
-                        submissionResponse: viewModel.submissionResponse,
-                        transferAmount: viewModel.transferAmount,
-                        fee: viewModel.fee,
-                        submissionError: viewModel.submissionError,
-                        assetCode: viewModel.anchoredAsset.code,
-                        operationName: viewModel.operationName
-                    )
                 }
-                Utils.divider
-                Sep6NavigationButtons(
-                    currentStep: viewModel.currentStep,
-                    submissionResponse: viewModel.submissionResponse,
-                    onPrevious: {
-                        if viewModel.currentStep > 1 {
-                            viewModel.currentStep -= 1
-                        }
-                    },
-                    onNext: {
-                        if viewModel.currentStep == 1 && viewModel.validateTransferFields() {
-                            viewModel.currentStep += 1
-                            Task {
-                                await viewModel.loadKYCData()
-                            }
-                        } else if viewModel.currentStep == 2 {
-                            if (viewModel.kycInfo?.sep12Status == Sep12Status.neesdInfo && viewModel.validateKycFields()) {
-                                Task {
-                                    await viewModel.submitKYCData()
-                                }
-                            } else if (viewModel.kycInfo?.sep12Status == Sep12Status.accepted) {
-                                viewModel.currentStep += 1
-                                Task {
-                                    await viewModel.loadFeeInfo()
-                                }
-                            }
-                        } else {
-                            viewModel.currentStep += 1
-                        }
-                    },
-                    onSubmit: {
-                        Task {
-                            await viewModel.submitTransfer()
-                        }
-                    },
-                    onClose: {
-                        dismiss()
-                    }
+            }
+            
+            if let error = viewModel.transferFieldsError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.red.opacity(0.1))
                 )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding()
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        dismiss()
+        }
+    }
+    
+    @ViewBuilder
+    private var kycDataStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("KYC Information")
+                .font(.title3)
+                .fontWeight(.semibold)
+            
+            if viewModel.isLoadingKyc {
+                TransferProgressIndicator(message: viewModel.kycLoadingText, progress: nil)
+            } else if let info = viewModel.kycInfo {
+                Sep6KycStatusView(kycInfo: info) {
+                    Task {
+                        await viewModel.deleteKYCData()
                     }
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Text("SEP-06 Deposit Stepper").font(.headline).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                
+                if info.sep12Status == Sep12Status.neesdInfo {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Required KYC Fields")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        Sep6KycFields(
+                            kycFieldInfos: viewModel.kycFieldInfos,
+                            collectedKycDetails: $viewModel.collectedKycDetails,
+                            selectItem: viewModel.selectItem,
+                            indexForKycFieldKey: viewModel.indexForKycFieldKey
+                        )
+                    }
                 }
-            }.navigationBarTitleDisplayMode(.inline).navigationTitle("")
+                
+                if let error = viewModel.kycFieldsError {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.red.opacity(0.1))
+                    )
+                }
+            }
+        }
+        .onAppear {
+            if viewModel.kycInfo == nil {
+                Task {
+                    await viewModel.loadKYCData()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var feeStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Transfer Fee")
+                .font(.title3)
+                .fontWeight(.semibold)
+            
+            Text("Review the fee for this deposit")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Sep6FeeView(
+                isLoadingFee: viewModel.isLoadingFee,
+                fee: viewModel.fee,
+                feeError: viewModel.feeError,
+                assetCode: viewModel.anchoredAsset.code
+            )
+        }
+        .onAppear {
+            if viewModel.fee == nil && !viewModel.isLoadingFee {
+                Task {
+                    await viewModel.loadFeeInfo()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var summaryStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Review & Confirm")
+                .font(.title3)
+                .fontWeight(.semibold)
+            
+            Text("Please review your deposit details before submitting")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Sep6SummaryView(
+                isSubmitting: viewModel.isSubmitting,
+                submissionResponse: viewModel.submissionResponse,
+                transferAmount: viewModel.transferAmount,
+                fee: viewModel.fee,
+                submissionError: viewModel.submissionError,
+                assetCode: viewModel.anchoredAsset.code,
+                operationName: viewModel.operationName
+            )
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func handleNextStep() {
+        switch viewModel.currentStep {
+        case .transferDetails:
+            if viewModel.validateTransferFields() {
+                viewModel.goToNextStep()
+            }
+        case .kycData:
+            if viewModel.kycInfo?.sep12Status == Sep12Status.neesdInfo {
+                if viewModel.validateKycFields() {
+                    Task {
+                        await viewModel.submitKYCData()
+                        // Wait for submission to complete before moving
+                        if viewModel.kycInfo?.sep12Status == Sep12Status.accepted {
+                            viewModel.goToNextStep()
+                        }
+                    }
+                }
+            } else if viewModel.kycInfo?.sep12Status == Sep12Status.accepted {
+                viewModel.goToNextStep()
+            } else {
+                errorMessage = "KYC status must be accepted to continue"
+                showError = true
+            }
+        case .fee:
+            viewModel.goToNextStep()
+        case .summary:
+            // Handled by submit button
+            break
         }
     }
 }
