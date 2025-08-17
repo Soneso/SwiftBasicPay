@@ -326,6 +326,7 @@ struct SecurePINInput: View {
 struct EnhancedRecentPaymentsView: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var selectedPayment: PaymentInfo?
+    var onCopyAddress: ((String) -> Void)? = nil
     
     var body: some View {
         DashboardCard(title: "Recent Payments", systemImage: "arrow.left.arrow.right") {
@@ -372,7 +373,7 @@ struct EnhancedRecentPaymentsView: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(dashboardData.recentPayments.prefix(5), id: \.id) { payment in
-                        PaymentRow(payment: payment, isSelected: selectedPayment?.id == payment.id)
+                        PaymentRow(payment: payment, isSelected: selectedPayment?.id == payment.id, onCopyAddress: onCopyAddress)
                             .onTapGesture {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     selectedPayment = selectedPayment?.id == payment.id ? nil : payment
@@ -397,6 +398,7 @@ struct EnhancedRecentPaymentsView: View {
 struct PaymentRow: View {
     let payment: PaymentInfo
     let isSelected: Bool
+    var onCopyAddress: ((String) -> Void)? = nil
     
     private var assetCode: String {
         if payment.asset.id == "native" {
@@ -421,7 +423,7 @@ struct PaymentRow: View {
     }
     
     private var counterpartyName: String {
-        payment.contactName ?? String(payment.address.prefix(8)) + "..."
+        payment.contactName ?? payment.address.shortAddress
     }
     
     var body: some View {
@@ -438,7 +440,7 @@ struct PaymentRow: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.primary)
                         
-                        Text("• \(counterpartyName)")
+                        Text("• \(payment.direction == .received ? "From" : "To") \(counterpartyName)")
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
@@ -475,16 +477,35 @@ struct PaymentRow: View {
             
             if isSelected {
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Full Address:")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(payment.direction == .received ? "From" : "To") Address:")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)
                         
-                        Text(payment.address)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                        HStack(alignment: .top, spacing: 8) {
+                            Text(payment.address)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(.primary)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            if let onCopyAddress = onCopyAddress {
+                                Button(action: {
+                                    onCopyAddress(payment.address)
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                }) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.blue)
+                                        .padding(4)
+                                        .background(Color.blue.opacity(0.1))
+                                        .cornerRadius(4)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
                     
                     HStack {
@@ -558,13 +579,18 @@ struct AssetRow: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
+                // Asset icon
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(asset.id == "native" ? .orange : .blue)
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(asset.code)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primary)
                     
                     if let issuer = asset.issuer, !issuer.isEmpty {
-                        Text(String(issuer.prefix(8)) + "...")
+                        Text(issuer.shortAddress)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
@@ -590,7 +616,7 @@ struct AssetRow: View {
                 HStack(spacing: 16) {
                     InfoItem(label: "Asset ID", value: asset.id)
                     if let issuer = asset.issuer, !issuer.isEmpty {
-                        InfoItem(label: "Issuer", value: String(issuer.prefix(12)) + "...")
+                        InfoItem(label: "Issuer", value: issuer.shortAddress)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -759,7 +785,7 @@ struct Overview: View {
                 accountOverviewSection
                 EnhancedBalancesView()
                     .environment(dashboardData)
-                EnhancedRecentPaymentsView()
+                EnhancedRecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
                     .environment(dashboardData)
                 accountDetailsSection
             }
@@ -896,13 +922,15 @@ struct Overview: View {
     }
     
     private func initialDataLoad() async {
-        await dashboardData.fetchStellarData()
+        // Load contacts first so payment history can display contact names
         if dashboardData.userContacts.isEmpty {
             await dashboardData.loadUserContacts()
         }
         if dashboardData.userKycData.isEmpty {
             await dashboardData.loadUserKycData()
         }
+        // Then fetch Stellar data including payments
+        await dashboardData.fetchStellarData()
     }
     
     private func refreshData() async {

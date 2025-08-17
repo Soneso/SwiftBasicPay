@@ -156,7 +156,7 @@ struct LoadingView: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Image(systemName: "bitcoinsign.circle.fill")
+            Image(systemName: "star.circle.fill")
                 .font(.system(size: 60))
                 .foregroundStyle(
                     LinearGradient(
@@ -218,7 +218,7 @@ struct SplashScreen: View {
                         .frame(width: 100, height: 100)
                         .shadow(color: Color.blue.opacity(0.3), radius: 10, y: 5)
                     
-                    Image(systemName: "bitcoinsign.circle.fill")
+                    Image(systemName: "star.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.white)
                 }

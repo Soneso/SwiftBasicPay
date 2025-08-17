@@ -11,7 +11,7 @@ public extension String {
 
     var shortAddress: String {
         if self.count == 56 {
-            return "\(self.prefix(4))...\(self.suffix(4))"
+            return "\(self.prefix(3))...\(self.suffix(3))"
         }
         return self
     }

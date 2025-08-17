@@ -764,15 +764,15 @@ struct SendPathPaymentBox: View {
                         Label {
                             Text("\(asset.code) (\(asset.formattedBalance))")
                         } icon: {
-                            Image(systemName: asset.id == "native" ? "star.circle" : "dollarsign.circle")
+                            Image(systemName: "star.circle")
                         }
                     }
                 }
             } label: {
                 HStack {
                     if let asset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAssetToSend }) {
-                        Image(systemName: asset.id == "native" ? "star.circle.fill" : "dollarsign.circle.fill")
-                            .foregroundStyle(asset.id == "native" ? .orange : .green)
+                        Image(systemName: "star.circle.fill")
+                            .foregroundStyle(asset.id == "native" ? .orange : .blue)
                         
                         Text(asset.code)
                             .font(.system(size: 16, weight: .medium))
@@ -813,15 +813,15 @@ struct SendPathPaymentBox: View {
                         Label {
                             Text(asset.code)
                         } icon: {
-                            Image(systemName: asset.id == "native" ? "star.circle" : "dollarsign.circle")
+                            Image(systemName: "star.circle")
                         }
                     }
                 }
             } label: {
                 HStack {
                     if let asset = viewModel.recipientAssets.first(where: { $0.id == viewModel.selectedAssetToReceive }) {
-                        Image(systemName: asset.id == "native" ? "star.circle.fill" : "dollarsign.circle.fill")
-                            .foregroundStyle(asset.id == "native" ? .orange : .green)
+                        Image(systemName: "star.circle.fill")
+                            .foregroundStyle(asset.id == "native" ? .orange : .blue)
                         
                         Text(asset.code)
                             .font(.system(size: 16, weight: .medium))

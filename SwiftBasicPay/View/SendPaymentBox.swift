@@ -385,7 +385,7 @@ struct SendPaymentBox: View {
         VStack(spacing: 16) {
             // Asset Picker
             VStack(alignment: .leading, spacing: 8) {
-                Label("Asset", systemImage: "dollarsign.circle")
+                Label("Asset", systemImage: "star.circle")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
                     .textCase(.uppercase)
@@ -396,15 +396,15 @@ struct SendPaymentBox: View {
                             Label {
                                 Text(asset.code)
                             } icon: {
-                                Image(systemName: asset.id == "native" ? "star.circle" : "dollarsign.circle")
+                                Image(systemName: "star.circle")
                             }
                         }
                     }
                 } label: {
                     HStack {
                         if let selectedAsset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAsset }) {
-                            Image(systemName: selectedAsset.id == "native" ? "star.circle.fill" : "dollarsign.circle.fill")
-                                .foregroundStyle(selectedAsset.id == "native" ? .orange : .green)
+                            Image(systemName: "star.circle.fill")
+                                .foregroundStyle(selectedAsset.id == "native" ? .orange : .blue)
                             
                             Text(selectedAsset.code)
                                 .font(.system(size: 16, weight: .medium))

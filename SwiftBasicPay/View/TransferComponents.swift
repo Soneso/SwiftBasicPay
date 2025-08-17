@@ -482,7 +482,7 @@ struct TransferAssetSelector: View {
                             Text(asset.code)
                                 .font(.body)
                             if !asset.asset.issuer.isEmpty {
-                                Text(String(asset.asset.issuer.prefix(20)) + "...")
+                                Text(asset.asset.issuer.shortAddress)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -524,7 +524,7 @@ struct TransferAssetSelector: View {
     @ViewBuilder
     private var labelHeader: some View {
         HStack {
-            Label("Select Asset", systemImage: "bitcoinsign.circle.fill")
+            Label("Select Asset", systemImage: "star.circle.fill")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
@@ -615,9 +615,6 @@ struct TransferAssetSelector: View {
     }
     
     private func formatIssuer(_ issuer: String) -> String {
-        if issuer.count > 16 {
-            return String(issuer.prefix(8)) + "..." + String(issuer.suffix(4))
-        }
-        return issuer
+        return issuer.shortAddress
     }
 }

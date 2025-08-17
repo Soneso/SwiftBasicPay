@@ -199,9 +199,9 @@ struct AssetCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        Image(systemName: "bitcoinsign.circle.fill")
+                        Image(systemName: "star.circle.fill")
                             .font(.system(size: 24))
-                            .foregroundColor(.blue)
+                            .foregroundColor(asset.id == "native" ? .orange : .blue)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(asset.code)
@@ -209,7 +209,7 @@ struct AssetCard: View {
                                 .foregroundColor(.primary)
                             
                             if let issuer = asset.issuer, !issuer.isEmpty {
-                                Text(String(issuer.prefix(8)) + "...")
+                                Text(issuer.shortAddress)
                                     .font(.system(size: 11, design: .monospaced))
                                     .foregroundColor(.secondary)
                             }
@@ -497,7 +497,7 @@ struct AssetRemovalSheet: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primary)
                     
-                    Text(String(asset.issuer.prefix(16)) + "...")
+                    Text(asset.issuer.shortAddress)
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
@@ -737,7 +737,7 @@ struct AssetsView: View {
                     .environment(dashboardData)
             } else if dashboardData.userAssets.isEmpty {
                 EmptyStateView(
-                    icon: "bitcoinsign.circle.badge.xmark",
+                    icon: "star.circle.badge.xmark",
                     title: "No Assets Yet",
                     message: "Your account doesn't hold any assets. Start by adding a trustline above."
                 )

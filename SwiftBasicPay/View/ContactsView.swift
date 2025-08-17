@@ -216,7 +216,7 @@ struct ContactCard: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                Text(String(contact.accountId.prefix(20)) + "...")
+                Text(contact.accountId.shortAddress)
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundColor(.secondary)
             }

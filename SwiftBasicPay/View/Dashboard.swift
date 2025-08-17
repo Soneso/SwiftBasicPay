@@ -35,7 +35,7 @@ enum DashboardTab: String, CaseIterable {
         switch self {
         case .overview: return "list.dash"
         case .payments: return "dollarsign.circle"
-        case .assets: return "bitcoinsign.arrow.circlepath"
+        case .assets: return "star.circle"
         case .transfers: return "paperplane"
         case .kyc: return "shield.lefthalf.filled.badge.checkmark"
         case .contacts: return "person.2"
@@ -47,7 +47,7 @@ enum DashboardTab: String, CaseIterable {
         switch self {
         case .overview: return "list.dash"
         case .payments: return "dollarsign.circle.fill"
-        case .assets: return "bitcoinsign.arrow.circlepath"
+        case .assets: return "star.circle.fill"
         case .transfers: return "paperplane.fill"
         case .kyc: return "shield.lefthalf.filled.badge.checkmark"
         case .contacts: return "person.2.fill"

@@ -223,6 +223,8 @@ class DashboardData {
     
     func loadUserContacts() async {
         await contactManager.loadUserContacts()
+        // Update payment contact names after loading contacts
+        paymentManager.updatePaymentContactNames(contactManager: contactManager)
     }
     
     func loadUserKycData() async {
@@ -563,6 +565,17 @@ class PaymentManager {
             return cached.isExpired
         }
         return true // No cache, should refresh
+    }
+    
+    /// Update contact names for existing payments
+    func updatePaymentContactNames(contactManager: ContactManager) {
+        if case .loaded(let payments) = recentPaymentsState {
+            for payment in payments {
+                if let contact = contactManager.findContact(byAccountId: payment.address) {
+                    payment.contactName = contact.name
+                }
+            }
+        }
     }
 }
 

@@ -46,6 +46,13 @@ final class PaymentsViewModel {
         selectedSegment = value
         pathPaymentMode = value == 1
     }
+    
+    func copyToClipboard(_ text: String) {
+        UIPasteboard.general.string = text
+        toastMessage = "Address copied to clipboard"
+        showSuccessToast = true
+        selectionFeedback.selectionChanged()
+    }
 }
 
 // MARK: - Main View
@@ -88,7 +95,7 @@ struct PaymentsView: View {
                         .padding(.horizontal)
                         .padding(.top, 16)
                     
-                    RecentPaymentsCard()
+                    RecentPaymentsCard(onCopyAddress: viewModel.copyToClipboard)
                         .environment(dashboardData)
                         .padding(.horizontal)
                         .padding(.top, 16)
@@ -387,18 +394,14 @@ struct AssetBalanceRow: View {
     let asset: AssetInfo
     
     private var assetIcon: String {
-        if asset.id == "native" {
-            return "star.circle.fill"
-        } else {
-            return "dollarsign.circle.fill"
-        }
+        return "star.circle.fill"
     }
     
     private var assetColor: Color {
         if asset.id == "native" {
             return .orange
         } else {
-            return .green
+            return .blue
         }
     }
     
@@ -434,6 +437,7 @@ struct AssetBalanceRow: View {
 struct RecentPaymentsCard: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var expandedPaymentIndex: Int?
+    var onCopyAddress: ((String) -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -502,7 +506,8 @@ struct RecentPaymentsCard: View {
     private func paymentRowView(payment: PaymentInfo, index: Int) -> some View {
         ModernPaymentRow(
             payment: payment,
-            isExpanded: expandedPaymentIndex == index
+            isExpanded: expandedPaymentIndex == index,
+            onCopyAddress: onCopyAddress
         )
         .onTapGesture {
             togglePaymentExpansion(index: index)
@@ -560,6 +565,7 @@ struct RecentPaymentsCard: View {
 struct ModernPaymentRow: View {
     let payment: PaymentInfo
     let isExpanded: Bool
+    var onCopyAddress: ((String) -> Void)? = nil
     
     private var directionIcon: String {
         payment.direction == .received ? "arrow.down.circle.fill" : "arrow.up.circle.fill"
@@ -602,7 +608,7 @@ struct ModernPaymentRow: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Text(payment.contactName ?? payment.address.shortAddress)
+                    Text("\(payment.direction == .received ? "From" : "To") \(payment.contactName ?? payment.address.shortAddress)")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -619,9 +625,36 @@ struct ModernPaymentRow: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Divider()
                     
-                    Label(payment.address, systemImage: "person.circle")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(payment.direction == .received ? "From" : "To") Address:")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        HStack(alignment: .top, spacing: 8) {
+                            Text(payment.address)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            if let onCopyAddress = onCopyAddress {
+                                Button(action: {
+                                    onCopyAddress(payment.address)
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                }) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.blue)
+                                        .padding(4)
+                                        .background(Color.blue.opacity(0.1))
+                                        .cornerRadius(4)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
                 }
                 .padding(.leading, 36)
                 .transition(.opacity.combined(with: .move(edge: .top)))
