@@ -289,12 +289,12 @@ struct TransferHistoryView: View {
             } else {
                 ProgressView()
                     .onAppear {
-                        viewModel = TransferHistoryViewModel(
-                            assetInfo: assetInfo,
-                            authToken: authToken,
-                            savedKycData: savedKycData
-                        )
-                        Task {
+                        Task { @MainActor in
+                            viewModel = TransferHistoryViewModel(
+                                assetInfo: assetInfo,
+                                authToken: authToken,
+                                savedKycData: savedKycData
+                            )
                             await viewModel?.loadTransfers()
                         }
                     }

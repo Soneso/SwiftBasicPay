@@ -13,7 +13,7 @@ import stellarsdk
 public class StellarService {
     
     public static var wallet = Wallet.testNet
-    public static let testAnchorDomain = "testanchor.stellar.org"
+    public static let testAnchorDomain = "anchor-sep-server-dev.stellar.org"//"testanchor.stellar.org"
     
     /// Checks if an account for the given address (account id) exists on the Stellar Network.
     /// 

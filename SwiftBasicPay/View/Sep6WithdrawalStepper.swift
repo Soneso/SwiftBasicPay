@@ -204,10 +204,11 @@ struct Sep6WithdrawalStepper: View {
                 }
                 
                 if info.sep12Status == Sep12Status.neesdInfo {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("Required KYC Fields")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .padding(.top, 8)
                         
                         Sep6KycFields(
                             kycFieldInfos: viewModel.kycFieldInfos,

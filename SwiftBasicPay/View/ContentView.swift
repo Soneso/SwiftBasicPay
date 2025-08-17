@@ -197,31 +197,50 @@ struct SplashScreen: View {
     
     var body: some View {
         ZStack {
-            // Background
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.blue.opacity(0.8),
-                    Color.purple.opacity(0.6)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Solid background that adapts to light/dark mode
+            Color(.systemBackground)
+                .ignoresSafeArea()
             
             VStack(spacing: 24) {
-                Image(systemName: "bitcoinsign.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.white)
-                    .scaleEffect(scale)
+                // Icon with gradient background
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.blue,
+                                    Color.blue.opacity(0.7)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 100, height: 100)
+                        .shadow(color: Color.blue.opacity(0.3), radius: 10, y: 5)
+                    
+                    Image(systemName: "bitcoinsign.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.white)
+                }
+                .scaleEffect(scale)
                 
                 Text("SwiftBasicPay")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.blue,
+                                Color.purple
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .opacity(opacity)
                 
                 Text("Stellar Payments Made Simple")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Color(.secondaryLabel))
                     .opacity(opacity)
             }
         }

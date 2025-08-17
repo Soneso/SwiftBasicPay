@@ -190,19 +190,20 @@ struct Sep6KycStatusView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Status Card
             HStack(spacing: 12) {
-                Image(systemName: statusIcon)
-                    .font(.title2)
-                    .foregroundStyle(statusColor)
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.blue)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("KYC Status")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color(.systemGray))
                     
                     Text(statusMessage)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
                 
                 Spacer()
@@ -217,13 +218,13 @@ struct Sep6KycStatusView: View {
                     .controlSize(.small)
                 }
             }
-            .padding()
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(statusColor.opacity(0.1))
+                    .fill(Color(.systemGray6).opacity(0.5))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(statusColor.opacity(0.3), lineWidth: 1)
+                            .stroke(Color(.systemBlue).opacity(0.3), lineWidth: 1)
                     )
             )
         }
@@ -239,24 +240,27 @@ struct Sep6KycFields: View {
     let indexForKycFieldKey: (String) -> Int
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             if !collectedKycDetails.isEmpty {
                 ForEach(kycFieldInfos, id: \.key) { info in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(info.key)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                    VStack(alignment: .leading, spacing: 10) {
+                        // Field label
+                        HStack(spacing: 4) {
+                            Text(formatFieldLabel(info.key))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.primary)
                             
                             if !info.optional {
                                 Text("*")
-                                    .foregroundStyle(.orange)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Color.orange)
                             }
                             
                             Spacer()
                         }
                         
                         if let choices = info.info.choices, !choices.isEmpty {
+                            // Dropdown field
                             Menu {
                                 ForEach(choices, id: \.self) { choice in
                                     Button(choice) {
@@ -266,41 +270,94 @@ struct Sep6KycFields: View {
                             } label: {
                                 HStack {
                                     Text(collectedKycDetails[indexForKycFieldKey(info.key)] == selectItem ? 
-                                         "Select \(info.key)" : collectedKycDetails[indexForKycFieldKey(info.key)])
+                                         "Select \(formatFieldLabel(info.key))" : collectedKycDetails[indexForKycFieldKey(info.key)])
+                                        .font(.system(size: 16))
                                         .foregroundStyle(collectedKycDetails[indexForKycFieldKey(info.key)] == selectItem ? 
-                                                       .secondary : .primary)
+                                                       Color(.placeholderText) : .primary)
                                     
                                     Spacer()
                                     
                                     Image(systemName: "chevron.down")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(Color(.systemGray2))
                                 }
-                                .padding()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color(.systemGray6))
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemBackground))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color(.systemGray4), lineWidth: 1)
+                                        )
                                 )
                             }
                         } else {
-                            TextField(info.key, text: $collectedKycDetails[indexForKycFieldKey(info.key)])
+                            // Text input field
+                            TextField(formatFieldPlaceholder(info.key), text: $collectedKycDetails[indexForKycFieldKey(info.key)])
+                                .font(.system(size: 16))
                                 .textFieldStyle(.plain)
-                                .padding()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color(.systemGray6))
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemBackground))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color(.systemGray4), lineWidth: 1)
+                                        )
                                 )
+                                .autocorrectionDisabled()
+                                .keyboardType(getKeyboardType(for: info.key))
+                                .textInputAutocapitalization(getAutoCapitalization(for: info.key))
                         }
                         
+                        // Field description
                         if let description = info.info.description {
                             Text(description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(.systemGray))
+                                .padding(.horizontal, 4)
                         }
                     }
                 }
             }
         }
+    }
+    
+    // Helper function to format field labels
+    private func formatFieldLabel(_ key: String) -> String {
+        key.replacingOccurrences(of: "_", with: " ")
+           .split(separator: " ")
+           .map { $0.prefix(1).uppercased() + $0.dropFirst().lowercased() }
+           .joined(separator: " ")
+    }
+    
+    // Helper function to format field placeholders
+    private func formatFieldPlaceholder(_ key: String) -> String {
+        "Enter " + formatFieldLabel(key).lowercased()
+    }
+    
+    // Helper function to determine keyboard type
+    private func getKeyboardType(for key: String) -> UIKeyboardType {
+        if key.lowercased().contains("email") {
+            return .emailAddress
+        } else if key.lowercased().contains("phone") {
+            return .phonePad
+        } else if key.lowercased().contains("number") || key.lowercased().contains("amount") {
+            return .numberPad
+        }
+        return .default
+    }
+    
+    // Helper function to determine auto-capitalization
+    private func getAutoCapitalization(for key: String) -> TextInputAutocapitalization {
+        if key.lowercased().contains("email") {
+            return .never
+        } else if key.lowercased().contains("name") {
+            return .words
+        }
+        return .sentences
     }
 }
 

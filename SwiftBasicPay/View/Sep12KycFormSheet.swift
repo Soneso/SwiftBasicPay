@@ -156,14 +156,6 @@ struct Sep12KycFormSheet: View {
                     }
                     .foregroundStyle(.blue)
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Submit") {
-                        handleSubmit()
-                    }
-                    .fontWeight(.semibold)
-                    .disabled(viewModel.isSubmitting)
-                }
             }
         }
     }
@@ -175,18 +167,23 @@ struct Sep12KycFormSheet: View {
         ScrollView {
             VStack(spacing: 24) {
                 // Header card
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
                         Image(systemName: "person.text.rectangle")
-                            .font(.title2)
+                            .font(.system(size: 24))
                             .foregroundStyle(.blue)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                Circle()
+                                    .fill(Color.blue.opacity(0.1))
+                            )
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Required Information")
-                                .font(.headline)
+                                .font(.system(size: 18, weight: .semibold))
                             Text("Please provide your KYC details")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color(.systemGray))
                         }
                         
                         Spacer()
@@ -195,27 +192,27 @@ struct Sep12KycFormSheet: View {
                     if let customerId = viewModel.customerId {
                         HStack {
                             Label("Customer ID", systemImage: "person.crop.circle")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color(.systemGray))
                             
                             Spacer()
                             
                             Text(customerId)
-                                .font(.caption)
-                                .fontWeight(.medium)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.primary)
                         }
-                        .padding()
+                        .padding(12)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray6))
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.systemGray6).opacity(0.5))
                         )
                     }
                 }
-                .padding()
+                .padding(20)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(Color(.systemBackground))
-                        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                        .shadow(color: .black.opacity(0.05), radius: 3, y: 2)
                 )
                 
                 // Form fields
@@ -233,22 +230,51 @@ struct Sep12KycFormSheet: View {
                 
                 // Error message
                 if showValidationError, let error = viewModel.kycFieldsError {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 14))
                             .foregroundStyle(.red)
                         Text(error)
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.red)
+                        Spacer()
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity)
+                    .padding(14)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(Color.red.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                            )
                     )
                     .padding(.horizontal)
                     .transition(.scale.combined(with: .opacity))
                 }
+                
+                // Submit button
+                Button(action: handleSubmit) {
+                    HStack {
+                        if viewModel.isSubmitting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Submit")
+                                .font(.system(size: 17, weight: .semibold))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .foregroundColor(.white)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(viewModel.isSubmitting ? Color.gray : Color.blue)
+                    )
+                }
+                .disabled(viewModel.isSubmitting)
+                .padding(.horizontal)
+                .padding(.top, 8)
             }
             .padding(.vertical)
         }
@@ -305,16 +331,17 @@ struct KycFieldInput: View {
     var focusedField: FocusState<String?>.Binding
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             // Label
-            HStack {
-                Text(info.key)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+            HStack(spacing: 4) {
+                Text(formatFieldLabel(info.key))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
                 
                 if !info.optional {
                     Text("*")
-                        .foregroundStyle(.orange)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.orange)
                 }
                 
                 Spacer()
@@ -335,56 +362,106 @@ struct KycFieldInput: View {
                     }
                 } label: {
                     HStack {
-                        Text(value == selectItem ? "Select \(info.key)" : value)
-                            .foregroundStyle(value == selectItem ? .secondary : .primary)
+                        Text(value == selectItem ? "Select \(formatFieldLabel(info.key))" : value)
+                            .font(.system(size: 16))
+                            .foregroundStyle(value == selectItem ? Color(.placeholderText) : .primary)
                             .lineLimit(1)
                         
                         Spacer()
                         
                         Image(systemName: "chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color(.systemGray2))
                     }
-                    .padding()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                     .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(.systemGray6))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemBackground))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(
-                                        focusedField.wrappedValue == info.key ? Color.blue : Color.clear,
-                                        lineWidth: 2
+                                        focusedField.wrappedValue == info.key ? Color.blue.opacity(0.5) : Color(.systemGray4),
+                                        lineWidth: 1
                                     )
                             )
                     )
                 }
             } else {
                 // Text field for regular input
-                TextField(info.key, text: $value)
+                TextField(formatFieldPlaceholder(info.key), text: $value)
+                    .font(.system(size: 16))
                     .textFieldStyle(.plain)
                     .focused(focusedField, equals: info.key)
-                    .padding()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                     .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(.systemGray6))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemBackground))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(
-                                        focusedField.wrappedValue == info.key ? Color.blue : Color.clear,
-                                        lineWidth: 2
+                                        focusedField.wrappedValue == info.key ? Color.blue.opacity(0.5) : Color(.systemGray4),
+                                        lineWidth: 1
                                     )
                             )
                     )
+                    .autocorrectionDisabled()
+                    .keyboardType(getKeyboardType(for: info.key))
+                    .textInputAutocapitalization(getAutoCapitalization(for: info.key))
                     .animation(.easeInOut(duration: 0.2), value: focusedField.wrappedValue)
             }
             
             // Description
             if let description = info.info.description {
                 Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(.systemGray))
+                    .padding(.horizontal, 4)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+    
+    // Helper function to format field labels
+    private func formatFieldLabel(_ key: String) -> String {
+        key.replacingOccurrences(of: "_", with: " ")
+           .split(separator: " ")
+           .map { $0.prefix(1).uppercased() + $0.dropFirst().lowercased() }
+           .joined(separator: " ")
+    }
+    
+    // Helper function to format field placeholders
+    private func formatFieldPlaceholder(_ key: String) -> String {
+        let label = formatFieldLabel(key).lowercased()
+        return label
+    }
+    
+    // Helper function to determine keyboard type
+    private func getKeyboardType(for key: String) -> UIKeyboardType {
+        let lowercasedKey = key.lowercased()
+        if lowercasedKey.contains("email") || lowercasedKey.contains("e-mail") || lowercasedKey.contains("e_mail") {
+            return .emailAddress
+        } else if lowercasedKey.contains("phone") || lowercasedKey.contains("mobile") || lowercasedKey.contains("tel") {
+            return .phonePad
+        } else if lowercasedKey.contains("number") || lowercasedKey.contains("amount") || lowercasedKey.contains("zip") || lowercasedKey.contains("postal") {
+            return .numberPad
+        } else if lowercasedKey.contains("url") || lowercasedKey.contains("website") {
+            return .URL
+        }
+        return .default
+    }
+    
+    // Helper function to determine auto-capitalization
+    private func getAutoCapitalization(for key: String) -> TextInputAutocapitalization {
+        let lowercasedKey = key.lowercased()
+        if lowercasedKey.contains("email") || lowercasedKey.contains("e-mail") || lowercasedKey.contains("e_mail") {
+            return .never
+        } else if lowercasedKey.contains("name") || lowercasedKey.contains("city") || lowercasedKey.contains("country") {
+            return .words
+        } else if lowercasedKey.contains("address") {
+            return .words
+        }
+        return .sentences
     }
 }
