@@ -38,32 +38,32 @@ SwiftBasicPay is a demonstration iOS wallet application built with SwiftUI that 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         SwiftUI Views                        │
-│  (ContentView, Dashboard, Payments, Assets, Transfers, etc.) │
+│                         SwiftUI Views                       │
+│  (ContentView, Dashboard, Payments, Assets, Transfers, etc.)│
 └──────────────────────┬──────────────────────────────────────┘
                        │ @Environment injection
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      DashboardData                           │
-│              (@Observable + @MainActor)                      │
-│  ┌──────────┬──────────┬──────────┬──────────┐             │
-│  │ Asset    │ Payment  │ Contact  │ KYC      │             │
-│  │ Manager  │ Manager  │ Manager  │ Manager  │             │
-│  └──────────┴──────────┴──────────┴──────────┘             │
+│                      DashboardData                          │
+│              (@Observable + @MainActor)                     │
+│  ┌──────────┬──────────┬──────────┬──────────┐              │
+│  │ Asset    │ Payment  │ Contact  │ KYC      │              │
+│  │ Manager  │ Manager  │ Manager  │ Manager  │              │
+│  └──────────┴──────────┴──────────┴──────────┘              │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     Service Layer                            │
-│  ┌──────────────┬──────────────┬──────────────┐            │
-│  │ Stellar      │ Auth         │ Secure       │            │
-│  │ Service      │ Service      │ Storage      │            │
-│  └──────────────┴──────────────┴──────────────┘            │
+│                     Service Layer                           │
+│  ┌──────────────┬──────────────┬──────────────┐             │
+│  │ Stellar      │ Auth         │ Secure       │             │
+│  │ Service      │ Service      │ Storage      │             │
+│  └──────────────┴──────────────┴──────────────┘             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    External Systems                          │
+│                    External Systems                         │
 │        (Stellar Network, Anchors, Keychain)                 │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -165,7 +165,6 @@ class AssetManager {
 **SecureStorage**: Keychain wrapper
 - Encrypted storage for sensitive data
 - Keypair management
-- PIN storage
 - Contact and KYC data persistence
 
 ## Data Flow
@@ -268,8 +267,7 @@ App Launch
 ### Data Protection
 
 1. **Keychain Storage** (via SimpleKeychain)
-   - Stellar keypairs
-   - User PIN
+   - Encrypted Stellar keypairs
    - Sensitive user data
 
 2. **In-Memory Protection**
@@ -279,13 +277,11 @@ App Launch
 
 3. **Authentication Layers**
    - PIN verification for app access
-   - Additional PIN for sensitive operations
-   - Biometric authentication support
+   - Additional PIN for sensitive operations and for signing Stellar transactions
 
 ### Network Security
 
 - HTTPS only for external communications
-- Certificate pinning for critical endpoints
 - Request signing for Stellar transactions
 
 ## Network Layer
@@ -311,7 +307,7 @@ class StellarService {
 
 - **SEP-6**: Deposit/Withdrawal via anchors
 - **SEP-12**: KYC/AML data collection
-- **SEP-24**: Interactive deposit/withdrawal flows
+- **SEP-24**: Interactive deposit/withdrawal flows via anchors
 
 ### Error Handling
 
