@@ -36,8 +36,9 @@ class Sep6WithdrawalStepperViewModel: Sep6StepperViewModel {
         if let winfo = withdrawInfo.types?.first?.value {
             for key in winfo.keys {
                 if let val = winfo[key] {
-                    if val.choices != nil && !val.choices!.isEmpty {
-                        self.collectedTransferDetails.append(selectItem)
+                    if let choices = val.choices, !choices.isEmpty {
+                        // Auto-select the first choice for dropdown fields
+                        self.collectedTransferDetails.append(choices[0])
                     } else {
                         self.collectedTransferDetails.append("")
                     }

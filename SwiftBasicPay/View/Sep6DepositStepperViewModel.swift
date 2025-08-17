@@ -36,8 +36,9 @@ class Sep6DepositStepperViewModel: Sep6StepperViewModel {
         if let dinfo = depositInfo.fieldsInfo {
             for key in dinfo.keys {
                 if let val = dinfo[key] {
-                    if val.choices != nil && !val.choices!.isEmpty {
-                        self.collectedTransferDetails.append(selectItem)
+                    if let choices = val.choices, !choices.isEmpty {
+                        // Auto-select the first choice for dropdown fields
+                        self.collectedTransferDetails.append(choices[0])
                     } else {
                         self.collectedTransferDetails.append("")
                     }
