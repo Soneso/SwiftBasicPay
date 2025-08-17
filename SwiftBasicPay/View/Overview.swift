@@ -324,7 +324,7 @@ struct SecurePINInput: View {
 // MARK: - Enhanced Recent Payments View
 
 struct EnhancedRecentPaymentsView: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var selectedPayment: PaymentInfo?
     
     var body: some View {
@@ -511,7 +511,7 @@ struct PaymentRow: View {
 // MARK: - Enhanced Balances View
 
 struct EnhancedBalancesView: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var selectedAsset: AssetInfo?
     
     var body: some View {
@@ -528,7 +528,7 @@ struct EnhancedBalancesView: View {
                 .padding(.vertical, 20)
             } else if let error = dashboardData.userAssetsLoadingError {
                 ErrorStateView(error: error)
-                    .environmentObject(dashboardData)
+                    .environment(dashboardData)
             } else if dashboardData.userAssets.isEmpty {
                 EmptyStateView(
                     icon: "creditcard.trianglebadge.exclamationmark",
@@ -648,7 +648,7 @@ struct ErrorStateView: View {
     let error: DashboardDataError
     @State private var isFundingAccount = false
     @State private var fundingError: String?
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     
     var body: some View {
         VStack(spacing: 12) {
@@ -708,6 +708,7 @@ struct ErrorStateView: View {
         .frame(maxWidth: .infinity)
     }
     
+    @MainActor
     private func fundAccount() async {
         isFundingAccount = true
         fundingError = nil
@@ -731,11 +732,16 @@ struct ErrorStateView: View {
 
 // MARK: - Main Overview View
 
+@MainActor
 struct Overview: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = OverviewViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: OverviewViewModel
     @State private var isRefreshing = false
     @Namespace private var animation
+    
+    init() {
+        self._viewModel = State(wrappedValue: OverviewViewModel())
+    }
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -752,9 +758,9 @@ struct Overview: View {
                 
                 accountOverviewSection
                 EnhancedBalancesView()
-                    .environmentObject(dashboardData)
+                    .environment(dashboardData)
                 EnhancedRecentPaymentsView()
-                    .environmentObject(dashboardData)
+                    .environment(dashboardData)
                 accountDetailsSection
             }
             .padding(.horizontal, 16)
@@ -972,5 +978,5 @@ struct ErrorBanner: View {
 
 #Preview {
     Overview()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

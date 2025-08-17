@@ -12,7 +12,6 @@ import AlertToast
 // MARK: - View Model
 
 @Observable
-@MainActor
 class TransfersViewModel {
     // State management
     enum ViewState: Equatable {
@@ -73,12 +72,14 @@ class TransfersViewModel {
         !anchoredAssets.isEmpty
     }
     
+    @MainActor
     var isAccountFunded: Bool {
         !dashboardData.userAssets.isEmpty
     }
     
     // MARK: - Actions
     
+    @MainActor
     func loadAnchoredAssets() async {
         isLoadingAssets = true
         anchoredAssetsError = nil
@@ -129,6 +130,7 @@ class TransfersViewModel {
         }
     }
     
+    @MainActor
     private func checkWebAuth(anchor: stellar_wallet_sdk.Anchor) async {
         state = .loading(message: "Loading anchor configuration")
         tomlInfo = nil
@@ -148,6 +150,7 @@ class TransfersViewModel {
         state = .pinRequired
     }
     
+    @MainActor
     func authenticateWithPin() async {
         let feedback = UINotificationFeedbackGenerator()
         
@@ -194,6 +197,7 @@ class TransfersViewModel {
         await loadTransferInfo()
     }
     
+    @MainActor
     private func loadTransferInfo() async {
         sep6Info = nil
         sep24Info = nil
@@ -262,9 +266,10 @@ class TransfersViewModel {
 
 // MARK: - Main View
 
+@MainActor
 struct TransfersView: View {
     
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var viewModel: TransfersViewModel
     
     init() {
@@ -602,5 +607,5 @@ struct TransfersView: View {
 
 #Preview {
     TransfersView()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

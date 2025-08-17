@@ -12,7 +12,6 @@ import AlertToast
 // MARK: - View Model
 
 @Observable
-@MainActor
 final class KycViewModel {
     // UI State
     var selectedItem: KycEntry?
@@ -63,6 +62,7 @@ final class KycViewModel {
         impact.impactOccurred()
     }
     
+    @MainActor
     func saveEditedValue(dashboardData: DashboardData) async {
         guard let item = selectedItem else { return }
         
@@ -101,6 +101,7 @@ final class KycViewModel {
         isSaving = false
     }
     
+    @MainActor
     func refreshData(dashboardData: DashboardData) async {
         isRefreshing = true
         
@@ -116,6 +117,7 @@ final class KycViewModel {
         isRefreshing = false
     }
     
+    @MainActor
     func deleteValue(dashboardData: DashboardData) async {
         guard let item = itemToDelete else { return }
         
@@ -147,10 +149,15 @@ final class KycViewModel {
 
 // MARK: - Main View
 
+@MainActor
 struct KycView: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = KycViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: KycViewModel
     @FocusState private var isTextFieldFocused: Bool
+    
+    init() {
+        self._viewModel = State(wrappedValue: KycViewModel())
+    }
     
     var body: some View {
         NavigationStack {

@@ -502,18 +502,19 @@ struct InfoRow: View {
     var onCopy: (() -> Void)? = nil
     
     var body: some View {
-        HStack {
+        HStack(alignment: .top) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .frame(minWidth: 80, alignment: .leading)
             
             Spacer()
             
             Text(value)
                 .font(.caption)
                 .fontWeight(.medium)
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
             
             if showCopy, let onCopy = onCopy {
                 Button(action: onCopy) {

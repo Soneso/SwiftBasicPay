@@ -280,13 +280,18 @@ final class SendPaymentViewModel {
 
 // MARK: - Main View
 
+@MainActor
 struct SendPaymentBox: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = SendPaymentViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: SendPaymentViewModel
     @FocusState private var focusedField: PaymentField?
     
     enum PaymentField {
         case recipient, amount, memo, pin
+    }
+    
+    init() {
+        self._viewModel = State(wrappedValue: SendPaymentViewModel())
     }
     
     var body: some View {
@@ -724,6 +729,6 @@ struct SendPaymentBox: View {
 
 #Preview {
     SendPaymentBox()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
         .padding()
 }

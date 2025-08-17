@@ -413,10 +413,15 @@ struct AddContactForm: View {
 
 // MARK: - Main Contacts View
 
+@MainActor
 struct ContactsView: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = ContactsViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: ContactsViewModel
     @State private var isRefreshing = false
+    
+    init() {
+        self._viewModel = State(wrappedValue: ContactsViewModel())
+    }
     
     var body: some View {
         NavigationView {
@@ -674,5 +679,5 @@ struct ContactCardSkeleton: View {
 
 #Preview {
     ContactsView()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

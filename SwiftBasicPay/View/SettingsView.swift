@@ -113,8 +113,9 @@ struct SettingsItem: Identifiable {
 
 // MARK: - Main View
 
+@MainActor
 struct SettingsView: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var viewModel = SettingsViewModel()
     private let logoutUser: () -> Void
     
@@ -492,5 +493,5 @@ public func logoutUserSettingsPreview() -> Void {}
 
 #Preview {
     SettingsView(logoutUser: logoutUserSettingsPreview)
-        .environmentObject(DashboardData(userAddress: "GBUJX4IGKSWL5C5T57Z5ED5KH3DNDVXHQPVPG7T76UZEEBK7M2PLQPCD"))
+        .environment(DashboardData(userAddress: "GBUJX4IGKSWL5C5T57Z5ED5KH3DNDVXHQPVPG7T76UZEEBK7M2PLQPCD"))
 }

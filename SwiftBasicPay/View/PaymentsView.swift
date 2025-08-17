@@ -14,7 +14,6 @@ import Observation
 // MARK: - View Model
 
 @Observable
-@MainActor
 final class PaymentsViewModel {
     // UI State
     var pathPaymentMode = false
@@ -51,10 +50,15 @@ final class PaymentsViewModel {
 
 // MARK: - Main View
 
+@MainActor
 struct PaymentsView: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = PaymentsViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: PaymentsViewModel
     @State private var isRefreshing = false
+    
+    init() {
+        self._viewModel = State(wrappedValue: PaymentsViewModel())
+    }
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -67,7 +71,7 @@ struct PaymentsView: View {
                         .padding(.top, 20)
                     
                     BalancesCard()
-                        .environmentObject(dashboardData)
+                        .environment(dashboardData)
                         .padding(.horizontal)
                         .padding(.top, 16)
                 } else {
@@ -80,12 +84,12 @@ struct PaymentsView: View {
                         .padding(.top, 16)
                     
                     BalancesCard()
-                        .environmentObject(dashboardData)
+                        .environment(dashboardData)
                         .padding(.horizontal)
                         .padding(.top, 16)
                     
                     RecentPaymentsCard()
-                        .environmentObject(dashboardData)
+                        .environment(dashboardData)
                         .padding(.horizontal)
                         .padding(.top, 16)
                 }
@@ -172,7 +176,7 @@ struct PaymentsView: View {
                     viewModel.showSuccess(message: message)
                 }
             )
-            .environmentObject(dashboardData)
+            .environment(dashboardData)
             .transition(.asymmetric(
                 insertion: .move(edge: .trailing).combined(with: .opacity),
                 removal: .move(edge: .leading).combined(with: .opacity)
@@ -183,7 +187,7 @@ struct PaymentsView: View {
                     viewModel.showSuccess(message: message)
                 }
             )
-            .environmentObject(dashboardData)
+            .environment(dashboardData)
             .transition(.asymmetric(
                 insertion: .move(edge: .leading).combined(with: .opacity),
                 removal: .move(edge: .trailing).combined(with: .opacity)
@@ -236,7 +240,7 @@ struct EmptyWalletCard: View {
 // MARK: - Modern Balances Card
 
 struct BalancesCard: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var isFundingAccount = false
     @State private var fundingError: String?
     
@@ -428,7 +432,7 @@ struct AssetBalanceRow: View {
 // MARK: - Recent Payments Card
 
 struct RecentPaymentsCard: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var expandedPaymentIndex: Int?
     
     var body: some View {
@@ -445,6 +449,7 @@ struct RecentPaymentsCard: View {
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
     }
     
+    @MainActor
     private var headerView: some View {
         HStack {
             Image(systemName: "clock.arrow.circlepath")
@@ -463,6 +468,7 @@ struct RecentPaymentsCard: View {
         }
     }
     
+    @MainActor
     @ViewBuilder
     private var contentView: some View {
         if dashboardData.isLoadingRecentPayments {
@@ -480,6 +486,7 @@ struct RecentPaymentsCard: View {
         }
     }
     
+    @MainActor
     private var paymentsListView: some View {
         VStack(spacing: 12) {
             ForEach(Array(dashboardData.recentPayments.prefix(5).enumerated()), id: \.offset) { index, payment in
@@ -671,21 +678,21 @@ struct PaymentSkeletonLoader: View {
 
 struct ModernSendPaymentCard: View {
     let onSuccess: (String) -> Void
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     
     var body: some View {
         SendPaymentBox()
-            .environmentObject(dashboardData)
+            .environment(dashboardData)
     }
 }
 
 struct ModernSendPathPaymentCard: View {
     let onSuccess: (String) -> Void
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     
     var body: some View {
         SendPathPaymentBox()
-            .environmentObject(dashboardData)
+            .environment(dashboardData)
     }
 }
 
@@ -696,5 +703,5 @@ struct ModernSendPathPaymentCard: View {
 
 #Preview {
     PaymentsView()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

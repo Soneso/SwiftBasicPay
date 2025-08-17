@@ -83,8 +83,9 @@ final class DashboardViewModel {
 
 // MARK: - Enhanced Dashboard
 
+@MainActor
 struct Dashboard: View {
-    @EnvironmentObject var dashboardData: DashboardData
+    @Environment(DashboardData.self) var dashboardData
     @State private var viewModel = DashboardViewModel()
     private let logoutUser: () -> Void
     
@@ -147,25 +148,25 @@ struct Dashboard: View {
         switch tab {
         case .overview:
             Overview()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .payments:
             PaymentsView()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .assets:
             AssetsView()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .transfers:
             TransfersView()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .kyc:
             KycView()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .contacts:
             ContactsView()
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         case .settings:
             SettingsView(logoutUser: logoutUser)
-                .environmentObject(dashboardData)
+                .environment(dashboardData)
         }
     }
     
@@ -217,5 +218,5 @@ struct CustomTabBarModifier: ViewModifier {
 
 #Preview {
     Dashboard(logoutUser: {})
-        .environmentObject(DashboardData(userAddress: "GAG4MYEEIJZ7DGS2PGCEEY5PX3HMZC7L7KK62BFLJ3LSYQIS4TYC4ETJ"))
+        .environment(DashboardData(userAddress: "GAG4MYEEIJZ7DGS2PGCEEY5PX3HMZC7L7KK62BFLJ3LSYQIS4TYC4ETJ"))
 }

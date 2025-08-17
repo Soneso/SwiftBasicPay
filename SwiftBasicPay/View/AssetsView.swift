@@ -133,6 +133,7 @@ final class AssetsViewModel {
         isRemovingAsset = false
     }
     
+    @MainActor
     private func getSelectedAsset(dashboardData: DashboardData) async throws -> IssuedAssetId {
         if selectedAsset != "Custom asset" {
             let availableAssets = getAvailableAssets(dashboardData: dashboardData)
@@ -153,6 +154,7 @@ final class AssetsViewModel {
         }
     }
     
+    @MainActor
     func getAvailableAssets(dashboardData: DashboardData) -> [IssuedAssetId] {
         var result = StellarService.testAnchorAssets
         for asset in dashboardData.userAssets {
@@ -579,10 +581,15 @@ struct AssetRemovalSheet: View {
 
 // MARK: - Main Assets View
 
+@MainActor
 struct AssetsView: View {
-    @EnvironmentObject var dashboardData: DashboardData
-    @State private var viewModel = AssetsViewModel()
+    @Environment(DashboardData.self) var dashboardData
+    @State private var viewModel: AssetsViewModel
     @State private var isRefreshing = false
+    
+    init() {
+        self._viewModel = State(wrappedValue: AssetsViewModel())
+    }
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -727,7 +734,7 @@ struct AssetsView: View {
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
             } else if let error = dashboardData.userAssetsLoadingError {
                 ErrorStateView(error: error)
-                    .environmentObject(dashboardData)
+                    .environment(dashboardData)
             } else if dashboardData.userAssets.isEmpty {
                 EmptyStateView(
                     icon: "bitcoinsign.circle.badge.xmark",
@@ -784,5 +791,5 @@ struct AssetsView: View {
 
 #Preview {
     AssetsView()
-        .environmentObject(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
+        .environment(DashboardData(userAddress: "GBDKRTMVEL2PK7BHHDDEL6J2QPFGXQW37GTOK42I54TZY23URZTSETR5"))
 }

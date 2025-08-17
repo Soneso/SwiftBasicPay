@@ -102,7 +102,7 @@ struct ContentView: View {
                 case .authenticated:
                     if let dashboardData = appState.dashboardData {
                         Dashboard(logoutUser: handleLogout)
-                            .environmentObject(dashboardData)
+                            .environment(dashboardData)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
                                 removal: .move(edge: .leading).combined(with: .opacity)
