@@ -64,7 +64,7 @@ class DashboardData {
     private var lastFullRefreshTime: Date?
     private let minimumRefreshInterval: TimeInterval = 2.0 // Minimum 2 seconds between full refreshes
     
-    // MARK: - Data state properties for backward compatibility
+    // MARK: - Data State Properties
     
     /// Data states for all async operations (delegated to managers)
     var userAssetsState: DataState<[AssetInfo]> {
@@ -83,7 +83,7 @@ class DashboardData {
         kycManager.userKycDataState
     }
     
-    // MARK: - Computed properties for backward compatibility
+    // MARK: - Public API Properties
     
     /// True if the user account exists on the Stellar Network (otherwise it needs to be funded)
     var userAccountExists: Bool {
@@ -110,7 +110,7 @@ class DashboardData {
         kycManager.userKycData
     }
     
-    // MARK: - Loading state computed properties for backward compatibility
+    // MARK: - Loading State Properties
     
     var isLoadingAssets: Bool {
         assetManager.isLoadingAssets
