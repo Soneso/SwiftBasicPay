@@ -31,13 +31,6 @@ struct BalancesView: View {
                 // Error state - includes account not found
                 ErrorStateView(error: error)
                     .environment(dashboardData)
-            } else if dashboardData.userAssets.isEmpty {
-                // Empty state
-                EmptyStateView(
-                    icon: "creditcard.trianglebadge.exclamationmark",
-                    title: "No Assets",
-                    message: "Your account doesn't hold any assets yet"
-                )
             } else {
                 // Display assets
                 VStack(spacing: 12) {
@@ -138,10 +131,7 @@ private func fundAccount() async {
         // Request funding from Friendbot
         try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
         
-        // Clear the account cache to force a fresh check
-        dashboardData.clearAccountCache()
-        
-        // Force refresh all data (bypasses the 2-second minimum refresh interval)
+        // Force refresh all data (clears cache and bypasses the 2-second minimum refresh interval)
         await dashboardData.forceRefreshAll()
         
         // Haptic feedback for success
@@ -182,10 +172,7 @@ The wallet SDK handles:
 After successful funding, the app performs a force refresh:
 
 ```swift
-// Clear the account cache to force a fresh check
-dashboardData.clearAccountCache()
-
-// Force refresh all data (bypasses cache and minimum refresh interval)
+// Force refresh all data (clears all caches and bypasses minimum refresh interval)
 await dashboardData.forceRefreshAll()
 ```
 
@@ -196,22 +183,11 @@ This force refresh operation:
 4. Loads initial payment history
 5. Updates all dependent views immediately
 
-### AssetManager Cache Clearing
-
-The `AssetManager` properly handles the transition:
-
-```swift
-/// Clear cached account existence (useful when account might have been funded)
-func clearAccountCache() {
-    cachedAccountExists = nil
-}
-```
-
 ## Funded Account Display
 
 After funding, the UI automatically updates:
 
-<img src="./img/account_creation/account_funded.png" alt="Account funded UI" width="40%">
+<img src="./img/account_creation/account_funded.png" alt="Account funded UI" width="30%">
 
 The assets are displayed using the `AssetRow` component within `BalancesView`:
 

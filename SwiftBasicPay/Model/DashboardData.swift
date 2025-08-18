@@ -238,12 +238,6 @@ class DashboardData {
         await paymentManager.fetchRecentPayments()
     }
     
-    /// Clear cached account existence (useful when account might have been funded)
-    func clearAccountCache() {
-        assetManager.clearAccountCache()
-        paymentManager.clearAccountCache()
-    }
-    
     // MARK: - Manager Access (for advanced usage)
     
     /// Direct access to asset manager for advanced operations
@@ -392,11 +386,6 @@ class AssetManager {
             cachedAccountExists = CacheEntry(data: false, timestamp: Date(), ttl: accountExistenceTTL)
             return false
         }
-    }
-    
-    /// Clear cached account existence (useful when account might have been funded)
-    func clearAccountCache() {
-        cachedAccountExists = nil
     }
     
     /// Clear all caches
@@ -552,11 +541,6 @@ class PaymentManager {
             cachedAccountExists = CacheEntry(data: false, timestamp: Date(), ttl: accountExistenceTTL)
             return false
         }
-    }
-    
-    /// Clear cached account existence (useful when account might have been funded)
-    func clearAccountCache() {
-        cachedAccountExists = nil
     }
     
     /// Clear all caches

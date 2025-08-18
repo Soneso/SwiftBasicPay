@@ -13,23 +13,38 @@ final class SendPathPaymentViewModel {
     // Form State
     var selectedAssetToSend = "native"
     var selectedAssetToReceive = "native"
-    var strictSend = true  // true = strict send, false = strict receive
+    var selectedRecipient = "Select recipient"
+    var recipientAccountId = ""
+    var pin = ""
+    var amountToSend = ""
+    var memoToSend = ""
+    var strictSend = true
     
-    // Path Finding
+    // UI State
+    var state: PathPaymentState = .initial
+    var errorMessage: String?
+    var showSuccessToast = false
+    var toastMessage = ""
     var selectedPath: PaymentPath?
+    
+    // Validation State
+    var recipientError: String?
+    var amountError: String?
+    var pinError: String?
+    var pathError: String?
+    
+    // Assets
     var recipientAssets: [AssetInfo] = []
     
-    // State Management
-    enum PathPaymentState {
-        case initial
-        case loadingDestinationAssets
-        case destinationAssetsLoaded
-        case findingPath
-        case pathFound
-        case sendingPayment
+    enum PathPaymentState: Int {
+        case initial = 0
+        case otherRecipientSelected = 1
+        case loadingDestinationAssets = 2
+        case destinationAssetsLoaded = 3
+        case findingPath = 4
+        case pathFound = 5
+        case sendingPayment = 6
     }
-    
-    var state: PathPaymentState = .initial
 }
 ```
 
@@ -40,63 +55,73 @@ final class SendPathPaymentViewModel {
 <img src="./img/payment/path_payment_mode.png" alt="Strict mode toggle" width="40%">
 
 ```swift
-Toggle(isOn: $viewModel.strictSend) {
-    HStack {
-        Image(systemName: viewModel.strictSend ? "arrow.up.circle" : "arrow.down.circle")
-            .foregroundColor(.blue)
-        
-        VStack(alignment: .leading) {
-            Text(viewModel.strictSend ? "Strict Send" : "Strict Receive")
-                .font(.system(size: 15, weight: .semibold))
-            
-            Text(viewModel.strictSend ? 
-                "Specify exact amount to send" : 
-                "Specify exact amount to receive")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+HStack {
+    Label("Strict Send Mode", systemImage: "arrow.right.square")
+        .font(.system(size: 14, weight: .medium))
+    
+    Spacer()
+    
+    Toggle("", isOn: Binding(
+        get: { viewModel.strictSend },
+        set: { newValue in
+            viewModel.handleStrictModeChange(newValue)
         }
-    }
+    ))
+    .labelsHidden()
 }
-.onChange(of: viewModel.strictSend) { _, newValue in
-    viewModel.handleStrictModeChange(newValue)
-}
+.padding(12)
+.background(Color(.systemGray6).opacity(0.5))
+.cornerRadius(10)
 ```
 
 ## Strict Send Flow
 
 ### Selecting Asset to Send
 
-<img src="./img/payment/path_payment_strict_send_start.png" alt="Strict send start" width="40%">
+<img src="./img/payment/path_payment_strict_send_start.png" alt="Strict send start" width="30%">
 
 When in strict send mode, users select from their owned assets:
 
 ```swift
-if strictSend {
+// Send Asset Picker (when in strict send mode)
+VStack(alignment: .leading, spacing: 8) {
+    Label("Send Asset", systemImage: "arrow.up.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
     Menu {
-        ForEach(userAssets) { asset in
-            Button(action: {
-                selectedAssetToSend = asset.id
-                selectedPath = nil  // Reset path when asset changes
-            }) {
-                HStack {
-                    Text(asset.displayName)
-                    Spacer()
-                    Text(asset.formattedBalance)
-                        .foregroundColor(.secondary)
+        ForEach(dashboardData.userAssets.filter { Double($0.balance) ?? 0 > 0 }, id: \.id) { asset in
+            Button(action: { viewModel.selectedAssetToSend = asset.id }) {
+                Label {
+                    Text("\(asset.code) (\(asset.formattedBalance))")
+                } icon: {
+                    Image(systemName: "star.circle")
                 }
             }
         }
     } label: {
         HStack {
-            Image(systemName: "star.circle")
-                .foregroundColor(.orange)
-            Text("Send: \(selectedAssetDisplay)")
+            if let asset = dashboardData.userAssets.first(where: { $0.id == viewModel.selectedAssetToSend }) {
+                Image(systemName: "star.circle.fill")
+                    .foregroundStyle(asset.id == "native" ? .orange : .blue)
+                
+                Text(asset.code)
+                    .font(.system(size: 16, weight: .medium))
+                
+                Text("(\(asset.formattedBalance))")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            
             Spacer()
-            Text(availableBalance)
-                .font(.system(size: 14, design: .rounded))
+            
+            Image(systemName: "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.secondary)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(Color(.systemGray6))
         .cornerRadius(10)
     }
@@ -107,29 +132,54 @@ if strictSend {
 
 ### Selecting Asset to Receive
 
-<img src="./img/payment/path_payment_strict_receive_start.png" alt="Strict receive start" width="40%">
+<img src="./img/payment/path_payment_strict_receive_start.png" alt="Strict receive start" width="30%">
 
 In strict receive mode, users select from recipient's trusted assets:
 
 ```swift
-if !strictSend {
+// Receive Asset Picker (when in strict receive mode)
+VStack(alignment: .leading, spacing: 8) {
+    Label("Receive Asset", systemImage: "arrow.down.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
     Menu {
-        ForEach(recipientAssets) { asset in
-            Button(action: {
-                selectedAssetToReceive = asset.id
-                selectedPath = nil
+        ForEach(viewModel.recipientAssets, id: \.id) { asset in
+            Button(action: { 
+                viewModel.selectedAssetToReceive = asset.id 
+                viewModel.selectedPath = nil
+                viewModel.pathError = nil
             }) {
-                Text(asset.displayName)
+                Label {
+                    Text(asset.code)
+                } icon: {
+                    Image(systemName: "star.circle")
+                }
             }
         }
     } label: {
         HStack {
-            Image(systemName: "star.circle.fill")
-                .foregroundColor(.green)
-            Text("Receive: \(selectedAssetDisplay)")
+            if let asset = viewModel.recipientAssets.first(where: { $0.id == viewModel.selectedAssetToReceive }) {
+                Image(systemName: "star.circle.fill")
+                    .foregroundStyle(asset.id == "native" ? .orange : .blue)
+                
+                Text(asset.code)
+                    .font(.system(size: 16, weight: .medium))
+            } else {
+                Text("Select Asset")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+            }
+            
             Spacer()
+            
+            Image(systemName: "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.secondary)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(Color(.systemGray6))
         .cornerRadius(10)
     }
@@ -145,33 +195,28 @@ private func validateAndLoadRecipientAssets() async {
     state = .loadingDestinationAssets
     
     do {
-        // Check if account exists
-        let exists = try await StellarService.accountExists(
-            address: recipientAccountId
-        )
-        
+        let exists = try await StellarService.accountExists(address: recipientAccountId)
         if !exists {
-            recipientError = "Account not found. It needs to be funded first."
+            recipientError = "Account not found on Stellar Network. It needs to be funded first."
             state = .otherRecipientSelected
             return
         }
         
-        // Load recipient's trusted assets
-        recipientAssets = try await StellarService.loadAssetsForAddress(
-            address: recipientAccountId
-        )
+        // Load recipient assets directly
+        recipientAssets = try await StellarService.loadAssetsForAddress(address: recipientAccountId)
         
         state = .destinationAssetsLoaded
         
-        // Set default asset to receive
+        // Set default selected asset to receive if not already set or invalid
         if !recipientAssets.contains(where: { $0.id == selectedAssetToReceive }) {
-            selectedAssetToReceive = "native"  // Default to XLM
+            // Default to XLM since every account can receive it
+            selectedAssetToReceive = SendPathPaymentViewModel.xlmAssetItem
         }
         
-        // Haptic feedback
+        // Haptic feedback on success
         impactFeedback.impactOccurred()
     } catch {
-        recipientError = "Failed to load recipient assets"
+        recipientError = "Failed to load recipient assets: \(error.localizedDescription)"
         state = .otherRecipientSelected
     }
 }
@@ -181,7 +226,7 @@ private func validateAndLoadRecipientAssets() async {
 
 ### Finding Payment Paths
 
-<img src="./img/payment/find_path_button.png" alt="Find path button" width="40%">
+<img src="./img/payment/find_path_button.png" alt="Find path button" width="30%">
 
 The wallet SDK searches for available payment paths:
 
@@ -259,59 +304,6 @@ public static func findStrictReceivePaymentPath(
         destinationAssetId: destinationAsset,
         destinationAmount: destinationAmount.description
     )
-}
-```
-
-## Path Display
-
-### Showing Found Path
-
-<img src="./img/payment/path_display.png" alt="Path display" width="40%">
-
-Display the discovered payment path to users:
-
-```swift
-struct PathDisplayView: View {
-    let path: PaymentPath
-    let strictSend: Bool
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Payment Path Found")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.green)
-            
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("Send")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    Text("\(path.sourceAmount) \(path.sourceAsset.displayName)")
-                        .font(.system(size: 15, weight: .medium))
-                }
-                
-                Image(systemName: "arrow.right")
-                    .foregroundColor(.blue)
-                
-                VStack(alignment: .trailing) {
-                    Text("Receive")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    Text("\(path.destinationAmount) \(path.destinationAsset.displayName)")
-                        .font(.system(size: 15, weight: .medium))
-                }
-            }
-            
-            if !path.path.isEmpty {
-                Text("Via: \(pathDescription)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding()
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(10)
-    }
 }
 ```
 
@@ -395,11 +387,7 @@ public static func strictSendPayment(
     userKeyPair: SigningKeyPair
 ) async throws -> Bool {
     let stellar = wallet.stellar
-    
-    // Build transaction
     var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
-    
-    // Add strict send operation
     txBuilder = txBuilder.strictSend(
         sendAssetId: sendAssetId,
         sendAmount: sendAmount,
@@ -409,13 +397,12 @@ public static func strictSendPayment(
         path: path
     )
     
-    // Add memo if provided
     if let memo = memo {
-        let memoObj = try Memo(text: memo)
+        guard let memoObj = try Memo(text: memo) else {
+            throw StellarServiceError.runtimeError("invalid argument 'memo' value: \(memo)")
+        }
         txBuilder = txBuilder.setMemo(memo: memoObj)
     }
-    
-    // Build, sign, and submit
     let tx = try txBuilder.build()
     stellar.sign(tx: tx, keyPair: userKeyPair)
     return try await stellar.submitTransaction(signedTransaction: tx)
@@ -440,48 +427,6 @@ Path: GOLD → COPPER → SILVER
 ```
 
 Detailed instructions can be found [here](path_payment_test_setup.md).
-
-## Recent Path Payments Display
-
-<img src="./img/payment/recent_payments_strict_send.png" alt="Recent path payments" width="40%">
-
-Path payments appear in the recent payments list:
-
-```swift
-struct PathPaymentRow: View {
-    let payment: PaymentInfo
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Path Payment")
-                        .font(.system(size: 14, weight: .medium))
-                    
-                    Image(systemName: "arrow.triangle.swap")
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
-                }
-                
-                Text("\(payment.sourceAsset) → \(payment.destinationAsset)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing) {
-                Text(payment.formattedAmount)
-                    .font(.system(size: 16, weight: .semibold))
-                
-                Text(payment.formattedDate)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-}
-```
 
 ## Key Features
 

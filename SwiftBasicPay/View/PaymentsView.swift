@@ -73,10 +73,6 @@ struct PaymentsView: View {
                 headerSection
                 
                 if dashboardData.userAssets.isEmpty {
-                    EmptyWalletCard()
-                        .padding(.horizontal)
-                        .padding(.top, 20)
-                    
                     BalancesCard()
                         .environment(dashboardData)
                         .padding(.horizontal)
@@ -216,34 +212,6 @@ struct PaymentsView: View {
     }
 }
 
-// MARK: - Empty Wallet Card
-
-struct EmptyWalletCard: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "wallet.pass")
-                .font(.system(size: 48))
-                .foregroundStyle(.blue.gradient)
-            
-            VStack(spacing: 8) {
-                Text("Wallet Not Funded")
-                    .font(.system(size: 18, weight: .semibold))
-                
-                Text("Your account needs to be funded before you can send payments")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .padding(.horizontal, 20)
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-    }
-}
-
 // MARK: - Modern Balances Card
 
 struct BalancesCard: View {
@@ -294,12 +262,6 @@ struct BalancesCard: View {
                             .font(.system(size: 14, weight: .medium))
                     }
                 }
-            } else if dashboardData.userAssets.isEmpty {
-                EmptyStateView(
-                    icon: "creditcard.circle",
-                    title: "No Assets",
-                    message: "Fund your account to start"
-                )
             } else {
                 VStack(spacing: 12) {
                     ForEach(dashboardData.userAssets, id: \.id) { asset in
@@ -343,6 +305,7 @@ struct BalancesCard: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(isFundingAccount)
             }
+            .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             
         case .fetchingError(let message):
@@ -369,7 +332,9 @@ struct BalancesCard: View {
         
         do {
             try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
-            await dashboardData.fetchStellarData()
+            
+            // Force refresh all data (clears cache and bypasses the 2-second minimum refresh interval)
+            await dashboardData.forceRefreshAll()
             
             // Haptic feedback on success
             await MainActor.run {
@@ -504,7 +469,7 @@ struct RecentPaymentsCard: View {
     }
     
     private func paymentRowView(payment: PaymentInfo, index: Int) -> some View {
-        ModernPaymentRow(
+        PaymentsPaymentRow(
             payment: payment,
             isExpanded: expandedPaymentIndex == index,
             onCopyAddress: onCopyAddress
@@ -562,7 +527,7 @@ struct RecentPaymentsCard: View {
 
 // MARK: - Modern Payment Row
 
-struct ModernPaymentRow: View {
+struct PaymentsPaymentRow: View {
     let payment: PaymentInfo
     let isExpanded: Bool
     var onCopyAddress: ((String) -> Void)? = nil

@@ -2,11 +2,11 @@
 
 Payment operations send assets (XLM or tokens) to destination accounts. SwiftBasicPay provides a payment interface with comprehensive validation, contact management, and real-time status updates.
 
-## Modern Payment Architecture
+## Payment Architecture
 
-The [`PaymentsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/PaymentsView.swift) uses iOS 17+ patterns with reactive state management:
+The [`PaymentsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/PaymentsView.swift) uses iOS patterns with reactive state management:
 
-<img src="./img/payment/simple_payment.png" alt="Payments view" width="40%">
+<img src="./img/payment/simple_payment.png" alt="Payments view" width="3%">
 
 ```swift
 @Observable
@@ -14,9 +14,10 @@ final class PaymentsViewModel {
     // UI State
     var pathPaymentMode = false
     var showSuccessToast = false
+    var toastMessage = ""
     var selectedSegment = 0
     
-    // Haptic feedback
+    // Haptic feedback generator
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private let selectionFeedback = UISelectionFeedbackGenerator()
     
@@ -87,39 +88,29 @@ final class SendPaymentViewModel {
 Users can select from contacts or enter a custom address:
 
 ```swift
-Menu {
-    ForEach(userContacts) { contact in
-        Button(action: {
-            selectedRecipient = contact.id
-            recipientAccountId = contact.accountId
-            expandForm()
+VStack(alignment: .leading, spacing: 8) {
+    Label("Recipient", systemImage: "person.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
+    Menu {
+        ForEach(dashboardData.userContacts, id: \.id) { contact in
+            Button(action: { 
+                viewModel.handleRecipientSelection(contact.id) 
+            }) {
+                Label(contact.name, systemImage: "person.fill")
+            }
+        }
+        
+        Divider()
+        
+        Button(action: { 
+            viewModel.handleRecipientSelection(SendPaymentViewModel.otherRecipient) 
         }) {
-            Label(contact.name, systemImage: "person.circle")
+            Label("Other Address", systemImage: "plus.circle")
         }
     }
-    
-    Divider()
-    
-    Button(action: {
-        selectedRecipient = "Other"
-        recipientAccountId = ""
-        expandForm()
-    }) {
-        Label("Other (Enter Address)", systemImage: "plus.circle")
-    }
-} label: {
-    HStack {
-        Image(systemName: "person.crop.circle")
-            .foregroundColor(.blue)
-        Text(displayRecipientName)
-            .foregroundColor(.primary)
-        Spacer()
-        Image(systemName: "chevron.down")
-            .foregroundColor(.secondary)
-    }
-    .padding(12)
-    .background(Color(.systemGray6))
-    .cornerRadius(10)
 }
 ```
 
@@ -128,85 +119,86 @@ Menu {
 Display available assets with balances:
 
 ```swift
-Menu {
-    ForEach(userAssets) { asset in
-        Button(action: {
-            selectedAsset = asset.id
-        }) {
-            HStack {
-                Text(asset.displayName)
-                Spacer()
-                Text(asset.formattedBalance)
-                    .foregroundColor(.secondary)
+VStack(alignment: .leading, spacing: 8) {
+    Label("Asset", systemImage: "star.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
+    Menu {
+        ForEach(dashboardData.userAssets, id: \.id) { asset in
+            Button(action: { 
+                viewModel.handleAssetSelection(asset.id) 
+            }) {
+                Label {
+                    Text(asset.code)
+                } icon: {
+                    Image(systemName: "star.circle")
+                }
             }
         }
     }
-} label: {
-    HStack {
-        Image(systemName: "star.circle")
-            .foregroundColor(.orange)
-        Text(selectedAssetDisplay)
-            .foregroundColor(.primary)
-        Spacer()
-        Text(availableBalance)
-            .font(.system(size: 14, design: .rounded))
-            .foregroundColor(.secondary)
-        Image(systemName: "chevron.down")
-            .foregroundColor(.secondary)
-    }
-    .padding(12)
-    .background(Color(.systemGray6))
-    .cornerRadius(10)
 }
 ```
 
 ### Amount Input with Validation
 
-Modern amount input with real-time validation:
+Amount input with real-time validation:
 
 ```swift
-VStack(alignment: .leading, spacing: 8) {
-    Text("Amount")
-        .font(.system(size: 13, weight: .medium))
-        .foregroundColor(.secondary)
-    
-    HStack {
-        TextField("0.00", text: $amountToSend)
-            .keyboardType(.decimalPad)
-            .font(.system(size: 20, weight: .semibold, design: .rounded))
-            .onChange(of: amountToSend) { _, newValue in
-                // Format input to valid decimal
-                let filtered = newValue.filter { 
-                    $0.isNumber || $0 == "." 
-                }
-                if filtered != newValue {
-                    amountToSend = filtered
-                }
-                
-                // Validate amount
-                if let amount = Double(filtered) {
-                    if amount > maxAmount {
-                        amountError = "Insufficient balance"
-                    } else {
-                        amountError = nil
-                    }
-                }
+private var amountField: some View {
+    VStack(alignment: .leading, spacing: 8) {
+        HStack {
+            Label("Amount", systemImage: "number.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            Spacer()
+            
+            if let asset = dashboardData.userAssets.first(where: { 
+                $0.id == viewModel.selectedAsset 
+            }) {
+                Text("Max: \(viewModel.calculateMaxAmount(for: asset).toStringWithoutTrailingZeros)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
             }
-        
-        Button("Max") {
-            amountToSend = String(maxAmount)
         }
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundColor(.blue)
-    }
-    .padding(12)
-    .background(Color(.systemGray6))
-    .cornerRadius(10)
-    
-    if let error = amountError {
-        Text(error)
-            .font(.system(size: 12))
-            .foregroundColor(.red)
+        
+        HStack {
+            TextField("0.00", text: $viewModel.amountToSend)
+                .textFieldStyle(.plain)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .keyboardType(.decimalPad)
+                .focused($focusedField, equals: .amount)
+                .onChange(of: viewModel.amountToSend) { oldValue, newValue in
+                    if newValue != "" && Double(newValue) == nil {
+                        viewModel.amountToSend = oldValue
+                    }
+                    viewModel.amountError = nil
+                }
+            
+            if let asset = dashboardData.userAssets.first(where: { 
+                $0.id == viewModel.selectedAsset 
+            }) {
+                Text(asset.code)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(12)
+        .background(Color(.systemGray6))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(viewModel.amountError != nil ? Color.red : Color.clear, lineWidth: 1)
+        )
+        
+        if let error = viewModel.amountError {
+            Label(error, systemImage: "exclamationmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundColor(.red)
+        }
     }
 }
 ```
@@ -235,6 +227,11 @@ func validateRecipient() -> Bool {
 func validateAmount(maxAmount: Double) -> Bool {
     amountError = nil
     
+    if amountToSend.isEmpty {
+        amountError = "Amount is required"
+        return false
+    }
+    
     guard let amount = Double(amountToSend) else {
         amountError = "Invalid amount format"
         return false
@@ -246,7 +243,23 @@ func validateAmount(maxAmount: Double) -> Bool {
     }
     
     if amount > maxAmount {
-        amountError = "Insufficient balance"
+        amountError = "Insufficient balance (max: \(maxAmount.toStringWithoutTrailingZeros))"
+        return false
+    }
+    
+    return true
+}
+
+func validatePin() -> Bool {
+    pinError = nil
+    
+    if pin.isEmpty {
+        pinError = "PIN is required"
+        return false
+    }
+    
+    if pin.count != 6 {
+        pinError = "PIN must be 6 digits"
         return false
     }
     
@@ -261,60 +274,70 @@ func validateAmount(maxAmount: Double) -> Bool {
 Async payment implementation:
 
 ```swift
-func sendPayment(userAssets: [AssetInfo], dashboardData: DashboardData) async {
-    isSendingPayment = true
-    impactFeedback.impactOccurred()
+func sendPayment(userAssets: [AssetInfo], userContacts: [ContactInfo], dashboardData: DashboardData) async {
+    // ...
     
     do {
-        // 1. Verify PIN and get signing keypair
+        // Verify PIN and get user keypair
         let authService = AuthService()
         let userKeyPair = try authService.userKeyPair(pin: pin)
         
-        // 2. Check if recipient account exists
-        let destinationExists = try await StellarService.accountExists(
-            address: recipientAccountId
-        )
+        // Check if destination account exists
+        let destinationExists = try await StellarService.accountExists(address: recipientAccountId)
         
-        // 3. Fund if needed (testnet only)
+        // Fund destination if it doesn't exist (testnet only)
         if !destinationExists {
-            try await StellarService.fundTestnetAccount(
-                address: recipientAccountId
-            )
+            try await StellarService.fundTestnetAccount(address: recipientAccountId)
         }
         
-        // 4. Verify recipient can receive the asset
-        if let issuedAsset = asset.asset as? IssuedAssetId {
-            let recipientAssets = try await StellarService.loadAssetsForAddress(
-                address: recipientAccountId
-            )
+        // Verify recipient can receive the asset
+        if let issuedAsset = asset.asset as? IssuedAssetId, issuedAsset.issuer != recipientAccountId {
+            let recipientAssets = try await StellarService.loadAssetsForAddress(address: recipientAccountId)
             if !recipientAssets.contains(where: { $0.id == selectedAsset }) {
-                throw PaymentError.recipientCannotReceiveAsset
+                errorMessage = "Recipient cannot receive \(asset.code)"
+                isSendingPayment = false
+                notificationFeedback.notificationOccurred(.error)
+                return
             }
         }
         
-        // 5. Create memo if provided
-        let memo = memoToSend.isEmpty ? nil : try Memo(text: memoToSend)
+        // Prepare stellar asset
+        guard let stellarAssetId = asset.asset as? StellarAssetId else {
+            errorMessage = "Invalid asset type"
+            isSendingPayment = false
+            notificationFeedback.notificationOccurred(.error)
+            return
+        }
         
-        // 6. Send payment through wallet SDK
+        // Prepare memo if provided
+        var memo: Memo?
+        if !memoToSend.isEmpty {
+            memo = try Memo(text: memoToSend)
+        }
+        
+        // Send payment
         let result = try await StellarService.sendPayment(
             destinationAddress: recipientAccountId,
-            assetId: asset.asset,
+            assetId: stellarAssetId,
             amount: Decimal(Double(amountToSend)!),
             memo: memo,
             userKeyPair: userKeyPair
         )
         
         if result {
-            // 7. Refresh data
-            await dashboardData.fetchStellarData()
-            
-            // 8. Show success
+            // Success
             toastMessage = "Payment sent successfully!"
             showSuccessToast = true
             notificationFeedback.notificationOccurred(.success)
             
-            // 9. Reset form
+            // Reset form
             resetForm()
+            
+            // Refresh data
+            await dashboardData.fetchStellarData()
+        } else {
+            errorMessage = "Payment failed. Please try again."
+            notificationFeedback.notificationOccurred(.error)
         }
     } catch {
         errorMessage = error.localizedDescription
@@ -327,7 +350,7 @@ func sendPayment(userAssets: [AssetInfo], dashboardData: DashboardData) async {
 
 ### Stellar Service Integration
 
-Using the wallet SDK for payment submission:
+Using the wallet SDK in [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) for payment submission:
 
 ```swift
 /// Submits a payment to the Stellar Network using the wallet SDK
@@ -364,100 +387,10 @@ public static func sendPayment(
 
 ## Recent Payments Display
 
-<img src="./img/payment/recent_payments_updated.png" alt="Recent payments" width="40%">
+<img src="./img/payment/recent_payments_updated.png" alt="Recent payments" width="30%">
 
-The recent payments card with interactive features:
+The recent payments card (`RecentPaymentsCard`) displays the recent payments.
 
-```swift
-struct RecentPaymentsCard: View {
-    @Environment(DashboardData.self) var dashboardData
-    let onCopyAddress: (String) -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "clock.arrow.circlepath")
-                    .foregroundColor(.blue)
-                Text("Recent Activity")
-                    .font(.system(size: 18, weight: .semibold))
-                Spacer()
-            }
-            
-            if dashboardData.recentPayments.isEmpty {
-                EmptyStateView(
-                    icon: "tray",
-                    title: "No Payments Yet",
-                    message: "Your payment history will appear here"
-                )
-            } else {
-                ForEach(dashboardData.recentPayments) { payment in
-                    PaymentRow(
-                        payment: payment,
-                        userAddress: dashboardData.userAddress,
-                        onCopyAddress: onCopyAddress
-                    )
-                }
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-    }
-}
-```
-
-### Payment Row Component
-
-```swift
-struct PaymentRow: View {
-    let payment: PaymentInfo
-    let userAddress: String
-    let onCopyAddress: (String) -> Void
-    
-    var isIncoming: Bool {
-        payment.toAccount == userAddress
-    }
-    
-    var body: some View {
-        HStack {
-            Circle()
-                .fill(isIncoming ? Color.green : Color.red)
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: isIncoming ? "arrow.down" : "arrow.up")
-                        .foregroundColor(.white)
-                        .font(.system(size: 18, weight: .bold))
-                )
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(payment.contactName ?? payment.counterpartyAddress.shortAddress)
-                    .font(.system(size: 15, weight: .medium))
-                
-                Text(payment.formattedDate)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("\(isIncoming ? "+" : "-")\(payment.formattedAmount)")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(isIncoming ? .green : .red)
-                
-                Text(payment.assetCode)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onCopyAddress(payment.counterpartyAddress)
-        }
-    }
-}
-```
 
 ## Loading Recent Payments
 
@@ -472,7 +405,7 @@ public static func loadRecentPayments(address: String) async throws -> [PaymentI
     let paymentsResponseEnum = await server.payments.getPayments(
         forAccount: address,
         order: Order.descending,
-        limit: 20
+        limit: 5
     )
     
     switch paymentsResponseEnum {
@@ -498,14 +431,20 @@ public static func loadRecentPayments(address: String) async throws -> [PaymentI
                     address: address
                 )
                 result.append(info)
+            } else if let payment = record as? PathPaymentStrictSendOperationResponse {
+                let info = try paymentInfoFromPathPaymentStrictSendOperationResponse(
+                    payment: payment,
+                    address: address
+                )
+                result.append(info)
             }
         }
         
         return result
         
-    case .failure(let error):
+    case .failure(_):
         throw StellarServiceError.runtimeError(
-            "Could not load recent payments: \(error.localizedDescription)"
+            "could not load recent payments for \(address)"
         )
     }
 }

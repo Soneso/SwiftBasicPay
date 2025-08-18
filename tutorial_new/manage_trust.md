@@ -2,11 +2,11 @@
 
 To hold and trade assets other than XLM, accounts must establish [trustlines](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts#trustlines) with issuing accounts. Each trustline increases the account's [base reserve](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts#base-reserves-and-subentries) by 0.5 XLM.
 
-## Modern AssetsView Architecture
+## AssetsView Architecture
 
-The [`AssetsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AssetsView.swift) uses iOS 17+ patterns with `@Observable` view model:
+The [`AssetsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AssetsView.swift) uses iOS patterns with `@Observable` view model:
 
-<img src="./img/manage_trust/assets_tab.png" alt="Assets UI" width="40%">
+<img src="./img/manage_trust/assets_tab.png" alt="Assets UI" width="30%">
 
 ```swift
 @Observable
@@ -35,47 +35,58 @@ final class AssetsViewModel {
 
 Navigate to the Assets tab to see available assets:
 
-<img src="./img/manage_trust/assets_dropdown.png" alt="Assets dropdown" width="40%">
+<img src="./img/manage_trust/assets_dropdown.png" alt="Assets dropdown" width="30%">
 
 The dropdown shows:
 - Predefined Stellar Test Anchor assets (SRT, USDC)
 - Custom asset option for any issued asset
 
+The asset selection is part of the `AddAssetForm` struct which handles the entire add asset interface:
+
 ```swift
-struct AddAssetSection: View {
+struct AddAssetForm: View {
     @Binding var selectedAsset: String
-    let availableAssets: [IssuedAssetId]
+    @Binding var assetCode: String
+    @Binding var assetIssuer: String
+    @Binding var pin: String
+    var availableAssets: [IssuedAssetId]
+    var error: String?
+    var isLoading: Bool
+    var onSubmit: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Select Asset")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.secondary)
-            
-            Menu {
-                ForEach(availableAssets, id: \.id) { asset in
-                    Button(asset.code) {
-                        selectedAsset = asset.id
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Select Asset")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.secondary)
+                
+                Menu {
+                    ForEach(availableAssets, id: \.id) { asset in
+                        Button(asset.id) {
+                            selectedAsset = asset.id
+                        }
                     }
+                    Button("Custom asset") {
+                        selectedAsset = "Custom asset"
+                    }
+                } label: {
+                    HStack {
+                        Text(selectedAsset)
+                            .font(.system(size: 15))
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(12)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
                 }
-                
-                Divider()
-                
-                Button("Custom Asset...") {
-                    selectedAsset = "Custom asset"
-                }
-            } label: {
-                HStack {
-                    Text(selectedAsset)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .foregroundColor(.secondary)
-                }
-                .padding(12)
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
             }
+            
+            // Additional form fields for custom asset, PIN, etc...
         }
     }
 }
@@ -83,7 +94,7 @@ struct AddAssetSection: View {
 
 ### PIN Entry for Transaction Signing
 
-<img src="./img/manage_trust/pin_input.png" alt="PIN input" width="40%">
+<img src="./img/manage_trust/pin_input.png" alt="PIN input" width="30%">
 
 Every trustline operation requires PIN authentication:
 
@@ -134,23 +145,31 @@ func addAsset(dashboardData: DashboardData) async {
             userKeyPair: userKeyPair
         )
         
-        if success {
-            // Reset form
-            assetCode = ""
-            assetIssuer = ""
-            pin = ""
-            selectedAsset = "Custom asset"
-            
-            // Reload assets
-            await dashboardData.fetchUserAssets()
-            
-            // Success feedback
-            toastMessage = "Asset added successfully"
-            showToast = true
-            
-            let successFeedback = UINotificationFeedbackGenerator()
-            successFeedback.notificationOccurred(.success)
+        if !success {
+            addAssetErrorMsg = "Error submitting transaction. Please try again."
+            isAddingAsset = false
+            return
         }
+        
+        // Reset form
+        assetCode = ""
+        assetIssuer = ""
+        pin = ""
+        selectedAsset = "Custom asset"
+        
+        // Clear cache to ensure fresh data after addition
+        dashboardData.assetManagerDirect.clearCache()
+        
+        // Reload data with fresh fetch
+        await dashboardData.fetchUserAssets()
+        
+        // Success feedback
+        toastMessage = "Asset added successfully"
+        showToast = true
+        
+        let successFeedback = UINotificationFeedbackGenerator()
+        successFeedback.notificationOccurred(.success)
+        
     } catch {
         addAssetErrorMsg = error.localizedDescription
         
@@ -187,7 +206,7 @@ public static func addAssetSupport(
     return try await stellar.submitTransaction(signedTransaction: tx)
 }
 ```
-<img src="./img/manage_trust/asset_added.png" alt="Asset added" width="40%">
+<img src="./img/manage_trust/asset_added.png" alt="Asset added" width="30%">
 
 ## Adding Custom Assets
 
@@ -195,7 +214,7 @@ public static func addAssetSupport(
 
 When "Custom asset" is selected:
 
-<img src="./img/manage_trust/custom_asset_form.png" alt="Custom asset form" width="40%">
+<img src="./img/manage_trust/custom_asset_form.png" alt="Custom asset form" width="30%">
 
 ```swift
 if selectedAsset == "Custom asset" {
@@ -244,9 +263,19 @@ if selectedAsset == "Custom asset" {
 Verifying custom asset before adding:
 
 ```swift
+@MainActor
 private func getSelectedAsset(dashboardData: DashboardData) async throws -> IssuedAssetId {
-    if selectedAsset == "Custom asset" {
-        // Create and validate asset ID
+    if selectedAsset != "Custom asset" {
+        // Return predefined asset
+        let availableAssets = getAvailableAssets(dashboardData: dashboardData)
+        guard let selectedIssuedAsset = availableAssets.first(where: { 
+            $0.id == selectedAsset 
+        }) else {
+            throw DemoError.runtimeError("Error finding selected asset")
+        }
+        return selectedIssuedAsset
+    } else {
+        // Create and validate custom asset ID
         let selectedIssuedAsset = try IssuedAssetId(
             code: assetCode, 
             issuer: assetIssuer
@@ -264,19 +293,10 @@ private func getSelectedAsset(dashboardData: DashboardData) async throws -> Issu
         }
         
         return selectedIssuedAsset
-    } else {
-        // Return predefined asset
-        let availableAssets = getAvailableAssets(dashboardData: dashboardData)
-        guard let selectedIssuedAsset = availableAssets.first(where: { 
-            $0.id == selectedAsset 
-        }) else {
-            throw DemoError.runtimeError("Error finding selected asset")
-        }
-        return selectedIssuedAsset
     }
 }
 ```
-<img src="./img/manage_trust/custom_asset_added.png" alt="Custom asset added" width="40%">
+<img src="./img/manage_trust/custom_asset_added.png" alt="Custom asset added" width="30%">
 
 ## Removing Assets
 
@@ -284,7 +304,7 @@ private func getSelectedAsset(dashboardData: DashboardData) async throws -> Issu
 
 Assets display with removal capability:
 
-<img src="./img/manage_trust/asset_removal_button.png" alt="Asset removal button" width="40%">
+<img src="./img/manage_trust/asset_removal_button.png" alt="Asset removal button" width="30%">
 
 ```swift
 struct AssetCard: View {
@@ -342,7 +362,7 @@ struct AssetCard: View {
 
 ### Removal Confirmation Sheet
 
-<img src="./img/manage_trust/remove_asset_pin.png" alt="Remove asset confirmation" width="40%">
+<img src="./img/manage_trust/remove_asset_pin.png" alt="Remove asset confirmation" width="30%">
 
 ```swift
 struct AssetRemovalSheet: View {
@@ -425,27 +445,41 @@ func removeAsset(asset: IssuedAssetId, dashboardData: DashboardData) async {
             userKeyPair: userKeyPair
         )
         
-        if success {
-            // Reset state
-            pin = ""
-            showRemovalSheet = false
-            assetToRemove = nil
-            
-            // Reload assets
-            await dashboardData.fetchUserAssets()
-            
-            // Success feedback
-            toastMessage = "Asset removed successfully"
-            showToast = true
+        if !success {
+            removeAssetErrorMsg = "Error removing asset. Please try again."
+            isRemovingAsset = false
+            return
         }
+        
+        // Reset state
+        pin = ""
+        showRemovalSheet = false
+        assetToRemove = nil
+        
+        // Clear cache to ensure fresh data after removal
+        dashboardData.assetManagerDirect.clearCache()
+        
+        // Reload data with fresh fetch
+        await dashboardData.fetchUserAssets()
+        
+        // Success feedback
+        toastMessage = "Asset removed successfully"
+        showToast = true
+        
+        let successFeedback = UINotificationFeedbackGenerator()
+        successFeedback.notificationOccurred(.success)
+        
     } catch {
         removeAssetErrorMsg = error.localizedDescription
+        
+        let errorFeedback = UINotificationFeedbackGenerator()
+        errorFeedback.notificationOccurred(.error)
     }
     
     isRemovingAsset = false
 }
 ```
-<img src="./img/manage_trust/asset_removed.png" alt="Asset removed" width="40%">
+<img src="./img/manage_trust/asset_removed.png" alt="Asset removed" width="30%">
 
 ### Stellar SDK for Removal
 

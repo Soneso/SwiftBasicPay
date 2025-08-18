@@ -550,12 +550,6 @@ struct BalancesView: View {
             } else if let error = dashboardData.userAssetsLoadingError {
                 ErrorStateView(error: error)
                     .environment(dashboardData)
-            } else if dashboardData.userAssets.isEmpty {
-                EmptyStateView(
-                    icon: "creditcard.trianglebadge.exclamationmark",
-                    title: "No Assets",
-                    message: "Your account doesn't hold any assets yet"
-                )
             } else {
                 VStack(spacing: 12) {
                     ForEach(dashboardData.userAssets, id: \.id) { asset in
@@ -742,10 +736,7 @@ struct ErrorStateView: View {
         do {
             try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
             
-            // Clear the account cache to force a fresh check
-            dashboardData.clearAccountCache()
-            
-            // Force refresh all data (bypasses the 2-second minimum refresh interval)
+            // Force refresh all data (clears cache and bypasses the 2-second minimum refresh interval)
             await dashboardData.forceRefreshAll()
             
             let successFeedback = UINotificationFeedbackGenerator()

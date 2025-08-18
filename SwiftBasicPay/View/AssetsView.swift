@@ -51,9 +51,17 @@ final class AssetsViewModel {
         isAddingAsset = true
         
         do {
+            // Get selected or custom asset
             let assetToAdd = try await getSelectedAsset(dashboardData: dashboardData)
+            
+            // Decrypt signing key with PIN
             let userKeyPair = try authService.userKeyPair(pin: pin)
-            let success = try await StellarService.addAssetSupport(asset: assetToAdd, userKeyPair: userKeyPair)
+            
+            // Add trustline using wallet SDK
+            let success = try await StellarService.addAssetSupport(
+                asset: assetToAdd,
+                userKeyPair: userKeyPair
+            )
             
             if !success {
                 addAssetErrorMsg = "Error submitting transaction. Please try again."
@@ -102,7 +110,10 @@ final class AssetsViewModel {
         isRemovingAsset = true
         
         do {
+            // Decrypt signing key
             let userKeyPair = try authService.userKeyPair(pin: pin)
+            
+            // Remove trustline using wallet SDK
             let success = try await StellarService.removeAssetSupport(asset: asset, userKeyPair: userKeyPair)
             
             if !success {
@@ -741,16 +752,6 @@ struct AssetsView: View {
             } else if let error = dashboardData.userAssetsLoadingError {
                 ErrorStateView(error: error)
                     .environment(dashboardData)
-            } else if dashboardData.userAssets.isEmpty {
-                EmptyStateView(
-                    icon: "star.circle.badge.xmark",
-                    title: "No Assets Yet",
-                    message: "Your account doesn't hold any assets. Start by adding a trustline above."
-                )
-                .padding(.vertical, 20)
-                .background(Color(.systemBackground))
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
             } else {
                 VStack(spacing: 12) {
                     ForEach(dashboardData.userAssets, id: \.id) { asset in
