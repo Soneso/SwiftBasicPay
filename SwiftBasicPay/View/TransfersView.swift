@@ -596,7 +596,8 @@ struct TransfersView: View {
                     TransferHistoryView(
                         assetInfo: assetInfo,
                         authToken: authToken,
-                        savedKycData: dashboardData.userKycData
+                        savedKycData: dashboardData.userKycData,
+                        dashboardData: dashboardData
                     )
                     .padding(.horizontal)
                 }

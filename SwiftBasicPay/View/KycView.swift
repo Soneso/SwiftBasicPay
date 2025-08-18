@@ -70,11 +70,8 @@ final class KycViewModel {
         error = nil
         
         do {
-            // Save to secure storage
-            _ = try SecureStorage.updateKycDataEntry(id: item.id, val: editedValue)
-            
-            // Reload data
-            await dashboardData.loadUserKycData()
+            // Save using proper KycManager method
+            try await dashboardData.kycManagerDirect.updateKycEntry(id: item.id, value: editedValue)
             
             // Success feedback
             let notification = UINotificationFeedbackGenerator()
@@ -122,11 +119,8 @@ final class KycViewModel {
         guard let item = itemToDelete else { return }
         
         do {
-            // Clear the value in secure storage
-            _ = try SecureStorage.updateKycDataEntry(id: item.id, val: "")
-            
-            // Reload data
-            await dashboardData.loadUserKycData()
+            // Delete using proper KycManager method
+            try await dashboardData.kycManagerDirect.deleteKycEntry(id: item.id)
             
             // Success feedback
             let notification = UINotificationFeedbackGenerator()

@@ -15,7 +15,7 @@ SwiftBasicPay is a demonstration iOS wallet application built with SwiftUI that 
 7. [Navigation Pattern](#navigation-pattern)
 8. [Security Architecture](#security-architecture)
 9. [Network Layer](#network-layer)
-10. [Testing Strategy](#testing-strategy)
+10. [Best Practices](#best-practices)
 
 ## Technology Stack
 
@@ -24,14 +24,15 @@ SwiftBasicPay is a demonstration iOS wallet application built with SwiftUI that 
 - **SwiftUI** for declarative UI
 - **Swift Concurrency** (async/await)
 - **@Observable macro** for reactive state management
+- **@MainActor** for UI thread safety
 
 ### Key Dependencies
 | Package | Version | Purpose |
 |---------|---------|---------|
-| stellar-wallet-sdk | 0.6.6 | High-level Stellar wallet operations |
-| stellar-ios-mac-sdk | 3.2.3 | Core Stellar blockchain SDK |
+| stellar-wallet-sdk | 0.6.6+ | High-level Stellar wallet operations |
+| stellar-ios-mac-sdk | 3.2.3+ | Core Stellar blockchain SDK |
 | SimpleKeychain | 1.3.0 | Secure keychain storage |
-| CryptoSwift | 1.8.4 | Cryptographic operations |
+| CryptoSwift | 1.8.4 | Cryptographic operations (AES, PBKDF2) |
 | AlertToast | 1.3.9 | Toast notifications UI |
 
 ## Architecture Overview
@@ -72,32 +73,44 @@ SwiftBasicPay is a demonstration iOS wallet application built with SwiftUI that 
 
 ```
 SwiftBasicPay/
-├── Model/                    # Data models and state management
-│   ├── DashboardData.swift  # Central state coordinator
-│   ├── AssetInfo.swift      # Asset data model
-│   ├── PaymentInfo.swift    # Payment data model
-│   ├── ContactInfo.swift    # Contact data model
-│   └── KycEntry.swift       # KYC data model
+├── Model/                        # Data models and state management
+│   └── DashboardData.swift      # Central state coordinator with domain managers
 │
-├── View/                     # SwiftUI views
-│   ├── ContentView.swift    # Root view with auth routing
-│   ├── Dashboard.swift      # Main tab container
-│   ├── Overview.swift       # Dashboard overview
-│   ├── PaymentsView.swift   # Payment interface
-│   ├── AssetsView.swift     # Asset management
-│   ├── TransfersView.swift  # SEP-6/24 transfers
-│   ├── ContactsView.swift   # Contact management
-│   ├── KycView.swift        # KYC management
-│   └── SettingsView.swift   # App settings
+├── View/                         # SwiftUI views
+│   ├── ContentView.swift        # Root view with auth routing
+│   ├── AuthView.swift           # Sign up/sign in interface
+│   ├── Dashboard.swift          # Main tab container
+│   ├── Overview.swift           # Dashboard overview
+│   ├── PaymentsView.swift       # Payment interface
+│   ├── SendPaymentBox.swift     # Standard payment component
+│   ├── SendPathPaymentBox.swift # Path payment component
+│   ├── AssetsView.swift         # Asset management
+│   ├── TransfersView.swift      # SEP-6/24 transfers
+│   ├── NewTransferView.swift    # New transfer interface
+│   ├── TransferHistoryView.swift# Transfer history
+│   ├── Sep6DepositStepper.swift # SEP-6 deposit flow
+│   ├── Sep6WithdrawalStepper.swift # SEP-6 withdrawal flow
+│   ├── Sep12KycFormSheet.swift  # KYC form interface
+│   ├── ContactsView.swift       # Contact management
+│   ├── KycView.swift            # KYC management
+│   └── SettingsView.swift       # App settings
 │
-├── services/                 # Business logic layer
-│   ├── StellarService.swift # Stellar operations
-│   ├── AuthService.swift    # Authentication
-│   └── SecureStorage.swift  # Keychain wrapper
+├── services/                     # Business logic layer
+│   ├── StellarService.swift     # Stellar SDK operations wrapper
+│   ├── AuthService.swift        # Authentication management
+│   └── SecureStorage.swift      # Keychain wrapper for secure storage
 │
-└── Resources/               # Assets and configuration
-    ├── Assets.xcassets      # Images and colors
-    └── Info.plist          # App configuration
+├── common/                       # Shared utilities
+│   ├── DemoError.swift          # Error definitions
+│   ├── Utils.swift              # Helper functions
+│   ├── KycFieldInfo.swift       # KYC field definitions
+│   └── TransferFieldInfo.swift  # Transfer field definitions
+│
+├── extensions/                   # Swift extensions
+│   ├── Double+BasicPay.swift    # Double formatting
+│   └── String+BasicPay.swift    # String utilities
+│
+└── Assets.xcassets/             # Images and colors
 ```
 
 ## Core Components
@@ -223,15 +236,30 @@ enum DataState<T> {
    }
    ```
 
-2. **Intelligent Caching**
-   - TTL-based cache entries
-   - Configurable expiration (assets: 30s, payments: 20s)
-   - Cache invalidation on user actions
+2. **Intelligent Caching with TTL**
+   ```swift
+   struct CacheEntry<T> {
+       let data: T
+       let timestamp: Date
+       let ttl: TimeInterval
+       
+       var isExpired: Bool {
+           Date().timeIntervalSince(timestamp) > ttl
+       }
+   }
+   ```
+   
+   **Cache TTL Configuration:**
+   - Assets: 30 seconds
+   - Payments: 20 seconds  
+   - Account existence: 60 seconds
+   - Contacts & KYC: No expiry (manual refresh)
 
-3. **Debouncing**
-   - 500ms delay on refresh operations
+3. **Debouncing & Rate Limiting**
+   - 500ms debounce on refresh operations
    - Prevents rapid successive API calls
    - Minimum 2-second interval between full refreshes
+   - Request deduplication (prevents concurrent identical requests)
 
 ## Navigation Pattern
 

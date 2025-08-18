@@ -432,6 +432,7 @@ final class SendPathPaymentViewModel {
 struct SendPathPaymentBox: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var viewModel: SendPathPaymentViewModel
+    @State private var isRouteExpanded = false
     @FocusState private var focusedField: PathPaymentField?
     
     init() {
@@ -440,6 +441,18 @@ struct SendPathPaymentBox: View {
     
     enum PathPaymentField {
         case recipient, amount, memo, pin
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func formatAssetName(_ asset: StellarAssetId) -> String {
+        if asset.id == "native" {
+            return "XLM"
+        } else if let issuedAsset = asset as? IssuedAssetId {
+            return issuedAsset.code
+        } else {
+            return "Unknown"
+        }
     }
     
     var body: some View {
@@ -483,7 +496,10 @@ struct SendPathPaymentBox: View {
             Spacer()
             
             if viewModel.state != .initial {
-                Button(action: viewModel.resetForm) {
+                Button(action: {
+                    viewModel.resetForm()
+                    isRouteExpanded = false
+                }) {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 18))
                         .foregroundStyle(.secondary)
@@ -912,17 +928,9 @@ struct SendPathPaymentBox: View {
                         .cornerRadius(10)
                 }
                 
-                // Path visualization
+                // Expandable route visualization
                 if let path = viewModel.selectedPath, !path.path.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label("Route", systemImage: "arrow.triangle.turn.up.right.circle")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.secondary)
-                        
-                        Text("\(path.path.count + 1) hops")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                    }
+                    routeSection(for: path)
                 }
             }
             .padding(16)
@@ -1026,6 +1034,123 @@ struct SendPathPaymentBox: View {
         .cornerRadius(10)
     }
     
+    // MARK: - Route Section
+    
+    @ViewBuilder
+    private func routeSection(for path: PaymentPath) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Tappable header
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isRouteExpanded.toggle()
+                }
+            }) {
+                HStack {
+                    Label("Route", systemImage: "arrow.triangle.turn.up.right.circle")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 4) {
+                        Text("\(path.path.count + 1) hops")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        
+                        Image(systemName: isRouteExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .rotationEffect(.degrees(isRouteExpanded ? 0 : 0))
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            
+            // Expandable content
+            if isRouteExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    // Build the complete path including source and destination
+                    let completeAssets = [path.sourceAsset] + path.path + [path.destinationAsset]
+                    
+                    VStack(spacing: 8) {
+                        ForEach(Array(completeAssets.enumerated()), id: \.offset) { index, asset in
+                            HStack {
+                                // Asset info
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(asset.id == "native" ? Color.orange : Color.blue)
+                                        .frame(width: 8, height: 8)
+                                    
+                                    Text(formatAssetName(asset))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.primary)
+                                }
+                                
+                                Spacer()
+                                
+                                // Step indicator
+                                if index == 0 {
+                                    Text("Start")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.2))
+                                        .foregroundColor(.green)
+                                        .cornerRadius(8)
+                                } else if index == completeAssets.count - 1 {
+                                    Text("End")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.2))
+                                        .foregroundColor(.blue)
+                                        .cornerRadius(8)
+                                } else {
+                                    Text("Hop \(index)")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.gray.opacity(0.2))
+                                        .foregroundColor(.gray)
+                                        .cornerRadius(8)
+                                }
+                            }
+                            
+                            // Arrow indicator (except for last item)
+                            if index < completeAssets.count - 1 {
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 2)
+                            }
+                        }
+                    }
+                    
+                    // Summary text
+                    Text("This payment will convert through \(path.path.count) intermediate asset\(path.path.count == 1 ? "" : "s") to reach the destination.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity.combined(with: .move(edge: .top))
+                ))
+            }
+        }
+        .padding(12)
+        .background(Color(.systemGray5).opacity(0.3))
+        .cornerRadius(8)
+    }
+    
     // MARK: - Action Buttons
     
     private var actionButtons: some View {
@@ -1033,6 +1158,7 @@ struct SendPathPaymentBox: View {
             Button(action: {
                 viewModel.state = .destinationAssetsLoaded
                 viewModel.selectedPath = nil
+                isRouteExpanded = false
             }) {
                 Text("Change Path")
                     .font(.system(size: 16, weight: .medium))

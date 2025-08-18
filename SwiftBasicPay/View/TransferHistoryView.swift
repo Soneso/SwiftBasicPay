@@ -18,6 +18,7 @@ class TransferHistoryViewModel {
     let assetInfo: AnchoredAssetInfo
     let authToken: AuthToken
     let savedKycData: [KycEntry]
+    let dashboardData: DashboardData
     
     // State
     enum HistoryMode: Int, CaseIterable {
@@ -63,11 +64,13 @@ class TransferHistoryViewModel {
     init(
         assetInfo: AnchoredAssetInfo,
         authToken: AuthToken,
-        savedKycData: [KycEntry] = []
+        savedKycData: [KycEntry] = [],
+        dashboardData: DashboardData
     ) {
         self.assetInfo = assetInfo
         self.authToken = authToken
         self.savedKycData = savedKycData
+        self.dashboardData = dashboardData
     }
     
     // MARK: - Computed Properties
@@ -170,6 +173,9 @@ class TransferHistoryViewModel {
                 _ = try await sep12.add(sep9Info: requestedFieldsData, transactionId: txId)
             }
             
+            // Save KYC data locally using the domain manager to ensure proper cache management
+            try await dashboardData.kycManagerDirect.updateKycEntries(requestedFieldsData)
+            
             // Wait a bit for the server to process
             try await Task.sleep(nanoseconds: 2_000_000_000)
             await loadTransfers()
@@ -233,15 +239,18 @@ struct TransferHistoryView: View {
     private let assetInfo: AnchoredAssetInfo
     private let authToken: AuthToken
     private let savedKycData: [KycEntry]
+    private let dashboardData: DashboardData
     
     init(
         assetInfo: AnchoredAssetInfo,
         authToken: AuthToken,
-        savedKycData: [KycEntry] = []
+        savedKycData: [KycEntry] = [],
+        dashboardData: DashboardData
     ) {
         self.assetInfo = assetInfo
         self.authToken = authToken
         self.savedKycData = savedKycData
+        self.dashboardData = dashboardData
     }
     
     var body: some View {
@@ -293,7 +302,8 @@ struct TransferHistoryView: View {
                             viewModel = TransferHistoryViewModel(
                                 assetInfo: assetInfo,
                                 authToken: authToken,
-                                savedKycData: savedKycData
+                                savedKycData: savedKycData,
+                                dashboardData: dashboardData
                             )
                             await viewModel?.loadTransfers()
                         }

@@ -67,7 +67,10 @@ final class AssetsViewModel {
             pin = ""
             selectedAsset = "Custom asset"
             
-            // Reload data
+            // Clear cache to ensure fresh data after addition
+            dashboardData.assetManagerDirect.clearCache()
+            
+            // Reload data with fresh fetch
             await dashboardData.fetchUserAssets()
             
             // Success feedback
@@ -113,7 +116,10 @@ final class AssetsViewModel {
             showRemovalSheet = false
             assetToRemove = nil
             
-            // Reload data
+            // Clear cache to ensure fresh data after removal
+            dashboardData.assetManagerDirect.clearCache()
+            
+            // Reload data with fresh fetch
             await dashboardData.fetchUserAssets()
             
             // Success feedback

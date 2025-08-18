@@ -77,16 +77,8 @@ final class ContactsViewModel {
                 return
             }
             
-            // Add contact
-            var updatedContacts = dashboardData.userContacts
-            let newContact = ContactInfo(name: newContactName, accountId: newContactAccountId)
-            updatedContacts.append(newContact)
-            
-            // Save to secure storage
-            try SecureStorage.saveContacts(contacts: updatedContacts)
-            
-            // Reload contacts
-            await dashboardData.loadUserContacts()
+            // Add contact using ContactManager to ensure proper cache invalidation
+            try await dashboardData.contactManagerDirect.addContact(name: newContactName, accountId: newContactAccountId)
             
             // Success feedback
             toastMessage = "Contact added successfully"
@@ -112,12 +104,9 @@ final class ContactsViewModel {
     
     @MainActor
     func deleteContact(_ contact: ContactInfo, dashboardData: DashboardData) async {
-        var updatedContacts = dashboardData.userContacts
-        updatedContacts.removeAll { $0.id == contact.id }
-        
         do {
-            try SecureStorage.saveContacts(contacts: updatedContacts)
-            await dashboardData.loadUserContacts()
+            // Delete contact using ContactManager to ensure proper cache invalidation
+            try await dashboardData.contactManagerDirect.deleteContact(contact)
             
             toastMessage = "Contact deleted"
             showToast = true
@@ -135,12 +124,12 @@ final class ContactsViewModel {
     
     @MainActor
     func deleteSelectedContacts(dashboardData: DashboardData) async {
-        var updatedContacts = dashboardData.userContacts
-        updatedContacts.removeAll { selectedContacts.contains($0.id) }
-        
         do {
-            try SecureStorage.saveContacts(contacts: updatedContacts)
-            await dashboardData.loadUserContacts()
+            // Get contacts to delete based on selected IDs
+            let contactsToDelete = dashboardData.userContacts.filter { selectedContacts.contains($0.id) }
+            
+            // Delete contacts using ContactManager to ensure proper cache invalidation
+            try await dashboardData.contactManagerDirect.deleteContacts(contactsToDelete)
             
             toastMessage = "\(selectedContacts.count) contact(s) deleted"
             showToast = true
