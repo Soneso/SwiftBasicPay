@@ -139,7 +139,7 @@ class DashboardData {
 **Key Features:**
 - Coordinates all app state through domain managers
 - Provides clean API via computed properties
-- Implements performance optimizations (caching, debouncing)
+- Implements performance optimizations (caching, rate limiting)
 - Thread-safe with @MainActor isolation
 
 ### 2. Domain Managers
@@ -255,10 +255,9 @@ enum DataState<T> {
    - Account existence: 60 seconds
    - Contacts & KYC: No expiry (manual refresh)
 
-3. **Debouncing & Rate Limiting**
-   - 500ms debounce on refresh operations
-   - Prevents rapid successive API calls
+3. **Rate Limiting**
    - Minimum 2-second interval between full refreshes
+   - Prevents rapid successive API calls
    - Request deduplication (prevents concurrent identical requests)
 
 ## Navigation Pattern

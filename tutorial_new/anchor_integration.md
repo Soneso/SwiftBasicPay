@@ -533,7 +533,7 @@ struct InteractiveWebView: View {
 
 ## Testing with Stellar Test Anchor
 
-Use predefined test assets (SRT, USDC) from `testanchor.stellar.org`:
+Use predefined test assets (SRT, USDC) from `anchor-sep-server-dev.stellar.org`:
 1. Add trustline to SRT or USDC
 2. Navigate to Transfers tab
 3. Select the anchored asset

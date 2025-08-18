@@ -13,7 +13,7 @@ import stellarsdk
 public class StellarService {
     
     public static var wallet = Wallet.testNet
-    public static let testAnchorDomain = "anchor-sep-server-dev.stellar.org"//"testanchor.stellar.org"
+    public static let testAnchorDomain = "anchor-sep-server-dev.stellar.org"
     
     /// Checks if an account for the given address (account id) exists on the Stellar Network.
     /// 
@@ -52,7 +52,7 @@ public class StellarService {
     }
     
     /// A list of assets on the Stellar Test Network used to make
-    /// testing easier. (to be used with testanchor.stellar.org)
+    /// testing easier. (to be used with anchor-sep-server-dev.stellar.org)
     public static var testAnchorAssets : [IssuedAssetId] {
         return [
             try! IssuedAssetId(code: "SRT", issuer: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B"),
@@ -325,7 +325,7 @@ public class StellarService {
                     continue
                 }
                 // check if it is a known stellar testanchor asset
-                // if yes, we can use testanchor.stellar.org as anchor.
+                // if yes, we can use anchor-sep-server-dev.stellar.org as anchor.
                 if let _ = testAnchorAssets.filter({$0.code == issuedAsset.code && $0.issuer == issuedAsset.issuer}).first {
                     anchorDomain = testAnchorDomain
                 } else {

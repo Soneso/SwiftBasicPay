@@ -9,7 +9,7 @@ After login, the [`DashboardData`](https://github.com/Soneso/SwiftBasicPay/blob/
 1. **Domain Managers**: Specialized managers for different data domains
 2. **DataState Enum**: Unified state management for async operations
 3. **Smart Caching**: TTL-based caching with configurable expiration
-4. **Performance Optimization**: Parallel data fetching, debouncing, and request deduplication
+4. **Performance Optimization**: Parallel data fetching and request deduplication
 
 ### State Management with DataState
 
@@ -73,8 +73,6 @@ class DashboardData {
     private let kycManager: KycManager
     
     /// Performance optimization settings
-    private var refreshDebounceTimer: Timer?
-    private let refreshDebounceInterval: TimeInterval = 0.5 // 500ms debounce
     private let minimumRefreshInterval: TimeInterval = 2.0 // Min 2s between refreshes
     
     internal init(userAddress: String) {
@@ -283,42 +281,6 @@ func fetchStellarData() async {
 }
 ```
 
-### Smart Refresh with Debouncing
-
-```swift
-func refreshDataIfNeeded() async {
-    // Cancel any pending refresh
-    refreshDebounceTimer?.invalidate()
-    
-    // Debounce: Wait before executing
-    await withCheckedContinuation { continuation in
-        refreshDebounceTimer = Timer.scheduledTimer(
-            withTimeInterval: refreshDebounceInterval, 
-            repeats: false
-        ) { _ in
-            continuation.resume()
-        }
-    }
-    
-    // Only refresh expired caches
-    await withTaskGroup(of: Void.self) { group in
-        if assetManager.shouldRefresh() {
-            group.addTask { [weak self] in
-                await self?.assetManager.fetchUserAssets()
-            }
-        }
-        
-        if paymentManager.shouldRefresh() {
-            group.addTask { [weak self] in
-                await self?.paymentManager.fetchRecentPayments()
-            }
-        }
-        
-        await group.waitForAll()
-    }
-}
-```
-
 ## View Integration
 
 Views automatically update when data changes:
@@ -360,7 +322,7 @@ struct Overview: View {
 1. **Reactive Updates**: `@Observable` ensures UI updates automatically
 2. **Smart Caching**: TTL-based with configurable expiration times
 3. **Parallel Loading**: TaskGroup for concurrent data fetching
-4. **Debouncing**: Prevents excessive API calls
+4. **Rate Limiting**: Minimum refresh interval prevents excessive API calls
 5. **Error Handling**: Unified error states with DataState enum
 6. **Memory Efficient**: Weak references and proper cleanup
 7. **Testable**: Domain managers can be tested independently

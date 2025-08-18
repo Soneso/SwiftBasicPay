@@ -259,7 +259,7 @@ This architecture tracks account state through:
 
 1. **DataState Enum**: Unified loading/error states
 2. **Caching**: 60-second TTL for account existence
-3. **Automatic Retry**: Smart refresh on error
+3. **Manual Actions**: User-initiated refresh via pull-to-refresh
 4. **User Feedback**: Clear error messages and actions
 
 

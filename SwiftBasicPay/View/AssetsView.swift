@@ -621,7 +621,8 @@ struct AssetsView: View {
                 
                 descriptionCard
                 
-                if dashboardData.userAccountExists {
+                // Show add asset form if account exists OR if we have loaded assets (which means account exists)
+                if dashboardData.userAccountExists || !dashboardData.userAssets.isEmpty {
                     addAssetSection
                 }
                 
@@ -728,7 +729,8 @@ struct AssetsView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.primary)
                 Spacer()
-                if dashboardData.userAccountExists {
+                // Show asset count if account exists OR if we have loaded assets
+                if dashboardData.userAccountExists || !dashboardData.userAssets.isEmpty {
                     Text("\(dashboardData.userAssets.count) total")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary)

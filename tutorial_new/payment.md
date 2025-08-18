@@ -85,7 +85,9 @@ final class SendPaymentViewModel {
 
 ### Recipient Selection
 
-Users can select from contacts or enter a custom address:
+Users can select from contacts or enter a custom address. Contacts can be added to the app in the contacts view.
+
+<img src="./img/payment/simple_payment_select_contact.png" alt="Select Contact" width="30%">
 
 ```swift
 VStack(alignment: .leading, spacing: 8) {
@@ -118,6 +120,8 @@ VStack(alignment: .leading, spacing: 8) {
 
 Display available assets with balances:
 
+<img src="./img/payment/simple_payment_asset_selection.png" alt="Asset selection" width="30%">
+
 ```swift
 VStack(alignment: .leading, spacing: 8) {
     Label("Asset", systemImage: "star.circle")
@@ -140,6 +144,8 @@ VStack(alignment: .leading, spacing: 8) {
     }
 }
 ```
+
+<img src="./img/payment/simple_payment_asset_selected.png" alt="Asset selected" width="30%">
 
 ### Amount Input with Validation
 

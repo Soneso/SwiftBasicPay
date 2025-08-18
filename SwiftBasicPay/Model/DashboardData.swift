@@ -56,10 +56,6 @@ class DashboardData {
     private let contactManager: ContactManager
     private let kycManager: KycManager
     
-    /// Performance optimization: Debounce timer for refresh operations
-    private var refreshDebounceTimer: Timer?
-    private let refreshDebounceInterval: TimeInterval = 0.5 // 500ms debounce
-    
     /// Performance tracking
     private var lastFullRefreshTime: Date?
     private let minimumRefreshInterval: TimeInterval = 2.0 // Minimum 2 seconds between full refreshes
@@ -173,36 +169,6 @@ class DashboardData {
             }
             
             // Wait for all tasks to complete
-            await group.waitForAll()
-        }
-    }
-    
-    /// Smart refresh that only updates data if needed (with debouncing)
-    func refreshDataIfNeeded() async {
-        // Cancel any pending refresh
-        refreshDebounceTimer?.invalidate()
-        
-        // Debounce: Wait before executing
-        await withCheckedContinuation { continuation in
-            refreshDebounceTimer = Timer.scheduledTimer(withTimeInterval: refreshDebounceInterval, repeats: false) { _ in
-                continuation.resume()
-            }
-        }
-        
-        // Check what needs refreshing based on cache expiration
-        await withTaskGroup(of: Void.self) { group in
-            if assetManager.shouldRefresh() {
-                group.addTask { [weak self] in
-                    await self?.assetManager.fetchUserAssets()
-                }
-            }
-            
-            if paymentManager.shouldRefresh() {
-                group.addTask { [weak self] in
-                    await self?.paymentManager.fetchRecentPayments()
-                }
-            }
-            
             await group.waitForAll()
         }
     }

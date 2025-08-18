@@ -250,7 +250,7 @@ struct ContentView: View {
     
     var body: some View {
         if let userAddress = userAddress {
-            // Create DashboardData with modern architecture
+            // Create DashboardData
             let dashboardData = DashboardData(userAddress: userAddress)
             Dashboard(logoutUser: logoutUser)
                 .environmentObject(dashboardData)
@@ -270,8 +270,6 @@ struct ContentView: View {
 - PIN is never stored, only used for encryption
 - Secret key is immediately encrypted before storage
 - All sensitive fields use `SecureField`
-- Automatic clipboard clearing after copy
-- Session-based authentication (lost on app restart)
 
 ## Stellar SDK Integration
 

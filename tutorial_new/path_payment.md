@@ -259,10 +259,11 @@ func findPaymentPath(userAddress: String, userAssets: [AssetInfo]) async {
             return
         }
         
-        // Select the best path (first one for simplicity)
+        // Select the first path (in a real app, let user choose)
         selectedPath = paths.first
         state = .pathFound
         
+        // Success feedback
         notificationFeedback.notificationOccurred(.success)
     } catch {
         pathError = "Failed to find path: \(error.localizedDescription)"
@@ -307,6 +308,8 @@ public static func findStrictReceivePaymentPath(
 }
 ```
 
+<img src="./img/payment/path_display.png" alt="Path display" width="30%">
+
 ## Executing Path Payment
 
 ### Complete Path Payment Flow
@@ -321,14 +324,17 @@ func sendPathPayment(dashboardData: DashboardData) async {
     state = .sendingPayment
     
     do {
-        // Get signing keypair
+        // Get user keypair
         let authService = AuthService()
         let userKeyPair = try authService.userKeyPair(pin: pin)
         
-        // Prepare memo if provided
-        let memoText = memoToSend.isEmpty ? nil : memoToSend
+        // Prepare memo
+        var memoText = ""
+        if !memoToSend.isEmpty {
+            memoText = memoToSend
+        }
         
-        // Execute path payment based on mode
+        // Send payment
         var result = false
         
         if strictSend {
@@ -361,16 +367,25 @@ func sendPathPayment(dashboardData: DashboardData) async {
             showSuccessToast = true
             notificationFeedback.notificationOccurred(.success)
             
-            // Reset and refresh
+            // Reset form
             resetForm()
+            
+            // Refresh data
             await dashboardData.fetchStellarData()
+        } else {
+            errorMessage = "Payment failed. Please try again."
+            state = .pathFound
+            notificationFeedback.notificationOccurred(.error)
         }
     } catch {
         errorMessage = error.localizedDescription
         state = .pathFound
+        notificationFeedback.notificationOccurred(.error)
     }
 }
 ```
+
+<img src="./img/payment/path_payment_success.png" alt="Path Payment Success" width="30%">
 
 ### Stellar SDK Path Payment Operations
 
