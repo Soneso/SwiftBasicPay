@@ -20,10 +20,10 @@ Build and run using iPhone simulator (iOS 17.5+).
 1. [`Secure data storage`](secure_data_storage.md) - Keychain integration for secret keys and sensitive data
 2. [`Authentication`](authentication.md) - PIN-based authentication and signing key management
 3. [`Sign up and sign in`](signup_and_sign_in.md) - Account creation and user onboarding
-4. [`Dashboard Data`](dashboard_data.md) - Modern state management with domain managers
-5. [`Account creation`](account_creation.md) - Funding accounts on Stellar network
+4. [`Dashboard Data`](dashboard_data.md) - State management with domain managers
+5. [`Account creation`](account_creation.md) - Funding accounts on the Stellar Network
 6. [`Manage trust`](manage_trust.md) - Adding and removing asset trustlines
-7. [`Payment`](payment.md) - Sending simple payments with Stellar SDK
+7. [`Payment`](payment.md) - Sending simple payments with the Stellar Wallet SDK
 8. [`Path payment`](path_payment.md) - Cross-asset payments using order books
 9. [`Anchor integration`](anchor_integration.md) - SEP-6/24 deposits and withdrawals
 

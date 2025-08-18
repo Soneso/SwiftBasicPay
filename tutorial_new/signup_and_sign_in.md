@@ -2,7 +2,7 @@
 
 The [`AuthView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AuthView.swift) manages user onboarding. It displays either the sign-up or sign-in interface based on whether a user is already registered.
 
-<img src="./img/signup_signin.png" alt="Sign up/in UI screenshot" width="40%">
+<img src="./img/signup_signin.png" alt="Sign up/in UI screenshot" width="30%">
 
 ## Architecture
 
@@ -35,7 +35,7 @@ final class AuthViewModel {
 
 When the application starts without a registered user, [`AuthView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/AuthView.swift) displays the sign-up interface with a randomly generated keypair.
 
-<img src="./img/signup.png" alt="Sign up keypair display" width="40%">
+<img src="./img/signup.png" alt="Sign up keypair display" width="30%">
 
 #### Keypair Generation
 
@@ -161,7 +161,7 @@ func signup() async -> String? {
 
 ## Sign In Flow
 
-<img src="./img/signin.png" alt="Sign in UI screenshot" width="40%">
+<img src="./img/signin.png" alt="Sign in UI screenshot" width="30%">
 
 For returning users, the sign-in interface appears:
 
