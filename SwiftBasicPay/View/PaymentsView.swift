@@ -72,7 +72,7 @@ struct PaymentsView: View {
             VStack(spacing: 0) {
                 headerSection
                 
-                if dashboardData.userAssets.isEmpty {
+                if !dashboardData.userAccountExists {
                     BalancesCard()
                         .environment(dashboardData)
                         .padding(.horizontal)
@@ -119,7 +119,7 @@ struct PaymentsView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "paperplane.circle.fill")
+                Image(systemName: "dollarsign.circle.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(.white, .blue)
                 
@@ -174,7 +174,7 @@ struct PaymentsView: View {
     @ViewBuilder
     private var paymentFormSection: some View {
         if viewModel.pathPaymentMode {
-            ModernSendPathPaymentCard(
+            SendPathPaymentCard(
                 onSuccess: { message in
                     viewModel.showSuccess(message: message)
                 }
@@ -185,7 +185,7 @@ struct PaymentsView: View {
                 removal: .move(edge: .leading).combined(with: .opacity)
             ))
         } else {
-            ModernSendPaymentCard(
+            SendPaymentCard(
                 onSuccess: { message in
                     viewModel.showSuccess(message: message)
                 }
@@ -212,12 +212,10 @@ struct PaymentsView: View {
     }
 }
 
-// MARK: - Modern Balances Card
+// MARK: - Balances Card
 
 struct BalancesCard: View {
     @Environment(DashboardData.self) var dashboardData
-    @State private var isFundingAccount = false
-    @State private var fundingError: String?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -251,17 +249,6 @@ struct BalancesCard: View {
                 .padding(.vertical, 20)
             } else if let error = dashboardData.userAssetsLoadingError {
                 errorContent(error: error)
-            } else if let fundingError = fundingError {
-                VStack(spacing: 12) {
-                    Label(fundingError, systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.red)
-                    
-                    Button(action: { self.fundingError = nil }) {
-                        Text("Dismiss")
-                            .font(.system(size: 14, weight: .medium))
-                    }
-                }
             } else {
                 VStack(spacing: 12) {
                     ForEach(dashboardData.userAssets, id: \.id) { asset in
@@ -288,22 +275,10 @@ struct BalancesCard: View {
                 Text("Account Not Found")
                     .font(.system(size: 16, weight: .semibold))
                 
-                Text("Your account needs to be funded on the Stellar Test Network")
+                Text("Your account needs to be funded on the Stellar Network before you can make payments.")
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                
-                Button(action: { Task { await fundAccount() } }) {
-                    if isFundingAccount {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                    } else {
-                        Label("Fund on Testnet", systemImage: "arrow.down.circle.fill")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isFundingAccount)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -324,32 +299,6 @@ struct BalancesCard: View {
             }
             .padding(.vertical, 8)
         }
-    }
-    
-    private func fundAccount() async {
-        isFundingAccount = true
-        fundingError = nil
-        
-        do {
-            try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
-            
-            // Force refresh all data (clears cache and bypasses the 2-second minimum refresh interval)
-            await dashboardData.forceRefreshAll()
-            
-            // Haptic feedback on success
-            await MainActor.run {
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-            }
-        } catch {
-            fundingError = "Failed to fund account: \(error.localizedDescription)"
-            
-            // Haptic feedback on error
-            await MainActor.run {
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
-            }
-        }
-        
-        isFundingAccount = false
     }
 }
 
@@ -525,7 +474,7 @@ struct RecentPaymentsCard: View {
     }
 }
 
-// MARK: - Modern Payment Row
+// MARK: - Payment Row
 
 struct PaymentsPaymentRow: View {
     let payment: PaymentInfo
@@ -671,10 +620,9 @@ struct PaymentSkeletonLoader: View {
     }
 }
 
-// MARK: - Placeholder for Modern Send Payment Cards
-// These will be implemented in separate files
+// MARK: - Send Payment Cards
 
-struct ModernSendPaymentCard: View {
+struct SendPaymentCard: View {
     let onSuccess: (String) -> Void
     @Environment(DashboardData.self) var dashboardData
     
@@ -684,7 +632,7 @@ struct ModernSendPaymentCard: View {
     }
 }
 
-struct ModernSendPathPaymentCard: View {
+struct SendPathPaymentCard: View {
     let onSuccess: (String) -> Void
     @Environment(DashboardData.self) var dashboardData
     

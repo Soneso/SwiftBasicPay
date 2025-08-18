@@ -491,7 +491,7 @@ class PaymentManager {
         
         do {
             // Ensure account existence is checked
-            await checkAccountExists()
+            let _ = await checkAccountExists()
             
             guard userAccountExists else {
                 recentPaymentsState = .error(DashboardDataError.accountNotFound(accountId: userAddress))

@@ -34,9 +34,9 @@ enum DashboardTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .overview: return "list.dash"
-        case .payments: return "dollarsign.circle"
+        case .payments: return "paperplane.circle"
         case .assets: return "star.circle"
-        case .transfers: return "paperplane"
+        case .transfers: return "arrow.left.arrow.right.circle"
         case .kyc: return "shield.lefthalf.filled.badge.checkmark"
         case .contacts: return "person.2"
         case .settings: return "gearshape"
@@ -46,9 +46,9 @@ enum DashboardTab: String, CaseIterable {
     var selectedIcon: String {
         switch self {
         case .overview: return "list.dash"
-        case .payments: return "dollarsign.circle.fill"
+        case .payments: return "paperplane.circle.fill"
         case .assets: return "star.circle.fill"
-        case .transfers: return "paperplane.fill"
+        case .transfers: return "arrow.left.arrow.right.circle.fill"
         case .kyc: return "shield.lefthalf.filled.badge.checkmark"
         case .contacts: return "person.2.fill"
         case .settings: return "gearshape.fill"

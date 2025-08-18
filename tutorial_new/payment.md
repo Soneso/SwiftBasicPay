@@ -6,7 +6,7 @@ Payment operations send assets (XLM or tokens) to destination accounts. SwiftBas
 
 The [`PaymentsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/PaymentsView.swift) uses iOS patterns with reactive state management:
 
-<img src="./img/payment/simple_payment.png" alt="Payments view" width="3%">
+<img src="./img/payment/simple_payment.png" alt="Payments view" width="30%">
 
 ```swift
 @Observable

@@ -213,7 +213,7 @@ struct ContactCard: View {
             Spacer()
             
             // Selection indicator or chevron
-            if let onTap = onTap {
+            if let _ = onTap {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)

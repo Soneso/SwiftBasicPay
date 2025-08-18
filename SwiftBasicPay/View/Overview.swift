@@ -680,7 +680,7 @@ struct ErrorStateView: View {
             case .accountNotFound(_):
                 Text("Account Not Found")
                     .font(.system(size: 16, weight: .semibold))
-                Text("Your account does not exist on the Stellar Test Network and needs to be funded")
+                Text("Your account does not exist on the Stellar Network and needs to be funded.")
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -767,9 +767,8 @@ struct Overview: View {
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
+            headerSection
             VStack(spacing: 20) {
-                headerSection
-                
                 if let error = viewModel.viewErrorMsg {
                     ErrorBanner(message: error)
                         .transition(.asymmetric(
@@ -781,8 +780,10 @@ struct Overview: View {
                 accountOverviewSection
                 BalancesView()
                     .environment(dashboardData)
-                RecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
-                    .environment(dashboardData)
+                if dashboardData.userAccountExists {
+                    RecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
+                        .environment(dashboardData)
+                }
                 accountDetailsSection
             }
             .padding(.horizontal, 16)
@@ -803,17 +804,34 @@ struct Overview: View {
     }
     
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Overview")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundColor(.primary)
-            
-            Text("Manage your Stellar wallet")
-                .font(.system(size: 15))
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "list.dash")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.white, .blue)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Overview")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                    
+                    Text("Manage your Stellar wallet")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, 8)
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
     
     private var accountOverviewSection: some View {

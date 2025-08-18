@@ -74,7 +74,7 @@ class TransfersViewModel {
     
     @MainActor
     var isAccountFunded: Bool {
-        !dashboardData.userAssets.isEmpty
+        dashboardData.userAccountExists
     }
     
     // MARK: - Actions
@@ -86,8 +86,7 @@ class TransfersViewModel {
         
         do {
             // Check if account exists
-            let accountExists = try await StellarService.accountExists(address: dashboardData.userAddress)
-            if !accountExists {
+            if !isAccountFunded {
                 anchoredAssetsError = "Account not found on the network"
                 anchoredAssets = []
                 isLoadingAssets = false
@@ -279,7 +278,7 @@ struct TransfersView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Modern header with gradient
+
             headerView
             
             if !viewModel.isAccountFunded {
@@ -458,7 +457,7 @@ struct TransfersView: View {
                             .padding(.top, 40)
                     } else {
                         VStack(spacing: 20) {
-                            // Modern asset selector card
+                            // asset selector card
                             TransferAssetSelector(
                                 selectedAsset: .init(
                                     get: { viewModel.selectedAssetId },

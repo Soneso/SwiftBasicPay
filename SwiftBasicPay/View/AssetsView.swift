@@ -195,7 +195,7 @@ final class AssetsViewModel {
     }
 }
 
-// MARK: - Enhanced Asset Card
+// MARK: - Asset Card
 
 struct AssetCard: View {
     let asset: AssetInfo
@@ -204,7 +204,7 @@ struct AssetCard: View {
     @State private var isHovered = false
     
     var canRemove: Bool {
-        if let issuedAsset = asset.asset as? IssuedAssetId,
+        if let _ = asset.asset as? IssuedAssetId,
            Double(asset.balance) == 0 {
             return true
         }
@@ -602,7 +602,6 @@ struct AssetRemovalSheet: View {
 struct AssetsView: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var viewModel: AssetsViewModel
-    @State private var isRefreshing = false
     
     init() {
         self._viewModel = State(wrappedValue: AssetsViewModel())
@@ -610,9 +609,8 @@ struct AssetsView: View {
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
+            headerSection
             VStack(spacing: 20) {
-                headerSection
-                
                 if let error = viewModel.viewErrorMsg {
                     ErrorBanner(message: error)
                         .transition(.asymmetric(
@@ -623,7 +621,7 @@ struct AssetsView: View {
                 
                 descriptionCard
                 
-                if !dashboardData.userAssets.isEmpty {
+                if dashboardData.userAccountExists {
                     addAssetSection
                 }
                 
@@ -665,33 +663,34 @@ struct AssetsView: View {
     }
     
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Assets")
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.white, .blue)
                 
-                Text("Manage your Stellar assets")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Button(action: {
-                Task {
-                    await refreshData()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Assets")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                    
+                    Text("Manage your Stellar assets")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
                 }
-            }) {
-                Image(systemName: isRefreshing ? "arrow.clockwise.circle.fill" : "arrow.clockwise.circle")
-                    .font(.system(size: 24))
-                    .foregroundColor(.blue)
-                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                    .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
+                
+                Spacer()
             }
-            .disabled(isRefreshing)
+            .padding(.horizontal)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
         }
-        .padding(.bottom, 8)
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.1), Color.blue.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
     
     private var descriptionCard: some View {
@@ -729,7 +728,7 @@ struct AssetsView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.primary)
                 Spacer()
-                if !dashboardData.userAssets.isEmpty {
+                if dashboardData.userAccountExists {
                     Text("\(dashboardData.userAssets.count) total")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary)
@@ -770,9 +769,6 @@ struct AssetsView: View {
     }
     
     private func refreshData() async {
-        withAnimation {
-            isRefreshing = true
-        }
         
         await dashboardData.fetchUserAssets()
         
@@ -783,10 +779,6 @@ struct AssetsView: View {
             case .fetchingError(let message):
                 viewModel.viewErrorMsg = message
             }
-        }
-        
-        withAnimation {
-            isRefreshing = false
         }
         
         let successFeedback = UINotificationFeedbackGenerator()
