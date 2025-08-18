@@ -321,9 +321,9 @@ struct SecurePINInput: View {
     }
 }
 
-// MARK: - Enhanced Recent Payments View
+// MARK: - Recent Payments View
 
-struct EnhancedRecentPaymentsView: View {
+struct RecentPaymentsView: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var selectedPayment: PaymentInfo?
     var onCopyAddress: ((String) -> Void)? = nil
@@ -529,9 +529,9 @@ struct PaymentRow: View {
     }
 }
 
-// MARK: - Enhanced Balances View
+// MARK: - Balances View
 
-struct EnhancedBalancesView: View {
+struct BalancesView: View {
     @Environment(DashboardData.self) var dashboardData
     @State private var selectedAsset: AssetInfo?
     
@@ -741,7 +741,12 @@ struct ErrorStateView: View {
         
         do {
             try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
-            await dashboardData.fetchStellarData()
+            
+            // Clear the account cache to force a fresh check
+            dashboardData.clearAccountCache()
+            
+            // Force refresh all data (bypasses the 2-second minimum refresh interval)
+            await dashboardData.forceRefreshAll()
             
             let successFeedback = UINotificationFeedbackGenerator()
             successFeedback.notificationOccurred(.success)
@@ -783,9 +788,9 @@ struct Overview: View {
                 }
                 
                 accountOverviewSection
-                EnhancedBalancesView()
+                BalancesView()
                     .environment(dashboardData)
-                EnhancedRecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
+                RecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
                     .environment(dashboardData)
                 accountDetailsSection
             }
@@ -807,32 +812,16 @@ struct Overview: View {
     }
     
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Overview")
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(.primary)
-                
-                Text("Manage your Stellar wallet")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Overview")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundColor(.primary)
             
-            Spacer()
-            
-            Button(action: {
-                Task {
-                    await refreshData()
-                }
-            }) {
-                Image(systemName: isRefreshing ? "arrow.clockwise.circle.fill" : "arrow.clockwise.circle")
-                    .font(.system(size: 24))
-                    .foregroundColor(.blue)
-                    .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                    .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
-            }
-            .disabled(isRefreshing)
+            Text("Manage your Stellar wallet")
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 8)
     }
     
@@ -938,7 +927,8 @@ struct Overview: View {
             isRefreshing = true
         }
         
-        await dashboardData.fetchStellarData()
+        // Force refresh all data (bypasses cache and minimum refresh interval)
+        await dashboardData.forceRefreshAll()
         await dashboardData.loadUserContacts()
         await dashboardData.loadUserKycData()
         

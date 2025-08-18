@@ -66,7 +66,7 @@ final class AppStateManager {
     }
 }
 
-// MARK: - Enhanced Content View
+// MARK: - Content View
 
 struct ContentView: View {
     @State private var appState = AppStateManager()

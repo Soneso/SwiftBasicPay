@@ -81,7 +81,7 @@ final class DashboardViewModel {
     }
 }
 
-// MARK: - Enhanced Dashboard
+// MARK: - Dashboard
 
 @MainActor
 struct Dashboard: View {

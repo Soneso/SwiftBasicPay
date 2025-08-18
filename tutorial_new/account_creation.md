@@ -6,25 +6,44 @@ Stellar accounts require a valid keypair and minimum balance of XLM to exist on 
 
 ### Detecting Unfunded Accounts
 
-The modern [`Overview`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift) view detects unfunded accounts through the `DashboardData` state:
+The [`Overview`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift) view detects unfunded accounts through the `BalancesView` component, which checks the `DashboardData` state:
 
-<img src="./img/account_creation/account_not_funded" alt="Account not funded UI" width="40%">
+<img src="./img/account_creation/account_not_funded.png" alt="Account not funded UI" width="30%">
 
 ```swift
-struct Overview: View {
+struct BalancesView: View {
     @Environment(DashboardData.self) var dashboardData
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Check account status through asset state
-                switch dashboardData.userAssetsState {
-                case .error(let error):
-                    if case DashboardDataError.accountNotFound = error {
-                        AccountNotFoundView()
+        DashboardCard(title: "Balances", systemImage: "creditcard.fill") {
+            if dashboardData.isLoadingAssets {
+                // Loading state
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Loading balances...")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+            } else if let error = dashboardData.userAssetsLoadingError {
+                // Error state - includes account not found
+                ErrorStateView(error: error)
+                    .environment(dashboardData)
+            } else if dashboardData.userAssets.isEmpty {
+                // Empty state
+                EmptyStateView(
+                    icon: "creditcard.trianglebadge.exclamationmark",
+                    title: "No Assets",
+                    message: "Your account doesn't hold any assets yet"
+                )
+            } else {
+                // Display assets
+                VStack(spacing: 12) {
+                    ForEach(dashboardData.userAssets, id: \.id) { asset in
+                        AssetRow(asset: asset, isSelected: selectedAsset?.id == asset.id)
                     }
-                default:
-                    // Regular content
                 }
             }
         }
@@ -32,14 +51,16 @@ struct Overview: View {
 }
 ```
 
-### Account Not Found View Component
+### Error State View Component
 
-The error state UI with funding capability:
+The `ErrorStateView` component handles account not found errors with funding capability:
 
 ```swift
-struct AccountNotFoundView: View {
+struct ErrorStateView: View {
+    let error: DashboardDataError
     @State private var isFundingAccount = false
     @State private var fundingError: String?
+    @Environment(DashboardData.self) var dashboardData
     
     var body: some View {
         VStack(spacing: 12) {
@@ -47,40 +68,56 @@ struct AccountNotFoundView: View {
                 .font(.system(size: 32))
                 .foregroundColor(.orange)
             
-            Text("Account Not Found")
-                .font(.system(size: 16, weight: .semibold))
-            
-            Text("Your account does not exist on the Stellar Test Network and needs to be funded")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            if let fundingError = fundingError {
-                Text(fundingError)
-                    .font(.system(size: 12))
-                    .foregroundColor(.red)
-            }
-            
-            if isFundingAccount {
-                ProgressView()
-                    .scaleEffect(0.8)
-            } else {
-                Button(action: {
-                    Task {
-                        await fundAccount()
-                    }
-                }) {
-                    Text("Fund on Testnet")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.green)
-                        .cornerRadius(10)
+            switch error {
+            case .accountNotFound(_):
+                Text("Account Not Found")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("Your account does not exist on the Stellar Test Network and needs to be funded")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                if let fundingError = fundingError {
+                    Text(fundingError)
+                        .font(.system(size: 12))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
+                
+                if isFundingAccount {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .padding(.top, 8)
+                } else {
+                    Button(action: {
+                        Task {
+                            await fundAccount()
+                        }
+                    }) {
+                        Text("Fund on Testnet")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.green)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
+                }
+                
+            case .fetchingError(let message):
+                Text("Error Loading Data")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(message)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
         .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
     }
 }
 ```
@@ -89,7 +126,7 @@ struct AccountNotFoundView: View {
 
 ### Using Friendbot on Testnet
 
-The funding process uses [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) to request XLM from Friendbot:
+The funding process is implemented in `ErrorStateView` and uses [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) to request XLM from Friendbot:
 
 ```swift
 @MainActor
@@ -99,12 +136,13 @@ private func fundAccount() async {
     
     do {
         // Request funding from Friendbot
-        try await StellarService.fundTestnetAccount(
-            address: dashboardData.userAddress
-        )
+        try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
         
-        // Refresh data to show funded state
-        await dashboardData.fetchStellarData()
+        // Clear the account cache to force a fresh check
+        dashboardData.clearAccountCache()
+        
+        // Force refresh all data (bypasses the 2-second minimum refresh interval)
+        await dashboardData.forceRefreshAll()
         
         // Haptic feedback for success
         let successFeedback = UINotificationFeedbackGenerator()
@@ -141,17 +179,22 @@ The wallet SDK handles:
 
 ### Automatic State Update
 
-After successful funding, `DashboardData` refreshes all data:
+After successful funding, the app performs a force refresh:
 
 ```swift
-await dashboardData.fetchStellarData()
+// Clear the account cache to force a fresh check
+dashboardData.clearAccountCache()
+
+// Force refresh all data (bypasses cache and minimum refresh interval)
+await dashboardData.forceRefreshAll()
 ```
 
-This parallel fetch operation:
-1. Clears the account existence cache
-2. Fetches user assets (confirms account exists)
-3. Loads initial payment history
-4. Updates all dependent views
+This force refresh operation:
+1. Clears all cached data (account existence, assets, payments)
+2. Bypasses the 2-second minimum refresh interval
+3. Fetches fresh user assets (confirms account exists)
+4. Loads initial payment history
+5. Updates all dependent views immediately
 
 ### AssetManager Cache Clearing
 
@@ -170,35 +213,48 @@ After funding, the UI automatically updates:
 
 <img src="./img/account_creation/account_funded.png" alt="Account funded UI" width="40%">
 
-The assets are displayed with balances:
+The assets are displayed using the `AssetRow` component within `BalancesView`:
 
 ```swift
-struct BalancesSection: View {
-    let assets: [AssetInfo]
+struct AssetRow: View {
+    let asset: AssetInfo
+    let isSelected: Bool
     
     var body: some View {
-        VStack(spacing: 12) {
-            ForEach(assets) { asset in
-                HStack {
-                    AssetIcon(asset: asset)
+        VStack(spacing: 8) {
+            HStack {
+                // Asset icon
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(asset.id == "native" ? .orange : .blue)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(asset.code)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
                     
-                    VStack(alignment: .leading) {
-                        Text(asset.displayName)
-                            .font(.system(size: 14, weight: .medium))
-                        Text(asset.assetCode)
-                            .font(.system(size: 12))
+                    if let issuer = asset.issuer, !issuer.isEmpty {
+                        Text(issuer.shortAddress)
+                            .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
-                    
-                    Spacer()
-                    
-                    Text(asset.formattedBalance)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                 }
-                .padding(12)
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(asset.formattedBalance)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    
+                    Text(asset.code)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
             }
+            .padding(12)
+            .background(isSelected ? Color.blue.opacity(0.05) : Color(.systemGray6))
+            .cornerRadius(10)
         }
     }
 }
@@ -230,28 +286,6 @@ This architecture tracks account state through:
 3. **Automatic Retry**: Smart refresh on error
 4. **User Feedback**: Clear error messages and actions
 
-## Error Handling
-
-Common funding errors and handling:
-
-```swift
-enum FundingError: LocalizedError {
-    case networkError
-    case friendbotUnavailable
-    case accountAlreadyExists
-    
-    var errorDescription: String? {
-        switch self {
-        case .networkError:
-            return "Network connection failed. Please check your connection."
-        case .friendbotUnavailable:
-            return "Testnet funding service is temporarily unavailable."
-        case .accountAlreadyExists:
-            return "Account is already funded."
-        }
-    }
-}
-```
 
 ## Next
 

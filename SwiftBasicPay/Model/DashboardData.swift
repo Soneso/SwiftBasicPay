@@ -207,11 +207,14 @@ class DashboardData {
         }
     }
     
-    /// Force refresh all data (bypasses cache)
+    /// Force refresh all data (bypasses cache and minimum refresh interval)
     func forceRefreshAll() async {
         // Clear all caches
         assetManager.clearCache()
         paymentManager.clearCache()
+        
+        // Reset the last refresh time to bypass minimum interval check
+        lastFullRefreshTime = nil
         
         // Fetch fresh data
         await fetchStellarData()
@@ -356,9 +359,9 @@ class AssetManager {
         
         do {
             // Ensure account existence is checked
-            await checkAccountExists()
+            let accountExists = await checkAccountExists()
             
-            guard userAccountExists else {
+            guard accountExists else {
                 userAssetsState = .error(DashboardDataError.accountNotFound(accountId: userAddress))
                 return
             }
@@ -375,17 +378,19 @@ class AssetManager {
     }
     
     /// Check if account exists and cache the result
-    private func checkAccountExists() async {
+    private func checkAccountExists() async -> Bool {
         // Check if cache is still valid
         if let cached = cachedAccountExists, !cached.isExpired {
-            return
+            return cached.data
         }
         
         do {
             let exists = try await StellarService.accountExists(address: userAddress)
             cachedAccountExists = CacheEntry(data: exists, timestamp: Date(), ttl: accountExistenceTTL)
+            return exists
         } catch {
             cachedAccountExists = CacheEntry(data: false, timestamp: Date(), ttl: accountExistenceTTL)
+            return false
         }
     }
     
@@ -533,17 +538,19 @@ class PaymentManager {
     }
     
     /// Check if account exists and cache the result
-    private func checkAccountExists() async {
+    private func checkAccountExists() async -> Bool {
         // Check if cache is still valid
         if let cached = cachedAccountExists, !cached.isExpired {
-            return
+            return cached.data
         }
         
         do {
             let exists = try await StellarService.accountExists(address: userAddress)
             cachedAccountExists = CacheEntry(data: exists, timestamp: Date(), ttl: accountExistenceTTL)
+            return exists
         } catch {
             cachedAccountExists = CacheEntry(data: false, timestamp: Date(), ttl: accountExistenceTTL)
+            return false
         }
     }
     
