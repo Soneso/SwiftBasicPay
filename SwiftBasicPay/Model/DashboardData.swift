@@ -296,6 +296,14 @@ class AssetManager {
         if let cached = cachedAccountExists, !cached.isExpired {
             return cached.data
         }
+        
+        // If cache expired but we have successfully loaded assets, 
+        // the account must exist (can't have assets without an account)
+        if case .loaded(let assets) = userAssetsState, !assets.isEmpty {
+            return true
+        }
+        
+        // Only return false if we have no evidence of account existence
         return false
     }
     
@@ -427,6 +435,14 @@ class PaymentManager {
         if let cached = cachedAccountExists, !cached.isExpired {
             return cached.data
         }
+        
+        // If cache expired but we have successfully loaded payments, 
+        // the account must exist (can't have payments without an account)
+        if case .loaded(let payments) = recentPaymentsState, !payments.isEmpty {
+            return true
+        }
+        
+        // Only return false if we have no evidence of account existence
         return false
     }
     

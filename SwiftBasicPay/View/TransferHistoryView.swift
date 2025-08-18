@@ -126,6 +126,7 @@ class TransferHistoryViewModel {
         }
     }
     
+    @MainActor
     func getCustomerInfo(txId: String) async {
         isGettingRequiredSep12Data = true
         
@@ -162,6 +163,7 @@ class TransferHistoryViewModel {
         isGettingRequiredSep12Data = false
     }
     
+    @MainActor
     func uploadSep12CustomerData(customerId: String? = nil, requestedFieldsData: [String: String], txId: String) async {
         isUpdatingSep12Data = true
         

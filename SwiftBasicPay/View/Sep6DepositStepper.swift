@@ -274,13 +274,20 @@ struct Sep6DepositStepper: View {
     @ViewBuilder
     private var summaryStep: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Review & Confirm")
-                .font(.title3)
-                .fontWeight(.semibold)
-            
-            Text("Please review your deposit details before submitting")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            // Show different header based on submission state
+            if viewModel.submissionResponse != nil {
+                // After submission - no need for header as Sep6TransferResponseView shows its own
+                EmptyView()
+            } else {
+                // Before submission - show review header
+                Text("Review & Confirm")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Text("Please review your deposit details before submitting")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
             
             Sep6SummaryView(
                 isSubmitting: viewModel.isSubmitting,
@@ -307,10 +314,8 @@ struct Sep6DepositStepper: View {
                 if viewModel.validateKycFields() {
                     Task {
                         await viewModel.submitKYCData()
-                        // Wait for submission to complete before moving
-                        if viewModel.kycInfo?.sep12Status == Sep12Status.accepted {
-                            viewModel.goToNextStep()
-                        }
+                        // Don't auto-advance - let user see the acceptance status
+                        // User must click Continue again to proceed
                     }
                 }
             } else if viewModel.kycInfo?.sep12Status == Sep12Status.accepted {

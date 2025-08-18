@@ -288,15 +288,13 @@ struct ProfileHeaderCard: View {
             
             // Account Status
             HStack(spacing: 12) {
-                // Account is active if exists OR if we have loaded assets
-                let isAccountActive = dashboardData.userAccountExists || !dashboardData.userAssets.isEmpty
                 StatusBadge(
                     icon: "checkmark.shield.fill",
-                    text: isAccountActive ? "Active" : "Inactive",
-                    color: isAccountActive ? .green : .orange
+                    text: dashboardData.userAccountExists ? "Active" : "Inactive",
+                    color: dashboardData.userAccountExists ? .green : .orange
                 )
                 
-                if isAccountActive {
+                if dashboardData.userAccountExists {
                     StatusBadge(
                         icon: "star.fill",
                         text: "\(dashboardData.userAssets.count) Assets",

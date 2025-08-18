@@ -17,7 +17,7 @@ SwiftBasicPay integrates multiple Stellar Ecosystem Proposals (SEPs):
 
 The [`TransfersView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift) manages anchor operations:
 
-<img src="./img/anchor/transfers_view.png" alt="Transfers view" width="40%">
+<img src="./img/anchor/transfers_view.png" alt="Transfers view" width="30%">
 
 ```swift
 @Observable
@@ -31,6 +31,25 @@ class TransfersViewModel {
         case error(String)
     }
     
+    enum TransferMode: Int, CaseIterable {
+        case newTransfer = 1
+        case history = 2
+        
+        var title: String {
+            switch self {
+            case .newTransfer: return "New"
+            case .history: return "History"
+            }
+        }
+    }
+    
+    // Observable properties
+    var mode: TransferMode = .newTransfer
+    var state: ViewState = .initial
+    var selectedAssetInfo: AnchoredAssetInfo?
+    var pin = ""
+    var pinError: String?
+    
     // Transfer data
     var sep10AuthToken: AuthToken?
     var tomlInfo: TomlInfo?
@@ -39,7 +58,6 @@ class TransfersViewModel {
     
     // Anchored assets
     var anchoredAssets: [AnchoredAssetInfo] = []
-    var selectedAssetInfo: AnchoredAssetInfo?
 }
 ```
 
@@ -55,22 +73,32 @@ public static func getAnchoredAssets(
     let stellar = wallet.stellar
     
     for assetInfo in fromAssets {
-        // Only check issued assets (not XLM)
+        let asset = assetInfo.asset
+        var anchorDomain: String?
+        
+        // We are only interested in issued assets (not XLM)
         if let issuedAsset = asset as? IssuedAssetId {
-            var anchorDomain: String?
+            let issuerExists = try await stellar.account.accountExists(
+                accountAddress: issuedAsset.issuer
+            )
+            if !issuerExists {
+                continue
+            }
             
-            // Check if it's a known test anchor asset
-            if testAnchorAssets.contains(where: { 
+            // Check if it's a known stellar testanchor asset
+            if testAnchorAssets.contains(where: {
                 $0.code == issuedAsset.code && 
-                $0.issuer == issuedAsset.issuer 
+                $0.issuer == issuedAsset.issuer
             }) {
                 anchorDomain = testAnchorDomain
             } else {
-                // Load home domain from issuer account
+                // Otherwise load from home domain (maybe it is an anchor...)
                 let issuerAccountInfo = try await stellar.account.getInfo(
                     accountAddress: issuedAsset.issuer
                 )
-                anchorDomain = issuerAccountInfo.homeDomain
+                if let homeDomain = issuerAccountInfo.homeDomain {
+                    anchorDomain = homeDomain
+                }
             }
             
             if let domain = anchorDomain {
@@ -87,7 +115,7 @@ public static func getAnchoredAssets(
     return anchoredAssets
 }
 ```
-<img src="./img/anchor/anchored_assets_dropdown.png" alt="Anchored assets dropdown" width="40%">
+<img src="./img/anchor/anchored_assets_dropdown.png" alt="Anchored assets dropdown" width="30%">
 
 ## SEP-1: Loading Anchor Information
 
@@ -100,25 +128,14 @@ private func checkWebAuth(anchor: stellar_wallet_sdk.Anchor) async {
     tomlInfo = nil
     
     do {
-        // Load TOML information through wallet SDK
         tomlInfo = try await anchor.sep1
     } catch {
         state = .error("Could not load anchor data: \(error.localizedDescription)")
         return
     }
     
-    // Check for required endpoints
     guard tomlInfo?.webAuthEndpoint != nil else {
         state = .error("The anchor does not provide authentication service (SEP-10)")
-        return
-    }
-    
-    // Check for transfer servers
-    let hasSep6 = tomlInfo?.transferServer != nil
-    let hasSep24 = tomlInfo?.transferServerSep24 != nil
-    
-    if !hasSep6 && !hasSep24 {
-        state = .error("Anchor does not support transfers")
         return
     }
     
@@ -130,19 +147,22 @@ private func checkWebAuth(anchor: stellar_wallet_sdk.Anchor) async {
 
 Authenticating with the anchor using Stellar account:
 
-<img src="./img/anchor/sep_10_pin.png" alt="SEP-10 PIN" width="40%">
+<img src="./img/anchor/sep_10_pin.png" alt="SEP-10 PIN" width="30%">
 
 ```swift
 @MainActor
 func authenticateWithPin() async {
+    let feedback = UINotificationFeedbackGenerator()
+    
     guard !pin.isEmpty else {
         pinError = "Please enter your PIN"
+        feedback.notificationOccurred(.error)
         return
     }
     
     state = .loading(message: "Authenticating with anchor")
+    pinError = nil
     
-    // Get user's signing keypair
     var userKeyPair: SigningKeyPair?
     do {
         let authService = AuthService()
@@ -150,28 +170,31 @@ func authenticateWithPin() async {
     } catch {
         pinError = error.localizedDescription
         state = .pinRequired
+        feedback.notificationOccurred(.error)
         return
     }
     
-    // Clear PIN after use
     pin = ""
     
-    // Authenticate with anchor
-    let anchor = selectedAssetInfo.anchor
+    guard let selectedAsset = selectedAssetInfo else {
+        resetState()
+        state = .error("Please select an asset")
+        return
+    }
+    
+    let anchor = selectedAsset.anchor
     do {
         let sep10 = try await anchor.sep10
-        
-        // Get authentication token
-        sep10AuthToken = try await sep10.authenticate(
-            userKeyPair: userKeyPair!
-        )
-        
-        // Authentication successful
-        await loadTransferInfo()
+        sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)
     } catch {
-        pinError = "Authentication failed: \(error.localizedDescription)"
+        pinError = error.localizedDescription
         state = .pinRequired
+        feedback.notificationOccurred(.error)
+        return
     }
+    
+    // Load SEP-6 & SEP-24 info
+    await loadTransferInfo()
 }
 ```
 
@@ -182,36 +205,44 @@ After authentication, load available transfer options:
 ```swift
 @MainActor
 private func loadTransferInfo() async {
-    state = .loading(message: "Loading transfer options")
+    sep6Info = nil
+    sep24Info = nil
     
-    guard let selectedAsset = selectedAssetInfo,
-          let authToken = sep10AuthToken else {
+    state = .loading(message: "Loading transfer services")
+    
+    let sep6Supported = tomlInfo?.transferServer != nil
+    let sep24Supported = tomlInfo?.transferServerSep24 != nil
+    
+    guard sep6Supported || sep24Supported else {
+        state = .error("The anchor does not support SEP-6 or SEP-24 transfers")
         return
     }
     
-    let anchor = selectedAsset.anchor
+    var errorMessages: [String] = []
     
-    // Load SEP-6 info if available
-    if tomlInfo?.transferServer != nil {
+    if sep6Supported {
         do {
-            let sep6 = try await anchor.sep6()
-            sep6Info = try await sep6.info(authToken: authToken)
+            sep6Info = try await selectedAssetInfo?.anchor.sep6.info(authToken: sep10AuthToken)
         } catch {
-            // SEP-6 not available or failed
+            errorMessages.append("SEP-6: \(error.localizedDescription)")
         }
     }
     
-    // Load SEP-24 info if available
-    if tomlInfo?.transferServerSep24 != nil {
+    if sep24Supported {
         do {
-            let sep24 = try await anchor.sep24()
-            sep24Info = try await sep24.info()
+            sep24Info = try await selectedAssetInfo?.anchor.sep24.info
         } catch {
-            // SEP-24 not available or failed
+            errorMessages.append("SEP-24: \(error.localizedDescription)")
         }
     }
     
-    state = .transferReady
+    if !errorMessages.isEmpty && sep6Info == nil && sep24Info == nil {
+        state = .error(errorMessages.joined(separator: "\n"))
+    } else {
+        state = .transferReady
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.notificationOccurred(.success)
+    }
 }
 ```
 
@@ -219,7 +250,7 @@ private func loadTransferInfo() async {
 
 The [`NewTransferView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift) displays transfer options:
 
-<img src="./img/anchor/sep_6_methods_buttons.png" alt="Transfer methods" width="40%">
+<img src="./img/anchor/sep_6_methods_buttons.png" alt="Transfer methods" width="30%">
 
 ```swift
 struct NewTransferView: View {
@@ -227,6 +258,19 @@ struct NewTransferView: View {
     private var authToken: AuthToken
     private var sep6Info: Sep6Info?
     private var sep24Info: Sep24Info?
+    private var savedKycData: [KycEntry]
+    
+    internal init(assetInfo: AnchoredAssetInfo,
+                  authToken: AuthToken,
+                  sep6Info: Sep6Info? = nil,
+                  sep24Info: Sep24Info? = nil,
+                  savedKycData: [KycEntry] = []) {
+        self.assetInfo = assetInfo
+        self.authToken = authToken
+        self.sep6Info = sep6Info
+        self.sep24Info = sep24Info
+        self.savedKycData = savedKycData
+    }
     
     var body: some View {
         ScrollView {
@@ -246,47 +290,63 @@ struct NewTransferView: View {
 
 ## SEP-6 Deposit
 
-<img src="./img/anchor/sep_6_deposit_stepper.png" alt="SEP-6 deposit stepper" width="40%">
+<img src="./img/anchor/sep_6_deposit_stepper.png" alt="SEP-6 deposit stepper" width="30%">
 
 The deposit process using SEP-6:
 
 ```swift
 private var sep6TransferCard: some View {
     VStack(alignment: .leading, spacing: 16) {
-        // Header
+        // Section header
         HStack {
             Image(systemName: "6.circle.fill")
                 .font(.title2)
                 .foregroundStyle(.blue)
             
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("SEP-6 Transfers")
                     .font(.headline)
                 Text("Traditional transfer protocol")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            
+            Spacer()
+            
+            Image(systemName: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         
-        // Deposit button
-        if let depositInfo = sep6Info?.deposit,
-           let assetDepositInfo = depositInfo[assetInfo.code],
-           assetDepositInfo.enabled {
-            
-            Button(action: { showSep6DepositSheet = true }) {
-                transferButton(
-                    title: "Deposit",
-                    icon: "arrow.down.circle.fill",
-                    color: .green
-                )
-            }
-            .sheet(isPresented: $showSep6DepositSheet) {
-                Sep6DepositStepper(
-                    anchoredAsset: assetInfo,
-                    depositInfo: assetDepositInfo,
-                    authToken: authToken,
-                    savedKycData: savedKycData
-                )
+        // Transfer buttons
+        VStack(spacing: 12) {
+            if let depositInfo = sep6Info?.deposit,
+               let assetDepositInfo = depositInfo[assetInfo.code],
+               assetDepositInfo.enabled {
+                
+                Button(action: {
+                    showSep6DepositSheet = true
+                }) {
+                    transferButton(
+                        title: "Deposit",
+                        icon: "arrow.down.circle.fill",
+                        color: .green,
+                        isHovered: hoveredButton == "sep6-deposit"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .onHover { hovering in
+                    hoveredButton = hovering ? "sep6-deposit" : nil
+                }
+                .sheet(isPresented: $showSep6DepositSheet) {
+                    Sep6DepositStepper(
+                        anchoredAsset: assetInfo,
+                        depositInfo: assetDepositInfo,
+                        authToken: authToken,
+                        anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false,
+                        savedKycData: savedKycData
+                    )
+                }
             }
         }
     }
@@ -296,7 +356,7 @@ private var sep6TransferCard: some View {
 
 ## SEP-12: KYC Integration
 
-<img src="./img/anchor/sep_6_deposit_kyc_form.png" alt="SEP-6 deposit KYC form" width="40%">
+<img src="./img/anchor/sep_6_deposit_kyc_form.png" alt="SEP-6 deposit KYC form" width="30%">
 
 
 Managing KYC data for transfers:
@@ -305,86 +365,51 @@ Managing KYC data for transfers:
 
 ```
 
-<img src="./img/anchor/sep_6_deposit_kyc_accepted.png" alt="SEP-6 deposit KYC accepted" width="40%">
+<img src="./img/anchor/sep_6_deposit_kyc_accepted.png" alt="SEP-6 deposit KYC accepted" width="30%">
 
 
 ## Fee Calculation
 
-Getting fee information before transfers:
+Fee information is loaded during the transfer process (implemented in Sep6DepositStepper and Sep6WithdrawalStepper).
 
-```swift
-private func loadFeeInfo() async {
-    guard let sep6Info = sep6Info,
-          sep6Info.fee?.enabled == true else {
-        return
-    }
-    
-    do {
-        let sep6 = try await anchor.sep6()
-        let feeResponse = try await sep6.fee(
-            authToken: authToken,
-            operation: "deposit",
-            assetCode: asset.code,
-            amount: amount
-        )
-        
-        feeAmount = feeResponse.fee
-    } catch {
-        // Handle fee loading error
-    }
-}
-```
-
-<img src="./img/anchor/sep_6_deposit_fee.png" alt="Fee display" width="40%">
+<img src="./img/anchor/sep_6_deposit_fee.png" alt="Fee display" width="30%">
 
 
 ## Summary
 
-<img src="./img/anchor/sep_6_depost_summary.png" alt="Deposit sumary" width="40%">
+<img src="./img/anchor/sep_6_depost_summary.png" alt="Deposit sumary" width="30%">
 
 ## Success Handling
 
 After successful transfer initiation:
 
-<img src="./img/anchor/sep_6_deposit_submitted.png" alt="Deposit sumary" width="40%">
+<img src="./img/anchor/sep_6_deposit_submitted.png" alt="Deposit sumary" width="30%">
 
-// TODO: update image
 
 ```swift
 struct Sep6TransferResponseView: View {
-    let response: Sep6TransferResponse
+    private let response: Sep6TransferResponse
+    @State private var depositInstructions: [DepositInstruction] = []
+    @State private var showToast = false
+    @State private var toastMessage: String = ""
+    @State private var copiedText: String = ""
+    
+    internal init(response: Sep6TransferResponse) {
+        self.response = response
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.green)
-            
-            Text("Transfer Initiated")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            if let instructions = response.instructions {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Instructions:")
-                        .font(.headline)
-                    
-                    ForEach(instructions, id: \.self) { instruction in
-                        Text("• \(instruction)")
-                            .font(.body)
-                    }
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
+        VStack(alignment: .leading, spacing: 20) {
+            switch response {
+            case .missingKYC(let fields):
+                MissingKYCView(fields: fields)
+            case .success(let successInfo):
+                SuccessView(successInfo: successInfo,
+                          depositInstructions: $depositInstructions)
             }
-            
-            if let eta = response.eta {
-                Label("Estimated time: \(eta) seconds", 
-                      systemImage: "clock")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+        }
+        .onAppear {
+            loadDepositInstructions()
         }
     }
 }
@@ -392,65 +417,73 @@ struct Sep6TransferResponseView: View {
 
 ## Transfer History
 
-<img src="./img/anchor/history_mode.png" alt="Transfer history" width="40%">
+<img src="./img/anchor/history_mode.png" alt="Transfer history" width="30%">
 
 Track transfer status and history:
 
 ```swift
 struct TransferHistoryView: View {
-    @State private var transfers: [TransferRecord] = []
+    @State private var viewModel: TransferHistoryViewModel?
+    
+    private let assetInfo: AnchoredAssetInfo
+    private let authToken: AuthToken
+    private let savedKycData: [KycEntry]
+    private let dashboardData: DashboardData
+    
+    init(
+        assetInfo: AnchoredAssetInfo,
+        authToken: AuthToken,
+        savedKycData: [KycEntry] = [],
+        dashboardData: DashboardData
+    ) {
+        self.assetInfo = assetInfo
+        self.authToken = authToken
+        self.savedKycData = savedKycData
+        self.dashboardData = dashboardData
+    }
     
     var body: some View {
-        List(transfers) { transfer in
-            TransferRow(transfer: transfer)
+        VStack(spacing: 16) {
+            if let vm = viewModel {
+                // History mode picker and transaction list
+                // Implementation details in TransferHistoryView.swift
+            }
         }
         .onAppear {
-            Task {
-                await loadTransferHistory()
+            if viewModel == nil {
+                viewModel = TransferHistoryViewModel(
+                    assetInfo: assetInfo,
+                    authToken: authToken,
+                    savedKycData: savedKycData,
+                    dashboardData: dashboardData
+                )
             }
         }
     }
-    
-    private func loadTransferHistory() async {
-        // Load from anchor's transaction endpoint
-        let sep6 = try await anchor.sep6()
-        let transactions = try await sep6.transactions(
-            authToken: authToken,
-            assetCode: asset.code
-        )
-        
-        transfers = transactions.transactions
-    }
 }
 ```
+
+If the status is `pending_customer_info_update`, the user must upload additional KYC data by pressing the Upload button in the expanded row.
+
+<img src="./img/anchor/pending_customer_info.png" alt="Transfer history" width="30%">
+
+As soon as pressed, the additionally needed KYC Information is collected in a form. It is displayed via a sheet, see [Sep12KycFormSheet.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep12KycFormSheet.swift). 
+
+
+<img src="./img/anchor/additional_kyc_data.png" alt="Additionally requested KYC information" width="30%">
+
+As soon as the user fills the requested fields, and presses the submit button, the data is sent to the anchor and the status changes to `pending_anchor`:
+
+<img src="./img/anchor/pending_anchor.png" alt="Pending anchor status of the deposit row" width="30%">
+
+After some time the anchor sends the tokens to the user and the balance gets updated:
+
+<img src="./img/anchor/sep_6_deposit_received.png" alt="SEP-6 deposit received" width="30%">
+
 
 ## SEP-6 Withdrawal
 
-![SEP-6 withdrawal](./img/anchor/sep_6_methods_buttons.png)
-
-```swift
-// Withdrawal button
-if let withdrawInfo = sep6Info?.withdraw,
-   let assetWithdrawInfo = withdrawInfo[assetInfo.code],
-   assetWithdrawInfo.enabled {
-    
-    Button(action: { showSep6WithdrawalSheet = true }) {
-        transferButton(
-            title: "Withdraw",
-            icon: "arrow.up.circle.fill",
-            color: .orange
-        )
-    }
-    .sheet(isPresented: $showSep6WithdrawalSheet) {
-        Sep6WithdrawalStepper(
-            anchoredAsset: assetInfo,
-            withdrawInfo: assetWithdrawInfo,
-            authToken: authToken,
-            savedKycData: savedKycData
-        )
-    }
-}
-```
+The SEP-6 withdrawal process is similar to the deposit process. The implementation can be found in [Sep6WithdrawalStepper.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6WithdrawalStepper.swift)
 
 ## SEP-24: Interactive Transfers
 
@@ -458,64 +491,122 @@ if let withdrawInfo = sep6Info?.withdraw,
 
 SEP-24 uses web views for the transfer process:
 
-![SEP-24 interactive](./img/anchor/sep_24_deposit_interactive.png)
+<img src="./img/anchor/sep_24_deposit_interactive.png" alt="SEP-24 deposit interactive" width="30%">
+
+The implementation can be found in [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
 
 ```swift
-private func loadSep24InteractiveUrl(forMode mode: String) async {
-    isLoadingSep24InteractiveUrl = true
-    loadingSep24InteractiveUrlErrorMessage = nil
-    
-    do {
-        let sep24 = try await assetInfo.anchor.sep24()
-        
-        // Prepare interactive request
-        let request = Sep24InteractiveRequest(
-            authToken: authToken,
-            assetCode: assetInfo.code,
-            assetIssuer: assetInfo.issuer
-        )
-        
-        // Get interactive URL based on mode
-        let response: Sep24InteractiveResponse
-        if mode == "deposit" {
-            response = try await sep24.deposit(request: request)
-        } else {
-            response = try await sep24.withdraw(request: request)
-        }
-        
-        sep24InteractiveUrl = response.url
-        sep24OperationMode = mode
-        showSep24InteractiveUrlSheet = true
-        
-    } catch {
-        loadingSep24InteractiveUrlErrorMessage = error.localizedDescription
+private func initiateSep24Transfer(mode: String) async {
+    await MainActor.run {
+        isLoadingSep24InteractiveUrl = true
+        loadingSep24InteractiveUrlErrorMessage = nil
     }
     
-    isLoadingSep24InteractiveUrl = false
+    do {
+        let sep24 = assetInfo.anchor.sep24
+        let interactiveUrl: String?
+        
+        if mode == "deposit" {
+            let response = try await sep24.deposit(
+                assetId: assetInfo.asset, 
+                authToken: authToken
+            )
+            interactiveUrl = response.url
+        } else if mode == "withdraw" {
+            let response = try await sep24.withdraw(
+                assetId: assetInfo.asset, 
+                authToken: authToken
+            )
+            interactiveUrl = response.url
+        } else {
+            interactiveUrl = nil
+        }
+        
+        await MainActor.run {
+            if let url = interactiveUrl {
+                sep24InteractiveUrl = url
+                sep24OperationMode = mode
+                showSep24InteractiveUrlSheet = true
+            }
+            isLoadingSep24InteractiveUrl = false
+        }
+        
+    } catch {
+        await MainActor.run {
+            loadingSep24InteractiveUrlErrorMessage = 
+                "Error requesting SEP-24 interactive url: \(error.localizedDescription)"
+            isLoadingSep24InteractiveUrl = false
+        }
+    }
 }
 ```
 
 ### Interactive Web View
 
-Display the anchor's web interface:
+Display the anchor's web interface to complete the SEP-24 transfer:
 
 ```swift
-struct InteractiveWebView: View {
+struct InteractiveWebViewSheet: View {
     let url: String
-    @Environment(\.dismiss) var dismiss
+    let title: String
+    @Binding var isPresented: Bool
+    @State private var isLoading = false
     
     var body: some View {
-        NavigationStack {
-            WebView(url: URL(string: url)!)
-                .navigationTitle("Complete Transfer")
+        NavigationView {
+            InteractiveWebView(url: url, isLoading: $isLoading)
+                .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            dismiss()
+                        Button("Close") {
+                            isPresented = false
                         }
                     }
                 }
+        }
+    }
+}
+
+struct InteractiveWebView: UIViewRepresentable {
+    let url: String
+    @Binding var isLoading: Bool
+    
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        return webView
+    }
+    
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        if let url = URL(string: url) {
+            let request = URLRequest(url: url)
+            webView.load(request)
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, WKNavigationDelegate {
+        let parent: InteractiveWebView
+        
+        init(_ parent: InteractiveWebView) {
+            self.parent = parent
+        }
+        
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = true
+            }
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+            }
         }
     }
 }

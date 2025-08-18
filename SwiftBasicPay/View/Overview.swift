@@ -780,8 +780,7 @@ struct Overview: View {
                 accountOverviewSection
                 BalancesView()
                     .environment(dashboardData)
-                // Show recent payments if account exists OR if we have loaded assets (which means account exists)
-                if dashboardData.userAccountExists || !dashboardData.userAssets.isEmpty {
+                if dashboardData.userAccountExists {
                     RecentPaymentsView(onCopyAddress: viewModel.copyToClipboard)
                         .environment(dashboardData)
                 }

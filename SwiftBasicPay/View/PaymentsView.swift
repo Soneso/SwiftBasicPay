@@ -72,15 +72,12 @@ struct PaymentsView: View {
             VStack(spacing: 0) {
                 headerSection
                 
-                // Show payment forms if account exists OR if we have loaded assets (which means account exists)
-                if !dashboardData.userAccountExists && dashboardData.userAssets.isEmpty {
-                    // Account doesn't exist - show only balances card
+                if !dashboardData.userAccountExists {
                     BalancesCard()
                         .environment(dashboardData)
                         .padding(.horizontal)
                         .padding(.top, 16)
                 } else {
-                    // Account exists - show full payment interface
                     paymentTypeSelector
                         .padding(.horizontal)
                         .padding(.top, 20)

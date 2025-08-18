@@ -22,7 +22,7 @@ Now James can receive `SILVER:GAHH5QM5JGWWQQGKUQ4LWWCERNOI5E6R7ADG3S4KY6LYZXHBAM
 
 In the contracts view, we can add the new recipient account to our list of contacts by entering his name (`James`) and his Stellar address.
 
-![add james contact](./img/payment/add_james_contact.png)
+<img src="./img/payment/add_james_contact.png" alt="add james contact" width="30%">
 
 The code can be found in [`ContactsView.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/ContactsView.swift).
 
