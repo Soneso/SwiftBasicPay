@@ -1,59 +1,207 @@
 # Anchor Integration
 
-An anchor is a Stellar-specific term for the on and off-ramps that connect the Stellar network to traditional financial rails, such as financial institutions or fintech companies. When a user deposits with an anchor, that anchor will credit their Stellar account with the equivalent amount of digital tokens. The user can then hold, transfer, or trade those tokens just like any other Stellar asset. When a user withdraws those tokens, the anchor redeems them for cash in hand or money in the bank. Read more about anchors in this [Stellar docs anchor section](https://developers.stellar.org/docs/learn/fundamentals/anchors).
+## Overview
 
-When a customer downloads a wallet application that is connected to an anchor service, their Stellar account can either be created by the wallet application or the anchor service. In this example, the account has been created by the wallet application, Flutter Basic Pay. Account creation strategies are described more in-depth [here](https://developers.stellar.org/docs/build/apps/application-design-considerations#account-creation-strategies).
+Anchors are bridge services that connect the Stellar network to traditional banking systems, enabling users to move value between fiat currencies and digital assets. They act as trusted entities that hold deposits in traditional banking systems and issue corresponding tokens on the Stellar network, or vice versa for withdrawals.
 
-In this example, we’ll use an anchor on Stellar’s Testnet to simulate a bank transfer into and out of the user’s wallet using [SEP-6: Deposit and Withdrawal API](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md) and/or [SEP-24: Hosted Deposit and Withdrawal](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0024.md).
+SwiftBasicPay implements a comprehensive anchor integration using the [Stellar Wallet SDK](https://github.com/Soneso/stellar-wallet-sdk-ios), which provides high-level abstractions for complex anchor operations. This tutorial will guide you through the complete implementation, explaining how the wallet SDK simplifies anchor interactions.
 
-Our integrations will also use the following SEPs:
+### Key Concepts
 
-- [SEP-1: Stellar TOML](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0001.md) - a file that provides a place for the Internet to find information about an organization’s Stellar integration.
-- [SEP-9: Standard KYC Fields](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0009.md) - defines a list of standard KYC fields for use in Stellar ecosystem protocols.
-- [SEP-10: Stellar Web Authentication](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0010.md) - defines the standard way for clients to create authenticated web sessions on behalf of a user who holds a Stellar account.
-- [SEP-12: KYC API](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0012.md) - defines a standard way for Stellar clients to upload KYC information to anchors.
+- **Deposits**: Converting fiat currency to Stellar assets (on-ramp)
+- **Withdrawals**: Converting Stellar assets back to fiat currency (off-ramp)
+- **Anchored Assets**: Stellar assets that represent real-world value held by an anchor
+- **KYC/AML**: Know Your Customer and Anti-Money Laundering compliance requirements
 
-## Finding anchored assets
+## Supported Protocols
 
-SwiftBasicPay takes care of all the anchor transfer details in the Transfers View.
+SwiftBasicPay integrates multiple Stellar Ecosystem Proposals (SEPs) through the wallet SDK:
 
-![transfers view](./img/anchor/transfers_view.png).
+- **[SEP-1](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0001.md)**: Stellar TOML - Provides anchor metadata and service endpoints
+- **[SEP-10](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0010.md)**: Web Authentication - Proves account ownership to anchors
+- **[SEP-6](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md)**: Deposit/Withdrawal API - Traditional REST-based transfer protocol
+- **[SEP-9](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0009.md)**: Standard KYC Fields - Defines standard customer information fields
+- **[SEP-12](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0012.md)**: KYC API - Customer information collection and verification
+- **[SEP-24](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0024.md)**: Hosted Deposit/Withdrawal - Interactive web-based transfers
 
-It is implemented in [TransfersView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift)
+## Architecture Overview
 
-We need our application to know how it can communicate with anchors to get asset and infrastructure information. The first thing we'll do is determine whether the user holds trustlines to any assets that have a `home_domain` field set on the Stellar network. The presence of that field on an issuer's account tells us the asset *may* be plugged into the existing Stellar rails allowing for transfers of the asset. If it's present, we'll display some interactive elements to the user for that asset/domain.
+The anchor integration follows a layered architecture:
+
+```
+┌─────────────────────────────────────────┐
+│           SwiftUI Views                 │
+│  (TransfersView, NewTransferView, etc.) │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│         View Models                     │
+│  (TransfersViewModel, etc.)             │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│      Stellar Wallet SDK                 │
+│  (Anchor, Sep1, Sep6, Sep10, etc.)      │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────▼────────────────────────┐
+│      Stellar Horizon API                │
+│      Anchor Services                    │
+└─────────────────────────────────────────┘
+```
+
+## Wallet SDK Integration
+
+The Stellar Wallet SDK provides several key benefits:
+
+1. **Simplified API**: High-level abstractions for complex protocols
+2. **Protocol Compliance**: Automatic handling of SEP specifications
+3. **Error Handling**: Consistent error types and recovery strategies
+4. **Type Safety**: Strongly-typed Swift interfaces
+
+### Initializing the Wallet SDK
+
+The wallet SDK is initialized in `StellarService.swift`:
 
 ```swift
-public static func getAnchoredAssets(fromAssets:[AssetInfo]) async throws -> [AnchoredAssetInfo] {
-    var anchoredAssets:[AnchoredAssetInfo] = []
+import stellar_wallet_sdk
+
+public class StellarService {
+    // The wallet instance manages all SDK operations
+    public static var wallet: Wallet = {
+        let stellar = StellarConfiguration(
+            network: .testnet,
+            baseFee: 100_000,
+            horizonUrl: "https://horizon-testnet.stellar.org"
+        )
+        
+        let config = WalletConfiguration(
+            stellar: stellar,
+            // Additional configuration for anchors, etc.
+        )
+        
+        return Wallet(config: config)
+    }()
+    
+    // Create anchor instances for specific home domains
+    public static func anchor(homeDomain: String) -> stellar_wallet_sdk.Anchor {
+        return wallet.anchor(homeDomain: homeDomain)
+    }
+}
+```
+
+## Transfers View Architecture
+
+The [`TransfersView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift) serves as the main entry point for anchor operations:
+
+<img src="./img/anchor/transfers_view.png" alt="Transfers view" width="30%">
+
+```swift
+@Observable
+class TransfersViewModel {
+    // MARK: - State Management
+    enum ViewState: Equatable {
+        case initial                        // Initial state, no asset selected
+        case loading(message: String)        // Loading with progress message
+        case pinRequired                     // Awaiting PIN for authentication
+        case transferReady                   // Ready to initiate transfers
+        case error(String)                   // Error state with message
+    }
+    
+    // Transfer modes: New transfer creation or history viewing
+    enum TransferMode: Int, CaseIterable {
+        case newTransfer = 1
+        case history = 2
+        
+        var title: String {
+            switch self {
+            case .newTransfer: return "New"
+            case .history: return "History"
+            }
+        }
+    }
+    
+    // MARK: - Observable Properties
+    var mode: TransferMode = .newTransfer
+    var state: ViewState = .initial
+    var selectedAssetInfo: AnchoredAssetInfo?
+    var pin = ""
+    var pinError: String?
+    
+    // MARK: - Anchor Data
+    var sep10AuthToken: AuthToken?      // SEP-10 authentication token
+    var tomlInfo: TomlInfo?             // SEP-1 TOML information
+    var sep6Info: Sep6Info?             // SEP-6 transfer capabilities
+    var sep24Info: Sep24Info?           // SEP-24 interactive transfer info
+    
+    // Anchored assets available for transfer
+    var anchoredAssets: [AnchoredAssetInfo] = []
+}
+```
+
+### State Flow
+
+1. **Initial State**: User selects an anchored asset
+2. **Loading TOML**: Fetches anchor configuration via SEP-1
+3. **PIN Required**: Prompts for PIN to authenticate
+4. **Authentication**: Performs SEP-10 authentication
+5. **Transfer Ready**: Displays available transfer options
+
+## Finding Anchored Assets
+
+The first step is identifying which assets in the user's wallet are anchored. The wallet SDK helps by providing access to asset information and anchor connections:
+
+<img src="./img/anchor/anchored_assets_dropdown.png" alt="Anchored assets dropdown" width="30%">
+
+```swift
+public static func getAnchoredAssets(
+    fromAssets: [AssetInfo]
+) async throws -> [AnchoredAssetInfo] {
+    var anchoredAssets: [AnchoredAssetInfo] = []
+    
+    // Access the Stellar service through wallet SDK
     let stellar = wallet.stellar
     
     for assetInfo in fromAssets {
         let asset = assetInfo.asset
-        var anchorDomain:String?
+        var anchorDomain: String?
         
-        // We are only interested in issued assets (not XLM)
+        // We are only interested in issued assets (not native XLM)
         if let issuedAsset = asset as? IssuedAssetId {
-            let issuerExists = try await stellar.account.accountExists(accountAddress: issuedAsset.issuer)
+            // Verify the issuer account exists on the network
+            let issuerExists = try await stellar.account.accountExists(
+                accountAddress: issuedAsset.issuer
+            )
             if !issuerExists {
                 continue
             }
-            // check if it is a known stellar testanchor asset
-            // if yes, we can use testanchor.stellar.org as anchor.
-            if let _ = testAnchorAssets.filter({$0.code == issuedAsset.code && $0.issuer == issuedAsset.issuer}).first {
+            
+            // Check if it's a known test anchor asset
+            // The test anchor (anchor-sep-server-dev.stellar.org) provides
+            // SRT and USDC test assets for development
+            if testAnchorAssets.contains(where: {
+                $0.code == issuedAsset.code && 
+                $0.issuer == issuedAsset.issuer
+            }) {
                 anchorDomain = testAnchorDomain
             } else {
-                // otherwise load from home domain (maybe it is an anchor ...)
-                let issuerAccountInfo = try await stellar.account.getInfo(accountAddress: issuedAsset.issuer)
+                // For production assets, load the home_domain from the issuer's account
+                // The home_domain field links the asset to its anchor service
+                let issuerAccountInfo = try await stellar.account.getInfo(
+                    accountAddress: issuedAsset.issuer
+                )
                 if let homeDomain = issuerAccountInfo.homeDomain {
                     anchorDomain = homeDomain
                 }
             }
             
             if let domain = anchorDomain {
-                let info = AnchoredAssetInfo(asset: issuedAsset, 
-                                                balance: assetInfo.balance,
-                                                anchor: wallet.anchor(homeDomain: domain))
+                // Create an AnchoredAssetInfo with the wallet SDK's anchor instance
+                let info = AnchoredAssetInfo(
+                    asset: issuedAsset,
+                    balance: assetInfo.balance,
+                    anchor: wallet.anchor(homeDomain: domain)  // SDK creates anchor
+                )
                 anchoredAssets.append(info)
             }
         }
@@ -62,429 +210,974 @@ public static func getAnchoredAssets(fromAssets:[AssetInfo]) async throws -> [An
     return anchoredAssets
 }
 ```
-Source: [StellarService.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift)
 
-In this demo app, we will use the predefined assets `SRT` and `USDC`, because we know for sure that they are supported by the *Stellar Test Anchor* (see [https://testanchor.stellar.org/.well-known/stellar.toml](https://testanchor.stellar.org/.well-known/stellar.toml)). So, please make sure to add a trustline to those assets as described in [Mange Trust](manage_trust.md) before continuing. For all other issued assets from the balances, we are going to use their home domain as an anchor domain.
+### Key Points:
+- The wallet SDK's `stellar.account` service provides account information
+- The `home_domain` field connects assets to their anchor services
+- The SDK's `wallet.anchor()` factory creates properly configured anchor instances
 
-As soon as the anchored assets are loaded, the Transfers view will display them in a dropdown.
+## SEP-1: Loading Anchor Information
 
-![anchored assets dropdown](./img/anchor/anchored_assets_dropdown.png)
-
-As you can see in the source code above, each created anchored asset object has wallet SDK Anchor object assigned to it `anchor: wallet.anchor(homeDomain: domain)`. The best anchored asset to be used for our demo, is the `Stellar Reference Token (SRT)` because the Stellar Test Anchor supports SEP-6 and SEP-24 deposits and withdrawals for this asset. Please select the `SRT` asset from the dropdown.
-
-## SEP-1: Stellar TOML
-
-The [stellar.toml file](https://developers.stellar.org/docs/tokens/publishing-asset-info#completing-your-stellartoml) is a common place where the Internet can find information about an organization’s Stellar integration. Regardless of which type of transfer we want to use (SEP-6 or SEP-24), we'll need to start with SEP-1.
-
-For anchors, we’re interested in the `CURRENCIES` they issue, the `TRANSFER_SERVER` and/or `TRANSFER_SERVER_SEP0024` keywords that indicate if the anchor supports SEP-6, SEP-24, or both, and the `WEB_AUTH_ENDPOINT` which allows a wallet to set up an authenticated user session.
-
-For `SRT`, SwiftBasicPay is interoperating with the testing anchor located at `testanchor.stellar.org` and you can view its toml file [here](https://testanchor.stellar.org/.well-known/stellar.toml).
-
-The wallet sdk offers support for parsing the anchors toml data. We can access it to see if the anchor provides an authentication service (SEP-10):
+SEP-1 defines the `stellar.toml` file that provides anchor metadata and service endpoints. The wallet SDK handles the complexities of fetching and parsing this file:
 
 ```swift
-private func checkWebAuth(anchor:stellar_wallet_sdk.Anchor) async {
-    state = .loading
-    loadingText = "Loading toml file from anchor"
+@MainActor
+private func checkWebAuth(anchor: stellar_wallet_sdk.Anchor) async {
+    state = .loading(message: "Loading anchor configuration")
     tomlInfo = nil
+    
     do {
+        // The wallet SDK's anchor.sep1 property automatically:
+        // 1. Constructs the TOML URL: https://[domain]/.well-known/stellar.toml
+        // 2. Fetches the TOML file
+        // 3. Parses and validates the content
+        // 4. Returns strongly-typed TomlInfo
         tomlInfo = try await anchor.sep1
     } catch {
-        errorMessage = "Could not load toml data from anchor: \(error.localizedDescription)"
-        state = .initial
+        state = .error("Could not load anchor data: \(error.localizedDescription)")
         return
     }
     
-    if tomlInfo?.webAuthEndpoint == nil {
-        errorMessage = "The anchor does not provide an authentication service (SEP-10)"
-        state = .initial
+    // Verify the anchor supports SEP-10 authentication
+    // The webAuthEndpoint is required for secure authentication
+    guard tomlInfo?.webAuthEndpoint != nil else {
+        state = .error("The anchor does not provide authentication service (SEP-10)")
         return
     }
-    state = .sep10AuthPinRequired
-}
-```
-Source: [TransfersView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift)
-
-Using the `stellar.toml` information for an anchored asset, we can display to the user some options (depending on the available infrastructure). We'll start with SEP-10 authentication.
-
-## SEP-10: Stellar Web Authentication
-
-Similar to the SEP-1 information, both SEP-6 and SEP-24 protocols make use of SEP-10 for authentication with the user. The user must prove they own the account before they can withdraw or deposit any assets as part of [SEP-10: Stellar Web Authentication](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0010.md).
-
-### Prompt for authentication
-
-The wallet sdk offers support for SEP-10 Web Authentication. The sdk offers multiple ways to authenticate the user with the anchor. In this demo app we are going to simply use the users secret key to authenticate with the anchor. To be able to access the key, we need the user to enter their pin, so that we can load and decod the key from the secure storage entry (see [secure data storage](./secure_data_storage.md)).
-
-
-![enter pin](./img/anchor/sep_10_pin.png)
-
-### Authenticate with the anchor
-
-As soon as the user enters their pin, we can authenticate the user with the anchor:
-
-```swift
-
-// first get the user's signing key pair
-var userKeyPair:SigningKeyPair?
-do {
-    let authService = AuthService()
-    userKeyPair = try authService.userKeyPair(pin: self.pin)
-} catch {
-    // ..
-}
-
-// ...
-
-// next, authenticate with the anchor
-let anchor = selectedAsset.anchor
-do {
-    let sep10 = try await anchor.sep10
-    sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)
-} catch {
-    // ...
+    
+    state = .pinRequired
 }
 ```
 
-Source: [TransfersView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift)
+### TOML Information Structure
 
-The wallet sdk makes it easy to authenticate with the anchor. It abstracts the stellar specific functionality, so that we can just call `sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)` to get the authentication token containing the jwt that we will need for further steps.
+The `TomlInfo` object from the wallet SDK contains:
+- `webAuthEndpoint`: SEP-10 authentication endpoint
+- `transferServer`: SEP-6 transfer service URL
+- `transferServerSep24`: SEP-24 interactive transfer URL
+- `kycServer`: SEP-12 KYC service endpoint
+- `accounts`: Anchor's Stellar accounts
+- `signingKey`: Anchor's signing key for verification
 
-## SEP-6: Deposit and Withdrawal API
+## SEP-10: Web Authentication
 
-[SEP-6](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0006.md) allows wallets and other clients to interact with anchors directly without the user needing to leave the wallet to go to the anchor’s site. In this integration, a user’s KYC information is gathered and handled by the wallet and submitted to the anchor on behalf of the user.
+SEP-10 provides a secure way to prove account ownership to an anchor. The wallet SDK handles the complex challenge-response flow:
 
-Before we can ask anything about how to make a SEP-6 transfer, we have to figure out where to discover that information. Fortunately, the SEP-1 protocol describes standardized fields to find out what we need.
-
-### SEP-6 Support
-
-```swift
-let sep6Supported = tomlInfo?.transferServer != nil
-```
-
-### Get info
-
-Now that we know that SEP-06 is supported, Flutter Basic Pay needs to fetch the /info endpoint from the anchor's transfer server to understand the supported transfer methods (deposit, withdraw, deposit-exchange, and withdraw-exchange) and available endpoints, as well as additional features that may be available during transfers.
-
-We can load the needed info by using the wallet sdk:
+<img src="./img/anchor/sep_10_pin.png" alt="SEP-10 PIN authentication" width="30%">
 
 ```swift
-sep6Info = try await anchor.sep6.info(authToken: sep10AuthToken)
-```
-
-### Display interactive elements
-
-Depending on which transfer methods the anchor offers for our asset, we can now display the corresponding buttons (in SwiftBasicPay, only deposits and withdraws are supported, future version will also incorporate the *-exchange transfer methods.)
-
-To find out whether deposit is supported for our asset, we can check the `Sep6Info` object we received earlier from the sdk:
-
-```swift
-if let depositInfo = sep6Info?.deposit, let assetDepositInfo = depositInfo[assetInfo.code], assetDepositInfo.enabled {
-    Button("Deposit", action:   {
-        showSep6DepositSheet = true
+@MainActor
+func authenticateWithPin() async {
+    // Haptic feedback for better UX
+    let feedback = UINotificationFeedbackGenerator()
+    
+    guard !pin.isEmpty else {
+        pinError = "Please enter your PIN"
+        feedback.notificationOccurred(.error)
+        return
     }
-    // ...
-}
-```
-Source: [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
-
-If supported, we now have a `Sep6DepositInfo` sdk object that we can use if the user wants to initiate a deposit.
-
-To find out whether withdrawal is supported for our asset, we can also check the `Sep6Info` object we received earlier from the sdk:
-
-```swift
-if let withdrawInfo = sep6Info?.withdraw, let assetWithdrawInfo = withdrawInfo[assetInfo.code], assetWithdrawInfo.enabled {
-    Button("Withdraw", action:   {
-        showSep6WithdrawalSheet = true
+    
+    state = .loading(message: "Authenticating with anchor")
+    pinError = nil
+    
+    // Step 1: Retrieve the user's signing keypair from secure storage
+    var userKeyPair: SigningKeyPair?
+    do {
+        let authService = AuthService()
+        userKeyPair = try authService.userKeyPair(pin: pin)
+    } catch {
+        pinError = error.localizedDescription
+        state = .pinRequired
+        feedback.notificationOccurred(.error)
+        return
     }
-    // ...
+    
+    // Clear PIN from memory for security
+    pin = ""
+    
+    guard let selectedAsset = selectedAssetInfo else {
+        resetState()
+        state = .error("Please select an asset")
+        return
+    }
+    
+    // Step 2: Perform SEP-10 authentication using wallet SDK
+    let anchor = selectedAsset.anchor
+    do {
+        // The wallet SDK's sep10 service handles:
+        // 1. Requesting a challenge transaction from the anchor
+        // 2. Verifying the anchor's signature
+        // 3. Signing the challenge with the user's key
+        // 4. Submitting the signed challenge
+        // 5. Receiving and storing the JWT auth token
+        let sep10 = try await anchor.sep10
+        sep10AuthToken = try await sep10.authenticate(userKeyPair: userKeyPair!)
+    } catch {
+        pinError = error.localizedDescription
+        state = .pinRequired
+        feedback.notificationOccurred(.error)
+        return
+    }
+    
+    // Step 3: Load available transfer services
+    await loadTransferInfo()
 }
 ```
-Source: [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
 
-If supported, we now have a `Sep6WithdrawInfo` sdk object that we can use if the user wants to initiate a withdrawal.
+### SEP-10 Authentication Flow (handled by SDK):
 
-Depending on which methods are supported, we can display the corresponding buttons.
+1. **Challenge Request**: SDK requests a challenge from the anchor
+2. **Challenge Verification**: SDK verifies the challenge transaction is properly formed and signed by the anchor
+3. **Challenge Signing**: SDK signs the challenge with the user's private key
+4. **Challenge Submission**: SDK submits the signed challenge back to the anchor
+5. **Token Receipt**: SDK receives and stores the JWT authentication token
 
-![sep-06 methods buttons](./img/anchor/sep_6_methods_buttons.png)
+## Loading Transfer Services
 
-### Deposit
-
-If the user presses the deposit button, Swift displays a view called `Sep6DepositStepper`. It is used to collect the needed data to initiate a new SEP-06 deposit transfer.
-
-![sep6 deposit stepper](./img/anchor/sep_6_deposit_stepper.png)
-
-The `Sep6DepositStepper` is initialized as follows:
+After authentication, the app queries which transfer services the anchor supports:
 
 ```swift
-if let depositInfo = sep6Info?.deposit, let assetDepositInfo = depositInfo[assetInfo.code], assetDepositInfo.enabled {
-    Button("Deposit", action:   {
-        showSep6DepositSheet = true
-    }).buttonStyle(.borderedProminent).tint(.green).sheet(isPresented: $showSep6DepositSheet) {
-        Sep6DepositStepper(anchoredAsset: assetInfo,
-                            depositInfo: assetDepositInfo,
-                            authToken: authToken,
-                            anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false,
-                            savedKycData: savedKycData)
+@MainActor
+private func loadTransferInfo() async {
+    sep6Info = nil
+    sep24Info = nil
+    
+    state = .loading(message: "Loading transfer services")
+    
+    // Check TOML for available services
+    let sep6Supported = tomlInfo?.transferServer != nil
+    let sep24Supported = tomlInfo?.transferServerSep24 != nil
+    
+    guard sep6Supported || sep24Supported else {
+        state = .error("The anchor does not support SEP-6 or SEP-24 transfers")
+        return
+    }
+    
+    var errorMessages: [String] = []
+    
+    // Load SEP-6 capabilities if available
+    if sep6Supported {
+        do {
+            // The wallet SDK's sep6.info call:
+            // 1. Makes authenticated request to /info endpoint
+            // 2. Parses deposit/withdrawal options for each asset
+            // 3. Returns structured Sep6Info with capabilities
+            sep6Info = try await selectedAssetInfo?.anchor.sep6.info(authToken: sep10AuthToken)
+        } catch {
+            errorMessages.append("SEP-6: \(error.localizedDescription)")
+        }
+    }
+    
+    // Load SEP-24 capabilities if available
+    if sep24Supported {
+        do {
+            // SEP-24 info doesn't require authentication
+            sep24Info = try await selectedAssetInfo?.anchor.sep24.info
+        } catch {
+            errorMessages.append("SEP-24: \(error.localizedDescription)")
+        }
+    }
+    
+    // Handle partial failures gracefully
+    if !errorMessages.isEmpty && sep6Info == nil && sep24Info == nil {
+        state = .error(errorMessages.joined(separator: "\n"))
+    } else {
+        state = .transferReady
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.notificationOccurred(.success)
     }
 }
 ```
 
-Source: [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
+## New Transfer View
 
-As parameters, it receives the anchored asset that was selected, the `Sep6DepositInfo` object that we previously received from the sdk, the information whether the anchor provides an enabled fee endpoint and the SEP-10 auth token. 
+The [`NewTransferView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift) presents available transfer options based on the anchor's capabilities:
 
-Once launched, the `Sep6DepositStepper` will walk the user through a "stepper" to gather all the required information and ultimately create the transfer. Source: [Sep6DepositStepper.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6DepositStepper.swift).
-
-#### Step 1: Transfer details
-
-SwiftBasicPay prompts the user to input the transfer fields required by the anchor (from `depositInfo.fieldsInfo`) and the amount.
-
-![sep6 deposit step 1](./img/anchor/sep_6_deposit_step_1.png)
-
-
-#### Step 2: Gather KYC information
-
-Next, our SEP-06 deposit stepper queries the anchor’s [SEP-12](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0012.md) endpoint for the required KYC fields by using the wallet sdk, and we present these fields for the user to complete.
+<img src="./img/anchor/sep_6_methods_buttons.png" alt="Transfer methods" width="30%">
 
 ```swift
-let sep12 = try await anchoredAsset.anchor.sep12(authToken: authToken)
-let kycResponse = try await sep12.getByAuthTokenOnly() // GetCustomerResponse
-```
-
-Source: [Sep6StepperBase.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6StepperBase.swift).
-
-Depending on the received status from the Server we can show it to the user or request KYC information if needed:
-
-```swift
-struct Sep6KycStatusView: View {
-    let kycInfo: GetCustomerResponse
-    let onDelete: () -> Void
+struct NewTransferView: View {
+    // MARK: - Properties
+    private var assetInfo: AnchoredAssetInfo
+    private var authToken: AuthToken
+    private var sep6Info: Sep6Info?
+    private var sep24Info: Sep24Info?
+    private var savedKycData: [KycEntry]  // Pre-filled KYC data from secure storage
+    
+    // MARK: - State
+    @State private var showSep6DepositSheet = false
+    @State private var showSep6WithdrawalSheet = false
+    @State private var showSep24InteractiveUrlSheet = false
+    @State private var isLoadingSep24InteractiveUrl = false
+    @State private var loadingSep24InteractiveUrlErrorMessage: String?
+    @State private var sep24InteractiveUrl: String?
+    @State private var sep24OperationMode: String?
+    @State private var hoveredButton: String? = nil
+    
+    internal init(assetInfo: AnchoredAssetInfo,
+                  authToken: AuthToken,
+                  sep6Info: Sep6Info? = nil,
+                  sep24Info: Sep24Info? = nil,
+                  savedKycData: [KycEntry] = []) {
+        self.assetInfo = assetInfo
+        self.authToken = authToken
+        self.sep6Info = sep6Info
+        self.sep24Info = sep24Info
+        self.savedKycData = savedKycData
+    }
     
     var body: some View {
-        if kycInfo.sep12Status == Sep12Status.neesdInfo {
-            Text("The anchor needs following of your KYC data:")
-                .font(.subheadline)
-        } else if kycInfo.sep12Status == Sep12Status.accepted {
-            Text("Your KYC data has been accepted by the anchor.")
-                .font(.subheadline)
-            Button("Delete") {
-                onDelete()
+        ScrollView {
+            VStack(spacing: 24) {
+                // Show SEP-6 options if available
+                if sep6Info != nil {
+                    sep6TransferCard
+                }
+                
+                // Show SEP-24 options if available
+                if sep24Info != nil {
+                    sep24TransferCard
+                }
+                
+                // Show empty state if no services available
+                if sep6Info == nil && sep24Info == nil {
+                    EmptyStateView(
+                        icon: "exclamationmark.triangle",
+                        title: "No Transfer Options",
+                        message: "This anchor doesn't support transfers for this asset"
+                    )
+                }
             }
-        } else if kycInfo.sep12Status == Sep12Status.processing {
-            Text("Your KYC data is currently being processed by the anchor.")
-                .font(.subheadline)
-        } else if kycInfo.sep12Status == Sep12Status.rejected {
-            Text("Your KYC data has been rejected by the anchor.")
-                .font(.subheadline)
         }
     }
 }
 ```
 
-If the user has not transmitted the KYC data before, the SEP-12 status will be `Sep12Status.needsInfo` and the `kycInfo` object will contain the required fields that need to be filled by the user:
+## SEP-6: Traditional Deposit/Withdrawal
 
-![sep6 deposit step 2](./img/anchor/sep_6_deposit_step_2.png)
+SEP-6 provides a REST API-based approach for deposits and withdrawals. It's "traditional" because it relies on the wallet handling most of the flow.
 
-As soon as the user provided the necessary information for the KYC requirements of the anchor and presses the `Next` button, we can submit the provided KYC information to the anchor's KYC server.
+### SEP-6 Deposit Flow
 
-```dart
-let sep12 = try await anchoredAsset.anchor.sep12(authToken: authToken)
-if let customerId = kycInfo?.id {
-    let _ = try await sep12.update(id: customerId, sep9Info: preparedKycData)
-} else {
-    let _ = try await sep12.add(sep9Info: preparedKycData)
-}
-try await Task.sleep(nanoseconds: 5_000_000_000)
-await loadKYCData()
-```
+<img src="./img/anchor/sep_6_deposit_stepper.png" alt="SEP-6 deposit stepper" width="30%">
 
-Source: [Sep6StepperBase.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6StepperBase.swift).
-
-After sending the KYC data, we wait a couple of seconds for the server to do it's job and then reload the info.
-The status has changed and in our case, it is now `Sep12Status.accepted` so that we can show that to the user:
-
-![sep6 kyc accepted](./img/anchor/sep_6_kyc_accepted.png)
-
-#### Step 3: Fee calculation
-
-In this Step we try to calculate the fee that the anchor will apply for the transfer:
+The deposit process is managed by a multi-step form:
 
 ```swift
-if let feeFixed = transferInfo.feeFixed {
-    await MainActor.run {
-        fee = feeFixed
-    }
-} else {
-    guard let amount = Double(transferAmount) else {
-        await MainActor.run {
-            feeError = "Missing transfer amount"
-            isLoadingFee = false
+private var sep6TransferCard: some View {
+    VStack(alignment: .leading, spacing: 16) {
+        // Section header with visual hierarchy
+        HStack {
+            Image(systemName: "6.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("SEP-6 Transfers")
+                    .font(.headline)
+                Text("Traditional transfer protocol")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        
+        // Transfer buttons
+        VStack(spacing: 12) {
+            // Deposit button - only shown if anchor supports deposits for this asset
+            if let depositInfo = sep6Info?.deposit,
+               let assetDepositInfo = depositInfo[assetInfo.code],
+               assetDepositInfo.enabled {
+                
+                Button(action: {
+                    showSep6DepositSheet = true
+                }) {
+                    transferButton(
+                        title: "Deposit",
+                        icon: "arrow.down.circle.fill",
+                        color: .green,
+                        isHovered: hoveredButton == "sep6-deposit"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .onHover { hovering in
+                    hoveredButton = hovering ? "sep6-deposit" : nil
+                }
+                .sheet(isPresented: $showSep6DepositSheet) {
+                    // Present the deposit stepper with all required data
+                    Sep6DepositStepper(
+                        anchoredAsset: assetInfo,
+                        depositInfo: assetDepositInfo,
+                        authToken: authToken,
+                        anchorHasEnabledFeeEndpoint: sep6Info?.fee?.enabled ?? false,
+                        savedKycData: savedKycData
+                    )
+                }
+            }
+            
+            // Similar structure for withdrawal button...
+        }
+    }
+}
+```
+
+### SEP-6 Deposit Stepper Implementation
+
+The `Sep6DepositStepper` manages a four-step deposit process:
+
+1. **Transfer Details**: Amount and deposit type selection
+2. **KYC Data**: Customer information collection
+3. **Fee Review**: Display transfer fees
+4. **Summary & Submission**: Review and confirm
+
+```swift
+// Sep6DepositStepper.swift
+struct Sep6DepositStepper: View {
+    @StateObject private var viewModel: Sep6DepositViewModel
+    
+    var body: some View {
+        VStack {
+            // Progress indicator
+            ProgressView(value: Double(viewModel.currentStep), total: 4)
+            
+            // Step content
+            switch viewModel.currentStep {
+            case 1:
+                TransferDetailsStep(viewModel: viewModel)
+            case 2:
+                KYCDataStep(viewModel: viewModel)
+            case 3:
+                FeeStep(viewModel: viewModel)
+            case 4:
+                SummaryStep(viewModel: viewModel)
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+```
+
+## SEP-12: KYC Integration
+
+SEP-12 handles Know Your Customer (KYC) data collection. The wallet SDK provides structured interfaces for KYC operations:
+
+<img src="./img/anchor/sep_6_deposit_kyc_form.png" alt="SEP-6 deposit KYC form" width="30%">
+
+### KYC Data Collection
+
+```swift
+// In Sep6DepositViewModel
+@MainActor
+func loadRequiredKycFields() async {
+    isLoadingKycFields = true
+    requiredKycFields = []
+    
+    do {
+        // The wallet SDK's sep12 service handles KYC operations
+        let sep12 = try await anchoredAsset.anchor.sep12(authToken: authToken)
+        
+        // Get required fields for the deposit operation
+        // The SDK automatically:
+        // 1. Makes request to GET /customer endpoint
+        // 2. Parses the required fields based on SEP-9 standards
+        // 3. Returns structured field requirements
+        let customerInfo = try await sep12.getCustomer(
+            type: "sep6-deposit",
+            memo: nil
+        )
+        
+        // Check if KYC is already approved
+        if customerInfo.status == .accepted {
+            kycStatus = .accepted
+            // Skip KYC step if already approved
+            await nextStep()
+        } else {
+            // Parse required fields from the response
+            requiredKycFields = customerInfo.fields ?? []
+            kycStatus = customerInfo.status
+        }
+    } catch {
+        kycErrorMessage = "Failed to load KYC requirements: \(error.localizedDescription)"
+    }
+    
+    isLoadingKycFields = false
+}
+```
+
+### KYC Form Submission
+
+<img src="./img/anchor/sep_6_deposit_kyc_accepted.png" alt="SEP-6 deposit KYC accepted" width="30%">
+
+```swift
+@MainActor
+func submitKycData() async {
+    isSubmittingKyc = true
+    
+    do {
+        let sep12 = try await anchoredAsset.anchor.sep12(authToken: authToken)
+        
+        // Prepare KYC data according to SEP-9 standards
+        var kycData: [String: String] = [:]
+        for field in kycFormData {
+            kycData[field.key] = field.value
+        }
+        
+        // Submit KYC data through wallet SDK
+        // The SDK:
+        // 1. Validates field formats
+        // 2. Makes PUT request to /customer endpoint
+        // 3. Handles multipart form data if needed
+        // 4. Returns updated customer status
+        let response = try await sep12.putCustomer(
+            fields: kycData,
+            type: "sep6-deposit"
+        )
+        
+        // Save KYC data locally for future use
+        saveKycDataToSecureStorage(kycData)
+        
+        // Check new status
+        if response.status == .accepted {
+            kycStatus = .accepted
+            await nextStep()
+        } else if response.status == .pending {
+            kycStatus = .pending
+            kycPendingMessage = "Your KYC is under review"
+        }
+    } catch {
+        kycSubmissionError = error.localizedDescription
+    }
+    
+    isSubmittingKyc = false
+}
+```
+
+### Secure KYC Storage
+
+KYC data is stored securely using the Keychain:
+
+```swift
+class KycManager {
+    private let secureStorage = SecureStorage()
+    
+    func saveKycData(_ data: [String: String]) {
+        // Encrypt and store in Keychain
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: data)
+            try secureStorage.save(key: "kyc_data", data: jsonData)
+        } catch {
+            print("Failed to save KYC data: \(error)")
+        }
+    }
+    
+    func loadKycData() -> [String: String]? {
+        // Retrieve and decrypt from Keychain
+        do {
+            guard let data = try secureStorage.load(key: "kyc_data") else { return nil }
+            return try JSONSerialization.jsonObject(with: data) as? [String: String]
+        } catch {
+            print("Failed to load KYC data: \(error)")
+            return nil
+        }
+    }
+}
+```
+
+## Fee Calculation
+
+The wallet SDK provides fee information before initiating transfers:
+
+<img src="./img/anchor/sep_6_deposit_fee.png" alt="Fee display" width="30%">
+
+```swift
+@MainActor
+func loadFeeInfo() async {
+    guard anchorHasEnabledFeeEndpoint else {
+        // Skip if anchor doesn't support fee endpoint
+        fee = nil
         return
     }
     
-    if let feePercent = transferInfo.feePercent {
-        await MainActor.run {
-            fee = amount * feePercent / 100
+    isLoadingFee = true
+    
+    do {
+        let sep6 = try await anchoredAsset.anchor.sep6
+        
+        // Request fee information from the anchor
+        // The SDK constructs the proper request with all parameters
+        let feeResponse = try await sep6.fee(
+            authToken: authToken,
+            operation: "deposit",
+            type: selectedDepositType,
+            assetCode: anchoredAsset.code,
+            amount: Double(transferAmount) ?? 0
+        )
+        
+        // Store fee for display
+        fee = FeeInfo(
+            amount: feeResponse.fee,
+            description: feeResponse.description
+        )
+    } catch {
+        // Fee endpoint is optional, so failures are non-critical
+        print("Failed to load fee: \(error)")
+        fee = nil
+    }
+    
+    isLoadingFee = false
+}
+```
+
+## Transaction Summary and Submission
+
+<img src="./img/anchor/sep_6_depost_summary.png" alt="Deposit summary" width="30%">
+
+The final step shows a summary and submits the deposit request:
+
+```swift
+@MainActor
+func submitDeposit() async {
+    isSubmitting = true
+    submissionError = nil
+    
+    do {
+        let sep6 = try await anchoredAsset.anchor.sep6
+        
+        // Prepare deposit request with all collected data
+        let request = Sep6DepositRequest(
+            assetCode: anchoredAsset.code,
+            amount: transferAmount,
+            type: selectedDepositType,
+            // Account to receive the deposited assets
+            account: userStellarAddress,
+            // Optional memo for identifying the transaction
+            memo: generatedMemo,
+            memoType: "text"
+        )
+        
+        // Submit deposit request through wallet SDK
+        // The SDK:
+        // 1. Validates all parameters
+        // 2. Makes POST request to /deposit endpoint
+        // 3. Handles response parsing
+        // 4. Returns structured deposit response
+        let response = try await sep6.deposit(
+            authToken: authToken,
+            request: request
+        )
+        
+        // Handle the response
+        submissionResponse = response
+        
+        // Check if additional KYC is needed
+        if case .missingKYC(let fields) = response {
+            // Show additional KYC form
+            showAdditionalKycForm(fields: fields)
         }
-    } else if anchorHasEnabledFeeEndpoint {
-        do {
-            let calculatedFee = try await anchoredAsset.anchor.sep6.fee(assetCode: anchoredAsset.code,
-                                                                        amount: amount,
-                                                                        operation: operationNameLowercase,
-                                                                        type: preparedTransferData["type"])
-            await MainActor.run {
-                fee = calculatedFee
+    } catch {
+        submissionError = "Failed to submit deposit: \(error.localizedDescription)"
+    }
+    
+    isSubmitting = false
+}
+```
+
+## Success Handling
+
+<img src="./img/anchor/sep_6_deposit_submitted.png" alt="Deposit submitted" width="30%">
+
+After successful submission, the response is displayed:
+
+```swift
+struct Sep6TransferResponseView: View {
+    private let response: Sep6TransferResponse
+    @State private var depositInstructions: [DepositInstruction] = []
+    @State private var showToast = false
+    @State private var toastMessage: String = ""
+    @State private var copiedText: String = ""
+    
+    internal init(response: Sep6TransferResponse) {
+        self.response = response
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            switch response {
+            case .missingKYC(let fields):
+                // Show form for additional KYC fields
+                MissingKYCView(fields: fields)
+                
+            case .success(let successInfo):
+                // Show success with deposit instructions
+                SuccessView(
+                    successInfo: successInfo,
+                    depositInstructions: $depositInstructions
+                )
             }
-        } catch {
-            await MainActor.run {
-                feeError = "Error loading fee from anchor: \(error.localizedDescription)"
+        }
+        .onAppear {
+            loadDepositInstructions()
+        }
+    }
+    
+    private func loadDepositInstructions() {
+        // Parse deposit instructions from the response
+        if case .success(let info) = response {
+            // Convert how_to_deposit object to structured instructions
+            if let howTo = info.howToDeposit {
+                depositInstructions = parseInstructions(from: howTo)
             }
         }
     }
 }
 ```
 
-Source: [Sep6StepperBase.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6StepperBase.swift).
+## Transfer History
 
-If deposit info that we received earlier by using the sdk contains a fixed fee info or a fee percent info, then we can apply that. Otherwise, if the anchor provides a `fee` endpoint, we can use it to determine the fee.
+The transfer history view allows users to track their deposits and withdrawals:
 
-If we were able to determine the fee, we can now show it to the user:
-
-![sep6 fee](./img/anchor/sep_6_fee.png)
-
-
-#### Step 4: Submit transfer
-
-SwiftBasicPay makes this request by taking all the fields that have been collected during this process and using the wallet sdk:
+<img src="./img/anchor/history_mode.png" alt="Transfer history" width="30%">
 
 ```swift
-let sep6 = anchoredAsset.anchor.sep6
-
-let params = Sep6DepositParams(assetCode: anchoredAsset.code,
-                                account: authToken.account,
-                                amount: transferAmount,
-                                extraFields: preparedTransferData)
-
-let response = try await sep6.deposit(params: params, authToken: authToken)
-```
-Source: [Sep6DepositStepperViewModel.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6DepositStepperViewModel.swift).
-
-Then we display the transfer server's response to the user.
-
-![sep6 deposit success](./img/anchor/sep_6_deposit_success.png)
-
-As soon as the Stellar Test Anchor sends the funds, we can see it in the overview:
-
-![sep6 deposit received](./img/anchor/sep_6_deposit_received.png)
-
-
-### Withdrawal
-
-The withdrawal process is similar to the deposit process and can be found in [Sep6WithdrawalStepper.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Sep6WithdrawalStepper.swift)
-
-
-## SEP-24: Hosted Deposit and Withdrawal
-
-[SEP-24](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0024.md) provides a standard way for wallets and anchors to interact by having the user open a webview hosted by an anchor to collect and handle KYC information. In this integration, a user's KYC information is gathered and handled entirely by the anchor. For the most part, after the anchor's webview has opened, SwiftBasicPay will have little knowledge about what's going on.
-
-Before we can ask anything about how to make a SEP-24 transfer, we have to figure out where to discover that information. Fortunately, the SEP-1 protocol describes standardized fields to find out what we need.
-
-### SEP-24 Support
-
-```swift
-let sep24Supported = tomlInfo?.transferServerSep24 != nil
-```
-
-Source: [TransfersView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift)
-
-### Get info
-
-Now that we know that SEP-24 is supported, Flutter Basic Pay needs to fetch the /info endpoint from the anchor to understand the supported transfer methods (deposit, withdraw) and available endpoints, as well as additional features that may be available during transfers.
-
-We can load the needed info by using the wallet sdk:
-
-```swift
-if sep24Supported {
-    sep24Info = try await anchor.sep24.info
-}
-```
-
-### Display interactive elements
-
-Depending on which transfer methods the anchor offers for our asset, we can now display the corresponding buttons.
-
-
-```swift
- if let depositInfo = sep24Info?.deposit[assetInfo.code], depositInfo.enabled {
-    Button("Deposit", action: {
-        Task {
-            await initiateSep24Transfer(mode: "deposit")
+struct TransferHistoryView: View {
+    @State private var viewModel: TransferHistoryViewModel?
+    
+    private let assetInfo: AnchoredAssetInfo
+    private let authToken: AuthToken
+    private let savedKycData: [KycEntry]
+    private let dashboardData: DashboardData
+    
+    init(
+        assetInfo: AnchoredAssetInfo,
+        authToken: AuthToken,
+        savedKycData: [KycEntry] = [],
+        dashboardData: DashboardData
+    ) {
+        self.assetInfo = assetInfo
+        self.authToken = authToken
+        self.savedKycData = savedKycData
+        self.dashboardData = dashboardData
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            if let vm = viewModel {
+                // Mode picker for SEP-6 vs SEP-24 history
+                Picker("History Mode", selection: $vm.mode) {
+                    ForEach(TransferHistoryViewModel.HistoryMode.allCases, id: \.self) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                
+                // Transaction list
+                if vm.isLoadingTransfers && vm.rawSep6Transactions.isEmpty {
+                    TransferSkeletonLoader()
+                } else {
+                    TransactionList(transactions: vm.filteredTransactions)
+                }
+            }
         }
-    }).buttonStyle(.borderedProminent).tint(.green)
-}
-if let withdrawInfo = sep24Info?.withdraw[assetInfo.code], withdrawInfo.enabled {
-    Button("Withdraw", action: {
-        Task {
-            await initiateSep24Transfer(mode: "withdraw")
+        .onAppear {
+            if viewModel == nil {
+                viewModel = TransferHistoryViewModel(
+                    assetInfo: assetInfo,
+                    authToken: authToken,
+                    savedKycData: savedKycData,
+                    dashboardData: dashboardData
+                )
+            }
         }
-    }).buttonStyle(.borderedProminent).tint(.red)
+    }
 }
 ```
 
-Source: [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
-
-![sep-24 methods buttons](./img/anchor/sep_24_methods_buttons.png)
-
-
-### The user clicks "Deposit" or "Withdraw"
-
-Now that we have all the SEP-24 information the anchor has made available to us, it's up to the user to actually begin the initiation process. In Flutter Basic Pay, they do that by simply clicking a button. SwiftBasicPay then initiates a transfer method by requesting either the “SEP-24 Deposit” or “SEP-24 Withdraw” using the wallet sdk. 
+### Loading Transaction History
 
 ```swift
-if mode == "deposit" {
-    let response = try await sep24.deposit(assetId: assetInfo.asset, authToken: authToken)
-    interactiveUrl = response.url
-} else if mode == "withdraw" {
-    let response = try await sep24.withdraw(assetId: assetInfo.asset, authToken: authToken)
-    interactiveUrl = response.url
+@MainActor
+func loadTransferHistory() async {
+    isLoadingTransfers = true
+    
+    do {
+        switch mode {
+        case .sep6:
+            // Load SEP-6 transactions through wallet SDK
+            let sep6 = try await assetInfo.anchor.sep6
+            
+            // The SDK handles:
+            // 1. Authenticated request to /transactions endpoint
+            // 2. Parsing transaction records
+            // 3. Type-safe transaction objects
+            let response = try await sep6.transactions(
+                authToken: authToken,
+                assetCode: assetInfo.code,
+                kind: nil,  // Both deposits and withdrawals
+                limit: 50
+            )
+            
+            rawSep6Transactions = response.transactions
+            
+        case .sep24:
+            // Load SEP-24 transactions
+            let sep24 = try await assetInfo.anchor.sep24
+            
+            let response = try await sep24.transactions(
+                authToken: authToken,
+                assetCode: assetInfo.code,
+                limit: 50
+            )
+            
+            rawSep24Transactions = response.transactions
+        }
+    } catch {
+        errorMessage = "Failed to load history: \(error.localizedDescription)"
+    }
+    
+    isLoadingTransfers = false
 }
 ```
 
-Source: [NewTransferView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/NewTransferView.swift)
+### Handling Pending KYC Updates
 
-The anchor then returns an interactive URL that SwiftBasicPay will open as a popup for the user to complete and confirm the transfer.
+<img src="./img/anchor/pending_customer_info.png" alt="Pending customer info" width="30%">
 
-![sep-24 deposit interactive](./img/anchor/sep_24_deposit_interactive.png)
-
-Flutter Basic Pay doesn't know everything that's happening between the user and the anchor during a SEP-24 transfer. However, in a real app, you may want to know when the interaction is over, since you may need to take some action at that point (e.g. let the user send a stellar payment in case of withdrawal). To do so, you can add a callback to the interactive URL as described in this [section of the SEP-24 specification](https://www.stellar.org/protocol/sep-24#adding-parameters-to-the-url).
-
-### History
-
-With SwiftBasicPay you can also see how to fetch the transfers history using the wallet sdk. You can find the source code in  [TransfersView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransfersView.swift)
-
-The transfers view offers a toggled button on the upper part, where you can switch to History mode:
-
-![history mode](./img/anchor/history_mode.png)
-
-After the user selects the anchored asset, the SEP-10 authentication process is started (same as above for new transfers). After receiving the SEP-10 auth token, one can request the transfer history using the wallet sdk:
-
-**SEP-06:**
+When a transaction requires additional KYC information:
 
 ```swift
-let sep6 = assetInfo.anchor.sep6
-rawSep6Transactions = try await sep6.getTransactionsForAsset(authToken: authToken, assetCode: assetInfo.code)
+func handlePendingKycUpdate(for transaction: Sep6Transaction) async {
+    guard transaction.status == .pendingCustomerInfoUpdate else { return }
+    
+    isGettingRequiredSep12Data = true
+    
+    do {
+        // Get the specific fields needed for this transaction
+        let sep12 = try await assetInfo.anchor.sep12(authToken: authToken)
+        
+        let customerInfo = try await sep12.getCustomer(
+            transactionId: transaction.id,
+            type: transaction.kind.rawValue
+        )
+        
+        if let requiredFields = customerInfo.fields {
+            // Show KYC form for the missing fields
+            showKycFormForTransaction(
+                transaction: transaction,
+                fields: requiredFields
+            )
+        }
+    } catch {
+        errorMessage = "Failed to get required fields: \(error)"
+    }
+    
+    isGettingRequiredSep12Data = false
+}
 ```
 
-**SEP-24:**
+<img src="./img/anchor/additional_kyc_data.png" alt="Additional KYC data form" width="30%">
+
+After submitting the additional KYC data:
+
+<img src="./img/anchor/pending_anchor.png" alt="Pending anchor status" width="30%">
+
+And finally, when the deposit is complete:
+
+<img src="./img/anchor/sep_6_deposit_received.png" alt="Deposit received" width="30%">
+
+## SEP-6 Withdrawal Process
+
+The withdrawal process is similar to deposits but in reverse:
 
 ```swift
-let sep24 = assetInfo.anchor.sep24
-rawSep24Transactions = try await sep24.getTransactionsForAsset(authToken: authToken, asset: assetInfo.asset)
+// Sep6WithdrawalStepper.swift
+struct Sep6WithdrawalStepper: View {
+    @StateObject private var viewModel: Sep6WithdrawalViewModel
+    
+    // Similar structure to deposit stepper
+    // Key differences:
+    // 1. Collects destination account info (bank account, etc.)
+    // 2. Validates user has sufficient balance
+    // 3. May require additional withdrawal-specific KYC
+}
 ```
 
-Source: [TransferHistoryView.swift](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/TransferHistoryView.swift)
+### Withdrawal-Specific Considerations
 
-After loading the transactions, SwiftBasicPay displays them in the history view.
+```swift
+@MainActor
+func validateWithdrawalAmount() -> Bool {
+    guard let amount = Double(withdrawalAmount) else { return false }
+    guard let balance = Double(anchoredAsset.balance) else { return false }
+    
+    // Ensure user has sufficient balance
+    if amount > balance {
+        validationError = "Insufficient balance"
+        return false
+    }
+    
+    // Check minimum/maximum limits from anchor
+    if let minAmount = withdrawalInfo.minAmount,
+       amount < minAmount {
+        validationError = "Amount below minimum: \(minAmount)"
+        return false
+    }
+    
+    if let maxAmount = withdrawalInfo.maxAmount,
+       amount > maxAmount {
+        validationError = "Amount above maximum: \(maxAmount)"
+        return false
+    }
+    
+    return true
+}
+```
+
+## SEP-24: Interactive Transfers
+
+SEP-24 provides a web-based interactive flow where the anchor handles the entire UX:
+
+<img src="./img/anchor/sep_24_deposit_interactive.png" alt="SEP-24 interactive deposit" width="30%">
+
+### Initiating Interactive Transfers
+
+```swift
+private func initiateSep24Transfer(mode: String) async {
+    await MainActor.run {
+        isLoadingSep24InteractiveUrl = true
+        loadingSep24InteractiveUrlErrorMessage = nil
+    }
+    
+    do {
+        // Get SEP-24 service from wallet SDK
+        let sep24 = assetInfo.anchor.sep24
+        let interactiveUrl: String?
+        
+        if mode == "deposit" {
+            // Request interactive deposit URL
+            // The SDK:
+            // 1. Makes POST to /transactions/deposit/interactive
+            // 2. Includes auth token and asset information
+            // 3. Returns URL for web-based flow
+            let response = try await sep24.deposit(
+                assetId: assetInfo.asset,
+                authToken: authToken
+            )
+            interactiveUrl = response.url
+        } else if mode == "withdraw" {
+            // Request interactive withdrawal URL
+            let response = try await sep24.withdraw(
+                assetId: assetInfo.asset,
+                authToken: authToken
+            )
+            interactiveUrl = response.url
+        } else {
+            interactiveUrl = nil
+        }
+        
+        await MainActor.run {
+            if let url = interactiveUrl {
+                sep24InteractiveUrl = url
+                sep24OperationMode = mode
+                showSep24InteractiveUrlSheet = true
+            }
+            isLoadingSep24InteractiveUrl = false
+        }
+        
+    } catch {
+        await MainActor.run {
+            loadingSep24InteractiveUrlErrorMessage = 
+                "Error requesting SEP-24 interactive url: \(error.localizedDescription)"
+            isLoadingSep24InteractiveUrl = false
+        }
+    }
+}
+```
+
+### Interactive Web View
+
+The interactive flow is displayed in a web view:
+
+```swift
+struct InteractiveWebViewSheet: View {
+    let url: String
+    let title: String
+    @Binding var isPresented: Bool
+    @State private var isLoading = false
+    
+    var body: some View {
+        NavigationView {
+            InteractiveWebView(url: url, isLoading: $isLoading)
+                .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Close") {
+                            isPresented = false
+                        }
+                    }
+                }
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                    }
+                }
+        }
+    }
+}
+```
 
 
+## Testing with Stellar Test Anchor
+
+The Stellar test anchor (`anchor-sep-server-dev.stellar.org`) provides a safe environment for testing:
+
+### Setup Steps
+
+1. **Trust Test Asset**: 
+   - Navigate to Assets tab
+   - Add asset: SRT: `GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B`
+
+23. **Test Transfer Flow**:
+   - Navigate to Transfers tab
+   - Select SRT from dropdown
+   - Authenticate with PIN
+   - Choose deposit/withdrawal
+   - Complete the flow with test data
+
+### Test Scenarios
+
+1. **Successful Deposit**: Standard flow with valid KYC
+2. **KYC Required**: Test with minimal initial data
+3. **Fee Calculation**: Verify fee endpoint responses
+4. **Additional KYC**: pending_customer_info_update status shown in history
+
+
+## Summary
+
+This comprehensive anchor integration demonstrates:
+
+1. **Wallet SDK Power**: The SDK handles protocol complexity, allowing focus on UX
+2. **Multi-Protocol Support**: SEP-6 and SEP-24 provide flexibility for different use cases
+3. **Security First**: PIN protection, secure storage, and proper authentication
+
+The Stellar Wallet SDK abstracts away the complexities of anchor protocols while providing the flexibility needed for production applications. By following these patterns, you can build robust anchor integrations that provide seamless fiat on/off-ramp experiences for your users.
+
+## Next Steps
+
+This completes the SwiftBasicPay tutorial series. You now have a comprehensive understanding of:
+- Secure key management with PIN protection
+- Stellar account operations and balances
+- Asset management and trustlines
+- Payment systems (simple and path payments)
+- Anchor integrations for fiat on/off-ramps
+
+For more information:
+- [Stellar Wallet SDK Documentation](https://github.com/Soneso/stellar-wallet-sdk-ios)
+- [Stellar Developer Documentation](https://developers.stellar.org)
+- [SEP Specifications](https://github.com/stellar/stellar-protocol/tree/master/ecosystem)

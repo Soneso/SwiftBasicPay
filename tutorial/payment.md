@@ -1,146 +1,486 @@
 # Payment
 
-A payment operation sends an amount in a specific asset (XLM or non-XLM) to a destination account. With a basic payment operation, the asset sent is the same as the asset received. SwiftBasicPay also allows for path payments (where the asset sent is different than the asset received), which we’ll talk about in the next section.
+Payment operations send assets (XLM or tokens) to destination accounts. SwiftBasicPay provides a payment interface with comprehensive validation, contact management, and real-time status updates.
 
-In our SwiftBasicPay application, the user will navigate to the Payments tab where can either select a user from their contacts or input the public key of a destination address with a specified asset they’d like to send along with the amount of the asset and an optional text memo.
+## Payment Architecture
 
-![simple payment](./img/payment/simple_payment.png)
+The [`PaymentsView`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/PaymentsView.swift) uses iOS patterns with reactive state management:
 
-After the user enters the required data, they press the `Submit` button. If the destination account exists and is properly funded with XLM, this will trigger a payment transaction.
-
-
-## Code implementation
-
-The implementation can be found in [`SendPaymentBox.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/SendPaymentBox.swift). 
-
-To be able to fill the pickers, it needs to access the available assets that the user holds and their contacts by using our `DashboardData` instance. See also [`dashboard data`](dashboard_data.md).
+<img src="./img/payment/simple_payment.png" alt="Payments view" width="30%">
 
 ```swift
-var userAssets: [AssetInfo] {
-    dashboardData.userAssets
-}
-
-var userContacts: [ContactInfo] {
-    dashboardData.userContacts
+@Observable
+final class PaymentsViewModel {
+    // UI State
+    var pathPaymentMode = false
+    var showSuccessToast = false
+    var toastMessage = ""
+    var selectedSegment = 0
+    
+    // Haptic feedback generator
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    
+    func segmentChanged(to value: Int) {
+        selectionFeedback.selectionChanged()
+        selectedSegment = value
+        pathPaymentMode = value == 1
+    }
 }
 ```
 
-The `Asset to send` picker is filled with the assets received from our `DashboardData` instance.
-The `recipient` picker is filled from the list of contacts, also provided by our `DashboardData` instance. The `recipient` picker also contains an item called `Other`. If selected,
-the app let's the user manually insert the Stellar address of the recipient.
+## Payment Type Selection
 
-As soon as the recipient is selected, the UI displays the form fields to let the user provide the amount, optional memo and pin code. The pin code is needed to obtain the user's signing keypair from the `AuthService` so that the transaction can be signed before submitting it to the Stellar Network.
-
-![simple payment](./img/payment/simple_payment.png)
-
-As soon as the data has been correctly provided by the user and the user pressed the `Submit` button, the payment transaction is prepared, signed, and send to the Stellar Network:
-
-In [`SendPaymentBox.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/SendPaymentBox.swift):
+Users can choose between standard and path payments:
 
 ```swift
-let result = try await StellarService.sendPayment(
-    destinationAddress: recipientAccountId,
-    assetId: stellarAssetId,
-    amount: Decimal(Double(amountToSend)!),
-    memo: memo,
-    userKeyPair: userKeyPair)
+private var paymentTypeSelector: some View {
+    VStack(alignment: .leading, spacing: 12) {
+        Text("Payment Type")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundColor(.secondary)
+            .textCase(.uppercase)
+        
+        Picker("Payment Type", selection: $viewModel.selectedSegment) {
+            Label("Standard", systemImage: "arrow.right.circle")
+                .tag(0)
+            Label("Path Payment", systemImage: "arrow.triangle.swap")
+                .tag(1)
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: viewModel.selectedSegment) { _, newValue in
+            viewModel.segmentChanged(to: newValue)
+        }
+    }
+}
 ```
 
-In [`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
+## Send Payment Implementation
 
+### Send Payment Card
+
+The [`SendPaymentBox`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/SendPaymentBox.swift) provides the payment form:
 
 ```swift
-/// Submits a payment to the Stellar Network by using the wallet sdk. It requires the destinationAddress (account id) of the recipient,
-/// the assetId representing the asset to send, amount, optional memo and the user's signing keypair,
-/// needed to sign the transaction before submission. Returns true on success.
-///
-/// - Parameters:
-///   - destinationAddress: Account id of the recipeint (G...)
-///   - assetId: Asset to send
-///   - assetId: Amount to send
-///   - memo: Optional memo to attach to the transaction
-///   - userKeyPair: The user's signing keypair needed to sign the transaction
-///
-public static func sendPayment(destinationAddress:String,
-                               assetId:StellarAssetId,
-                               amount:Decimal,
-                               memo:Memo? = nil,
-                               userKeyPair:SigningKeyPair) async throws -> Bool {
+@Observable
+@MainActor
+final class SendPaymentViewModel {
+    // Form State
+    var selectedAsset = "native"
+    var selectedRecipient = "Select"
+    var recipientAccountId = ""
+    var pin = ""
+    var amountToSend = ""
+    var memoToSend = ""
+    
+    // Validation State
+    var recipientError: String?
+    var amountError: String?
+    var pinError: String?
+    
+    // Loading State
+    var isSendingPayment = false
+}
+```
+
+### Recipient Selection
+
+Users can select from contacts or enter a custom address. Contacts can be added to the app in the contacts view.
+
+<img src="./img/payment/simple_payment_select_contact.png" alt="Select Contact" width="30%">
+
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Label("Recipient", systemImage: "person.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
+    Menu {
+        ForEach(dashboardData.userContacts, id: \.id) { contact in
+            Button(action: { 
+                viewModel.handleRecipientSelection(contact.id) 
+            }) {
+                Label(contact.name, systemImage: "person.fill")
+            }
+        }
+        
+        Divider()
+        
+        Button(action: { 
+            viewModel.handleRecipientSelection(SendPaymentViewModel.otherRecipient) 
+        }) {
+            Label("Other Address", systemImage: "plus.circle")
+        }
+    }
+}
+```
+
+### Asset Selection
+
+Display available assets with balances:
+
+<img src="./img/payment/simple_payment_asset_selection.png" alt="Asset selection" width="30%">
+
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Label("Asset", systemImage: "star.circle")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.secondary)
+        .textCase(.uppercase)
+    
+    Menu {
+        ForEach(dashboardData.userAssets, id: \.id) { asset in
+            Button(action: { 
+                viewModel.handleAssetSelection(asset.id) 
+            }) {
+                Label {
+                    Text(asset.code)
+                } icon: {
+                    Image(systemName: "star.circle")
+                }
+            }
+        }
+    }
+}
+```
+
+<img src="./img/payment/simple_payment_asset_selected.png" alt="Asset selected" width="30%">
+
+### Amount Input with Validation
+
+Amount input with real-time validation:
+
+```swift
+private var amountField: some View {
+    VStack(alignment: .leading, spacing: 8) {
+        HStack {
+            Label("Amount", systemImage: "number.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            Spacer()
+            
+            if let asset = dashboardData.userAssets.first(where: { 
+                $0.id == viewModel.selectedAsset 
+            }) {
+                Text("Max: \(viewModel.calculateMaxAmount(for: asset).toStringWithoutTrailingZeros)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+        }
+        
+        HStack {
+            TextField("0.00", text: $viewModel.amountToSend)
+                .textFieldStyle(.plain)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .keyboardType(.decimalPad)
+                .focused($focusedField, equals: .amount)
+                .onChange(of: viewModel.amountToSend) { oldValue, newValue in
+                    if newValue != "" && Double(newValue) == nil {
+                        viewModel.amountToSend = oldValue
+                    }
+                    viewModel.amountError = nil
+                }
+            
+            if let asset = dashboardData.userAssets.first(where: { 
+                $0.id == viewModel.selectedAsset 
+            }) {
+                Text(asset.code)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(12)
+        .background(Color(.systemGray6))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(viewModel.amountError != nil ? Color.red : Color.clear, lineWidth: 1)
+        )
+        
+        if let error = viewModel.amountError {
+            Label(error, systemImage: "exclamationmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundColor(.red)
+        }
+    }
+}
+```
+
+### Payment Validation
+
+Comprehensive validation before submission:
+
+```swift
+func validateRecipient() -> Bool {
+    recipientError = nil
+    
+    if recipientAccountId.isEmpty {
+        recipientError = "Recipient address is required"
+        return false
+    }
+    
+    if !recipientAccountId.isValidEd25519PublicKey() {
+        recipientError = "Invalid Stellar address"
+        return false
+    }
+    
+    return true
+}
+
+func validateAmount(maxAmount: Double) -> Bool {
+    amountError = nil
+    
+    if amountToSend.isEmpty {
+        amountError = "Amount is required"
+        return false
+    }
+    
+    guard let amount = Double(amountToSend) else {
+        amountError = "Invalid amount format"
+        return false
+    }
+    
+    if amount <= 0 {
+        amountError = "Amount must be greater than 0"
+        return false
+    }
+    
+    if amount > maxAmount {
+        amountError = "Insufficient balance (max: \(maxAmount.toStringWithoutTrailingZeros))"
+        return false
+    }
+    
+    return true
+}
+
+func validatePin() -> Bool {
+    pinError = nil
+    
+    if pin.isEmpty {
+        pinError = "PIN is required"
+        return false
+    }
+    
+    if pin.count != 6 {
+        pinError = "PIN must be 6 digits"
+        return false
+    }
+    
+    return true
+}
+```
+
+## Stellar SDK Payment Execution
+
+### Complete Payment Flow
+
+Async payment implementation:
+
+```swift
+func sendPayment(userAssets: [AssetInfo], userContacts: [ContactInfo], dashboardData: DashboardData) async {
+    // ...
+    
+    do {
+        // Verify PIN and get user keypair
+        let authService = AuthService()
+        let userKeyPair = try authService.userKeyPair(pin: pin)
+        
+        // Check if destination account exists
+        let destinationExists = try await StellarService.accountExists(address: recipientAccountId)
+        
+        // Fund destination if it doesn't exist (testnet only)
+        if !destinationExists {
+            try await StellarService.fundTestnetAccount(address: recipientAccountId)
+        }
+        
+        // Verify recipient can receive the asset
+        if let issuedAsset = asset.asset as? IssuedAssetId, issuedAsset.issuer != recipientAccountId {
+            let recipientAssets = try await StellarService.loadAssetsForAddress(address: recipientAccountId)
+            if !recipientAssets.contains(where: { $0.id == selectedAsset }) {
+                errorMessage = "Recipient cannot receive \(asset.code)"
+                isSendingPayment = false
+                notificationFeedback.notificationOccurred(.error)
+                return
+            }
+        }
+        
+        // Prepare stellar asset
+        guard let stellarAssetId = asset.asset as? StellarAssetId else {
+            errorMessage = "Invalid asset type"
+            isSendingPayment = false
+            notificationFeedback.notificationOccurred(.error)
+            return
+        }
+        
+        // Prepare memo if provided
+        var memo: Memo?
+        if !memoToSend.isEmpty {
+            memo = try Memo(text: memoToSend)
+        }
+        
+        // Send payment
+        let result = try await StellarService.sendPayment(
+            destinationAddress: recipientAccountId,
+            assetId: stellarAssetId,
+            amount: Decimal(Double(amountToSend)!),
+            memo: memo,
+            userKeyPair: userKeyPair
+        )
+        
+        if result {
+            // Success
+            toastMessage = "Payment sent successfully!"
+            showSuccessToast = true
+            notificationFeedback.notificationOccurred(.success)
+            
+            // Reset form
+            resetForm()
+            
+            // Refresh data
+            await dashboardData.fetchStellarData()
+        } else {
+            errorMessage = "Payment failed. Please try again."
+            notificationFeedback.notificationOccurred(.error)
+        }
+    } catch {
+        errorMessage = error.localizedDescription
+        notificationFeedback.notificationOccurred(.error)
+    }
+    
+    isSendingPayment = false
+}
+```
+
+### Stellar Service Integration
+
+Using the wallet SDK in [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) for payment submission:
+
+```swift
+/// Submits a payment to the Stellar Network using the wallet SDK
+public static func sendPayment(
+    destinationAddress: String,
+    assetId: StellarAssetId,
+    amount: Decimal,
+    memo: Memo? = nil,
+    userKeyPair: SigningKeyPair
+) async throws -> Bool {
     let stellar = wallet.stellar
+    
+    // Build transaction
     var txBuilder = try await stellar.transaction(sourceAddress: userKeyPair)
-    txBuilder = try txBuilder.transfer(destinationAddress: destinationAddress,
-                                    assetId: assetId,
-                                    amount: amount)
+    
+    // Add payment operation
+    txBuilder = try txBuilder.transfer(
+        destinationAddress: destinationAddress,
+        assetId: assetId,
+        amount: amount
+    )
+    
+    // Add memo if provided
     if let memo = memo {
         txBuilder = txBuilder.setMemo(memo: memo)
     }
     
+    // Build, sign, and submit
     let tx = try txBuilder.build()
     stellar.sign(tx: tx, keyPair: userKeyPair)
     return try await stellar.submitTransaction(signedTransaction: tx)
-    
 }
 ```
 
-`StellarService` uses the wallet sdk to build, sign and submit the transaction to the Stellar Network.
+## Recent Payments Display
 
-All Stellar transactions require a small fee to make it to the ledger. Read more in the Stellar docs [Fees section](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering). In SwiftBasicPay, we’re using the default value, so that the user always pays a static fee of 100,000 stroops (one stroop equals 0.0000001 XLM) per operation. Alternatively, you can add a feature to your application that allows the user to set their own fee.
+<img src="./img/payment/recent_payments_updated.png" alt="Recent payments" width="30%">
 
-Once the payment has been sent, we ask our `DashboardData` instance refresh it's data':
+The recent payments card (`RecentPaymentsCard`) displays the recent payments.
 
-```swift
-await dashboardData.fetchStellarData()
-```
 
-The `Recent Payments` box has been updated and we can see it there:
+## Loading Recent Payments
 
-![recent payments updated](./img/payment/recent_payments_updated.png)
-
-To load the most recent payments we use the wallet_sdk in [`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift):
+Using the wallet SDK to fetch payment history:
 
 ```swift
-/// Loads the list of the 5 most recent payments for given address (account id).
-///
-/// - Parameters:
-///   - address: Account id to load the most recent payments for
-///
-public static func loadRecentPayments(address:String) async throws -> [PaymentInfo] {
+/// Loads recent payments from the Stellar Network
+public static func loadRecentPayments(address: String) async throws -> [PaymentInfo] {
     let server = wallet.stellar.server
-    let paymentsResponseEnum = await server.payments.getPayments(forAccount: address, order: Order.descending, limit: 5)
+    
+    // Fetch payments in descending order
+    let paymentsResponseEnum = await server.payments.getPayments(
+        forAccount: address,
+        order: Order.descending,
+        limit: 5
+    )
+    
     switch paymentsResponseEnum {
     case .success(let page):
-        let records = page.records
-        var result:[PaymentInfo] = []
-        for record in records {
+        var result: [PaymentInfo] = []
+        
+        for record in page.records {
+            // Process different payment types
             if let payment = record as? PaymentOperationResponse {
-                let info = try paymentInfoFromPaymentOperationResponse(payment: payment, address: address)
+                let info = try paymentInfoFromPaymentOperationResponse(
+                    payment: payment,
+                    address: address
+                )
                 result.append(info)
             } else if let payment = record as? AccountCreatedOperationResponse {
-                let info = paymentInfoFromAccountCreatedOperationResponse(payment: payment)
+                let info = paymentInfoFromAccountCreatedOperationResponse(
+                    payment: payment
+                )
                 result.append(info)
             } else if let payment = record as? PathPaymentStrictReceiveOperationResponse {
-                let info = try paymentInfoFromPathPaymentStrictReceiveOperationResponse(payment: payment, address: address)
+                let info = try paymentInfoFromPathPaymentStrictReceiveOperationResponse(
+                    payment: payment,
+                    address: address
+                )
                 result.append(info)
             } else if let payment = record as? PathPaymentStrictSendOperationResponse {
-                let info = try paymentInfoFromPathPaymentStrictSendOperationResponse(payment: payment, address: address)
+                let info = try paymentInfoFromPathPaymentStrictSendOperationResponse(
+                    payment: payment,
+                    address: address
+                )
                 result.append(info)
             }
         }
+        
         return result
+        
     case .failure(_):
-        throw StellarServiceError.runtimeError("could not load recent payments for \(address)")
+        throw StellarServiceError.runtimeError(
+            "could not load recent payments for \(address)"
+        )
     }
 }
 ```
 
-We received the list of recent payments from the wallet sdk. Depending on the type of payment, we extract the data needed and store it in a list of `PaymentInfo` objects, which we then display in the UI.
+## Key Features
+
+1. **Contact Integration**: Select from saved contacts
+2. **Real-time Validation**: Instant feedback on invalid inputs
+3. **Asset Verification**: Ensures recipient can receive the asset
+4. **Testnet Support**: Auto-funds unfunded accounts
+5. **Memo Support**: Optional transaction memos
+6. **Haptic Feedback**: Physical feedback for actions
+7. **Error Recovery**: Clear error messages and retry options
+
+## Transaction Fees
+
+SwiftBasicPay uses the default base fee (100,000 stroops = 0.00001 XLM):
+
+```swift
+// Fee is handled automatically by the wallet SDK
+let tx = try txBuilder.build() // Uses default base fee
+```
+
+For custom fees:
+
+```swift
+txBuilder = txBuilder.setBaseFee(fee: 200) // 200 stroops
+```
 
 ## Next
 
 Continue with [`Path payment`](path_payment.md).
-
-
-
-
-
-

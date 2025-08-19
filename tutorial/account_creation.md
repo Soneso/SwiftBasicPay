@@ -1,52 +1,266 @@
 # Account Creation
 
-Accounts are the central data structure in Stellar and can only exist with a valid keypair (a public and secret key) and the required minimum balance of XLM.
-Read more in the [Stellar docs: Accounts section](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts).
+Stellar accounts require a valid keypair and minimum balance of XLM to exist on the network. After signup, users must fund their account to activate it. Read more in the [Stellar docs: Accounts section](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts).
 
-After signup, the user get's redirected to the dashboard home page.
+## Account Funding Flow
 
-## Fund account
+### Detecting Unfunded Accounts
 
-The [`BalancesBox`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/BalancesBox.swift) UI shows that the uses account is not yet funded.
+The [`Overview`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift) view detects unfunded accounts through the `BalancesView` component, which checks the `DashboardData` state:
 
-![account not funded](./img/account_creation/account_not_funded.png)
-
-If the user presses the `Fund on Testnet` button, we request the Stellar Testnet's `Friendbot` to fund the account by using the [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) class.
+<img src="./img/account_creation/account_not_funded.png" alt="Account not funded UI" width="30%">
 
 ```swift
-try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
+struct BalancesView: View {
+    @Environment(DashboardData.self) var dashboardData
+    
+    var body: some View {
+        DashboardCard(title: "Balances", systemImage: "creditcard.fill") {
+            if dashboardData.isLoadingAssets {
+                // Loading state
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Loading balances...")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+            } else if let error = dashboardData.userAssetsLoadingError {
+                // Error state - includes account not found
+                ErrorStateView(error: error)
+                    .environment(dashboardData)
+            } else {
+                // Display assets
+                VStack(spacing: 12) {
+                    ForEach(dashboardData.userAssets, id: \.id) { asset in
+                        AssetRow(asset: asset, isSelected: selectedAsset?.id == asset.id)
+                    }
+                }
+            }
+        }
+    }
+}
 ```
 
-[`StellarService.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) uses the wallet sdk to fund the testnet account:
+### Error State View Component
+
+The `ErrorStateView` component handles account not found errors with funding capability:
 
 ```swift
-/// Funds the user account on the Stellar Test Network by using Friendbot.
-///
-/// - Parameters:
-///   - address: Stellar account id (G...) to be funded. E.g. the user's stellar account id
-///
+struct ErrorStateView: View {
+    let error: DashboardDataError
+    @State private var isFundingAccount = false
+    @State private var fundingError: String?
+    @Environment(DashboardData.self) var dashboardData
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(.orange)
+            
+            switch error {
+            case .accountNotFound(_):
+                Text("Account Not Found")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("Your account does not exist on the Stellar Test Network and needs to be funded")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                if let fundingError = fundingError {
+                    Text(fundingError)
+                        .font(.system(size: 12))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                
+                if isFundingAccount {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .padding(.top, 8)
+                } else {
+                    Button(action: {
+                        Task {
+                            await fundAccount()
+                        }
+                    }) {
+                        Text("Fund on Testnet")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.green)
+                            .cornerRadius(10)
+                    }
+                    .padding(.top, 8)
+                }
+                
+            case .fetchingError(let message):
+                Text("Error Loading Data")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(message)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+    }
+}
+```
+
+## Funding Implementation
+
+### Using Friendbot on Testnet
+
+The funding process is implemented in `ErrorStateView` and uses [`StellarService`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/services/StellarService.swift) to request XLM from Friendbot:
+
+```swift
+@MainActor
+private func fundAccount() async {
+    isFundingAccount = true
+    fundingError = nil
+    
+    do {
+        // Request funding from Friendbot
+        try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
+        
+        // Force refresh all data (clears cache and bypasses the 2-second minimum refresh interval)
+        await dashboardData.forceRefreshAll()
+        
+        // Haptic feedback for success
+        let successFeedback = UINotificationFeedbackGenerator()
+        successFeedback.notificationOccurred(.success)
+    } catch {
+        fundingError = "Error funding account: \(error.localizedDescription)"
+        
+        // Haptic feedback for error
+        let errorFeedback = UINotificationFeedbackGenerator()
+        errorFeedback.notificationOccurred(.error)
+    }
+    
+    isFundingAccount = false
+}
+```
+
+### StellarService Integration
+
+The wallet SDK provides Friendbot integration:
+
+```swift
+/// Funds the user account on the Stellar Test Network using Friendbot
 public static func fundTestnetAccount(address:String) async throws {
     return try await wallet.stellar.fundTestNetAccount(address: address)
 }
 ```
 
-## Update Dashboard data
+The wallet SDK handles:
+- Friendbot API request
+- Error handling
+- Response validation
 
-After the account has been funded, our instance of `DashboardData` must reload the users data, so that the app views can automatically update their state. 
+## Data Refresh After Funding
 
-In [`BalancesBox.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/BalancesBox.swift):
+### Automatic State Update
+
+After successful funding, the app performs a force refresh:
 
 ```swift
-try await StellarService.fundTestnetAccount(address: dashboardData.userAddress)
-
-await dashboardData.fetchStellarData()
+// Force refresh all data (clears all caches and bypasses minimum refresh interval)
+await dashboardData.forceRefreshAll()
 ```
 
-After the user's data is loaded from the Stellar Network the views are automatically updated. E.g. [`Overview.swift`](https://github.com/Soneso/SwiftBasicPay/blob/main/SwiftBasicPay/View/Overview.swift):
+This force refresh operation:
+1. Clears all cached data (account existence, assets, payments)
+2. Bypasses the 2-second minimum refresh interval
+3. Fetches fresh user assets (confirms account exists)
+4. Loads initial payment history
+5. Updates all dependent views immediately
 
-![account funded](./img/account_creation/account_funded.png)
+## Funded Account Display
 
-When you're ready to move your application to Pubnet, accounts will need to be funded with real XLM. This is something the application can cover itself by depositing XLM into the user's account, with the use of [sponsored reserves](https://developers.stellar.org/docs/learn/encyclopedia/transactions-specialized/sponsored-reserves), or the user can cover the required balance with their own XLM. See also [sponsoring transactions with the wallet sdk](https://developers.stellar.org/docs/building-apps/wallet/stellar#sponsoring-transactions).
+After funding, the UI automatically updates:
+
+<img src="./img/account_creation/account_funded.png" alt="Account funded UI" width="30%">
+
+The assets are displayed using the `AssetRow` component within `BalancesView`:
+
+```swift
+struct AssetRow: View {
+    let asset: AssetInfo
+    let isSelected: Bool
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                // Asset icon
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(asset.id == "native" ? .orange : .blue)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(asset.code)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    if let issuer = asset.issuer, !issuer.isEmpty {
+                        Text(issuer.shortAddress)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(asset.formattedBalance)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    
+                    Text(asset.code)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(12)
+            .background(isSelected ? Color.blue.opacity(0.05) : Color(.systemGray6))
+            .cornerRadius(10)
+        }
+    }
+}
+```
+
+## Production Considerations
+
+When moving to Mainnet, consider these funding options:
+
+### 1. User-Funded Accounts
+Users provide their own XLM:
+```swift
+// Display minimum balance requirement
+Text("Minimum balance: 1 XLM")
+Text("Send XLM to: \(userAddress)")
+```
+
+### 2. Service-Funded Accounts
+The app sponsors account creation using the wallet sdk. See [doc](https://github.com/Soneso/stellar-swift-wallet-sdk/blob/main/docs/stellar.md#building-advanced-transactions)
+
+
+
+## Account State Management
+
+This architecture tracks account state through:
+
+1. **DataState Enum**: Unified loading/error states
+2. **Caching**: 60-second TTL for account existence
+3. **Manual Actions**: User-initiated refresh via pull-to-refresh
+4. **User Feedback**: Clear error messages and actions
 
 
 ## Next
