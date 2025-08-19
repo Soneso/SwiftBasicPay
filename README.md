@@ -1,13 +1,6 @@
 # SwiftBasicPay
 
-SwiftBasicPay is a demo payment app for the Stellar Network demonstrating how Swift developers can build a Stellar payment application using the [Stellar Wallet SDK for Swift](https://github.com/Soneso/stellar-wallet-sdk-ios) and the [Stellar iOS SDK](https://github.com/Soneso/stellar-ios-mac-sdk).
-
-
-## Demo
-
-![Path Payment Flow Demo](./tutorial/demos/animated_gifs/path_payment_demo.gif)
-
-*Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds*
+SwiftBasicPay is an open-source example iOS payment application that showcases how to integrate Stellar's powerful payment infrastructure into native Swift apps using the using the [Stellar Wallet SDK for Swift](https://github.com/Soneso/stellar-wallet-sdk-ios) and the [Stellar iOS SDK](https://github.com/Soneso/stellar-ios-mac-sdk).
 
 
 ## Features
@@ -32,6 +25,14 @@ SwiftBasicPay integrates multiple Stellar Ecosystem Proposals (SEPs) through the
 - **[SEP-9](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0009.md)**: Standard KYC Fields - Defines standard customer information fields
 - **[SEP-12](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0012.md)**: KYC API - Customer information collection and verification
 - **[SEP-24](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0024.md)**: Hosted Deposit/Withdrawal - Interactive web-based transfers
+
+
+## Demo
+
+![Path Payment Flow Demo](./tutorial/demos/animated_gifs/path_payment_demo.gif)
+
+*Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds*
+
 
 ## SDKs Used
 
@@ -128,7 +129,7 @@ This app demonstrates how to:
 3. **Implement Payments**: Simple and path payments
 4. **Interact with Anchors**: SEP-1/10/6/12/24 integration
 5. **Ensure Security**: Keychain, PIN authentication, secure communication
-6. **Optimize Performance**: Caching, parallel requests, lazy loading
+6. **Optimize Performance**: Caching, parallel requests
 
 ## Tutorial
 
