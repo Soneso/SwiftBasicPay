@@ -471,94 +471,300 @@ struct Sep6TransactionCard: View {
             .buttonStyle(.plain)
             
             if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    Divider()
-                        .padding(.horizontal)
+                VStack(alignment: .leading, spacing: 0) {
+                    // Divider with gradient fade
+                    Rectangle()
+                        .fill(LinearGradient(
+                            colors: [Color(.systemGray5), Color(.systemGray6).opacity(0.3)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(height: 1)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     
-                    VStack(spacing: 4) {
-                        TransferDetailRow(
-                            label: "ID",
-                            value: "\(transaction.id.prefix(8))...\(transaction.id.suffix(4))",
-                            showCopyButton: true,
-                            copyValue: transaction.id
+                    VStack(spacing: 0) {
+                        // ID Section with enhanced styling
+                        HStack(spacing: 12) {
+                            Image(systemName: "number.square.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.blue)
+                                .frame(width: 24, height: 24)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Transaction ID")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                Text("\(transaction.id.prefix(8))...\(transaction.id.suffix(4))")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(.primary)
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: { onCopy(transaction.id) }) {
+                                Image(systemName: "doc.on.doc.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.systemGray6).opacity(0.5))
                         )
-                        .onTapGesture { onCopy(transaction.id) }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
                         
-                        TransferDetailRow(label: "Kind", value: transaction.kind)
+                        // Type Badge
+                        HStack {
+                            Label(transaction.kind.capitalized, systemImage: transaction.kind == "deposit" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(transaction.kind == "deposit" ? .green : .orange)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill((transaction.kind == "deposit" ? Color.green : Color.orange).opacity(0.1))
+                                        .overlay(
+                                            Capsule()
+                                                .strokeBorder((transaction.kind == "deposit" ? Color.green : Color.orange).opacity(0.3), lineWidth: 1)
+                                        )
+                                )
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
                         
                         if transaction.transactionStatus == .pendingCustomerInfoUpdate {
-                            HStack {
-                                TransferDetailRow(
-                                    label: "Status",
-                                    value: transaction.transactionStatus.rawValue
-                                )
-                                .foregroundStyle(.red)
-                                
-                                if isLoadingKyc {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Button(action: { onGetKycInfo(transaction.id) }) {
-                                        Image(systemName: "square.and.arrow.up")
-                                            .font(.body)
-                                            .foregroundStyle(.blue)
+                            // KYC Status Section with action button
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(.red)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Action Required")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(.red)
+                                        Text(transaction.transactionStatus.rawValue)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    if isLoadingKyc {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Button(action: { onGetKycInfo(transaction.id) }) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "arrow.up.doc.fill")
+                                                    .font(.system(size: 14, weight: .medium))
+                                                Text("Upload KYC")
+                                                    .font(.system(size: 13, weight: .semibold))
+                                            }
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(LinearGradient(
+                                                        colors: [Color.blue, Color.blue.opacity(0.8)],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ))
+                                            )
+                                            .shadow(color: .blue.opacity(0.3), radius: 4, y: 2)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.red.opacity(0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .strokeBorder(Color.red.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         } else {
-                            TransferDetailRow(label: "Status", value: transaction.transactionStatus.rawValue)
+                            // Regular Status
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(statusColor)
+                                    .frame(width: 8, height: 8)
+                                Text("Status:")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(transaction.transactionStatus.rawValue)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(statusColor)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         }
                         
                         if let eta = transaction.statusEta {
-                            TransferDetailRow(label: "ETA", value: "\(eta) seconds")
+                            HStack(spacing: 8) {
+                                Image(systemName: "clock.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.blue)
+                                Text("ETA:")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("\(eta) seconds")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         }
                         
-                        if let from = transaction.from {
-                            TransferDetailRow(
-                                label: "From",
-                                value: from.shortAddress,
-                                showCopyButton: true,
-                                copyValue: from
+                        // Addresses Section
+                        if transaction.from != nil || transaction.to != nil {
+                            VStack(spacing: 8) {
+                                if let from = transaction.from {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.orange)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("From")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(from.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(from) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                
+                                if let to = transaction.to {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.green)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("To")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(to.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(to) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.systemGray6).opacity(0.3))
                             )
-                            .onTapGesture { onCopy(from) }
-                        }
-                        
-                        if let to = transaction.to {
-                            TransferDetailRow(
-                                label: "To",
-                                value: to.shortAddress,
-                                showCopyButton: true,
-                                copyValue: to
-                            )
-                            .onTapGesture { onCopy(to) }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         }
                         
                         if let stellarTxId = transaction.stellarTransactionId {
-                            TransferDetailRow(
-                                label: "Stellar TX",
-                                value: "\(stellarTxId.prefix(8))...",
-                                showCopyButton: true,
-                                copyValue: stellarTxId
-                            )
-                            .onTapGesture { onCopy(stellarTxId) }
+                            HStack(spacing: 12) {
+                                Image(systemName: "link.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.purple)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Stellar Transaction")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    Text("\(stellarTxId.prefix(8))...")
+                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                        .foregroundStyle(.primary)
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: { onCopy(stellarTxId) }) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         }
                         
-                        if let startedAt = transaction.startedAt {
-                            TransferDetailRow(
-                                label: "Started",
-                                value: formatDate(startedAt)
+                        // Timestamps Section
+                        if transaction.startedAt != nil || transaction.completedAt != nil {
+                            VStack(spacing: 6) {
+                                if let startedAt = transaction.startedAt {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "calendar.badge.clock")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                        Text("Started:")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(formatDate(startedAt))
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                    }
+                                }
+                                
+                                if let completedAt = transaction.completedAt {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.green)
+                                        Text("Completed:")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(formatDate(completedAt))
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                    }
+                                }
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.systemGray6).opacity(0.2))
                             )
-                        }
-                        
-                        if let completedAt = transaction.completedAt {
-                            TransferDetailRow(
-                                label: "Completed",
-                                value: formatDate(completedAt)
-                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 12)
                 }
                 .transition(.asymmetric(
                     insertion: .push(from: .top).combined(with: .opacity),
@@ -635,96 +841,333 @@ struct Sep24TransactionCard: View {
             .buttonStyle(.plain)
             
             if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    Divider()
-                        .padding(.horizontal)
+                VStack(alignment: .leading, spacing: 0) {
+                    // Divider with gradient fade
+                    Rectangle()
+                        .fill(LinearGradient(
+                            colors: [Color(.systemGray5), Color(.systemGray6).opacity(0.3)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(height: 1)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     
-                    VStack(spacing: 4) {
-                        TransferDetailRow(
-                            label: "ID",
-                            value: "\(transaction.id.prefix(8))...\(transaction.id.suffix(4))",
-                            showCopyButton: true,
-                            copyValue: transaction.id
+                    VStack(spacing: 0) {
+                        // ID Section with enhanced styling
+                        HStack(spacing: 12) {
+                            Image(systemName: "number.square.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.blue)
+                                .frame(width: 24, height: 24)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Transaction ID")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                Text("\(transaction.id.prefix(8))...\(transaction.id.suffix(4))")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(.primary)
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: { onCopy(transaction.id) }) {
+                                Image(systemName: "doc.on.doc.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.systemGray6).opacity(0.5))
                         )
-                        .onTapGesture { onCopy(transaction.id) }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
                         
-                        TransferDetailRow(
-                            label: "Started",
-                            value: formatDate(transaction.startedAt)
-                        )
+                        // Type and Status Badge
+                        HStack {
+                            Label(title, systemImage: title.contains("Deposit") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(title.contains("Deposit") ? .green : .orange)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill((title.contains("Deposit") ? Color.green : Color.orange).opacity(0.1))
+                                        .overlay(
+                                            Capsule()
+                                                .strokeBorder((title.contains("Deposit") ? Color.green : Color.orange).opacity(0.3), lineWidth: 1)
+                                        )
+                                )
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(statusColor)
+                                    .frame(width: 8, height: 8)
+                                Text(getStatus())
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(statusColor)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(statusColor.opacity(0.1))
+                            )
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                        
+                        // Started Date
+                        HStack(spacing: 8) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                            Text("Started:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatDate(transaction.startedAt))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
                         
                         // Type-specific details
                         if let tx = transaction as? ProcessingAnchorTransaction {
-                            if let amountIn = tx.amountIn {
-                                TransferDetailRow(label: "Amount In", value: amountIn)
+                            // Amounts Section
+                            if tx.amountIn != nil || tx.amountOut != nil || tx.amountFee != nil {
+                                VStack(spacing: 8) {
+                                    if let amountIn = tx.amountIn {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "arrow.down.square.fill")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.green)
+                                            Text("Amount In:")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text(amountIn)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                        }
+                                    }
+                                    if let amountOut = tx.amountOut {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "arrow.up.square.fill")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.orange)
+                                            Text("Amount Out:")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text(amountOut)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                        }
+                                    }
+                                    if let fee = tx.amountFee {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "dollarsign.circle.fill")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.purple)
+                                            Text("Fee:")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text(fee)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundStyle(.primary)
+                                            Spacer()
+                                        }
+                                    }
+                                }
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color(.systemGray6).opacity(0.3))
+                                )
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 8)
                             }
-                            if let amountOut = tx.amountOut {
-                                TransferDetailRow(label: "Amount Out", value: amountOut)
-                            }
-                            if let fee = tx.amountFee {
-                                TransferDetailRow(label: "Fee", value: fee)
-                            }
+                            
                             if let completedAt = tx.completedAt {
-                                TransferDetailRow(
-                                    label: "Completed",
-                                    value: formatDate(completedAt)
-                                )
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.green)
+                                    Text("Completed:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(formatDate(completedAt))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 8)
                             }
+                            
                             if let stellarTxId = tx.stellarTransactionId {
-                                TransferDetailRow(
-                                    label: "Stellar TX",
-                                    value: "\(stellarTxId.prefix(8))...",
-                                    showCopyButton: true,
-                                    copyValue: stellarTxId
-                                )
-                                .onTapGesture { onCopy(stellarTxId) }
+                                HStack(spacing: 12) {
+                                    Image(systemName: "link.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(.purple)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Stellar Transaction")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                        Text("\(stellarTxId.prefix(8))...")
+                                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                            .foregroundStyle(.primary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: { onCopy(stellarTxId) }) {
+                                        Image(systemName: "doc.on.doc")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 8)
                             }
                         }
                         
+                        // Addresses for Deposit/Withdrawal
                         if let depositTx = transaction as? DepositTransaction {
-                            if let from = depositTx.from {
-                                TransferDetailRow(
-                                    label: "From",
-                                    value: from.shortAddress,
-                                    showCopyButton: true,
-                                    copyValue: from
-                                )
-                                .onTapGesture { onCopy(from) }
+                            VStack(spacing: 8) {
+                                if let from = depositTx.from {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.orange)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("From")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(from.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(from) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                if let to = depositTx.to {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.green)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("To")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(to.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(to) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
-                            if let to = depositTx.to {
-                                TransferDetailRow(
-                                    label: "To",
-                                    value: to.shortAddress,
-                                    showCopyButton: true,
-                                    copyValue: to
-                                )
-                                .onTapGesture { onCopy(to) }
-                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.systemGray6).opacity(0.3))
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
                         }
                         
                         if let withdrawalTx = transaction as? WithdrawalTransaction {
-                            if let from = withdrawalTx.from {
-                                TransferDetailRow(
-                                    label: "From",
-                                    value: from.shortAddress,
-                                    showCopyButton: true,
-                                    copyValue: from
-                                )
-                                .onTapGesture { onCopy(from) }
+                            VStack(spacing: 8) {
+                                if let from = withdrawalTx.from {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.orange)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("From")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(from.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(from) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                if let to = withdrawalTx.to {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "location.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.green)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("To")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            Text(to.shortAddress)
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundStyle(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: { onCopy(to) }) {
+                                            Image(systemName: "doc.on.doc")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
-                            if let to = withdrawalTx.to {
-                                TransferDetailRow(
-                                    label: "To",
-                                    value: to.shortAddress,
-                                    showCopyButton: true,
-                                    copyValue: to
-                                )
-                                .onTapGesture { onCopy(to) }
-                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.systemGray6).opacity(0.3))
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 12)
                 }
                 .transition(.asymmetric(
                     insertion: .push(from: .top).combined(with: .opacity),

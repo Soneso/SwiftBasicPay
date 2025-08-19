@@ -5,9 +5,9 @@ SwiftBasicPay is a demo payment app for the Stellar Network demonstrating how Sw
 
 ## Demo
 
-Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds.
-
 ![Path Payment Flow Demo](./tutorial/demos/animated_gifs/path_payment_demo.gif)
+
+*Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds*
 
 
 ## Features
