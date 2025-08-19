@@ -5,9 +5,9 @@ SwiftBasicPay is a demo payment app for the Stellar Network demonstrating how Sw
 
 ## Demo
 
-![Path Payment Flow Demo](./tutorial/demos/animated_gifs/path_payment_demo.gif)
+Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds.
 
-*Sending a path payment with SwiftBasicPay - from selection to confirmation in seconds*
+![Path Payment Flow Demo](./tutorial/demos/animated_gifs/path_payment_demo.gif)
 
 
 ## Features
@@ -49,10 +49,10 @@ SwiftBasicPay integrates multiple Stellar Ecosystem Proposals (SEPs) through the
 │   DashboardData (@Observable)       │
 │   ┌────────────────────────────┐    │
 │   │ Domain Managers:           │    │
-│   │ • AssetManager            │    │
-│   │ • PaymentManager          │    │
-│   │ • ContactManager          │    │
-│   │ • KycManager              │    │
+│   │ • AssetManager             │    │
+│   │ • PaymentManager           │    │
+│   │ • ContactManager           │    │
+│   │ • KycManager               │    │
 │   └────────────────────────────┘    │
 └──────────────┬──────────────────────┘
                ↓
@@ -156,4 +156,4 @@ Contributions are welcome! Please create a pull request with a clear description
 
 ---
 
-Developed by [Soneso](https://soneso.com) as a reference implementation for the Stellar community.
+Developed by [Soneso](https://soneso.com) as a demo implementation for the Stellar community.
