@@ -11,7 +11,6 @@
 		836E660D2E3F4BA200D68F6A /* InteractiveWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */; };
 		836E660F2E3F7DB400D68F6A /* Sep12KycFormSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */; };
 		8373576D2E54CBCB00E48F55 /* path_payment_demo.gif in Resources */ = {isa = PBXBuildFile; fileRef = 837357252E54CBCB00E48F55 /* path_payment_demo.gif */; };
-		8373576E2E54CBCB00E48F55 /* sep_6_deposit.mov in Resources */ = {isa = PBXBuildFile; fileRef = 837357262E54CBCB00E48F55 /* sep_6_deposit.mov */; };
 		8373576F2E54CBCB00E48F55 /* account_funded.png in Resources */ = {isa = PBXBuildFile; fileRef = 837357292E54CBCB00E48F55 /* account_funded.png */; };
 		837357702E54CBCB00E48F55 /* account_not_funded.png in Resources */ = {isa = PBXBuildFile; fileRef = 8373572A2E54CBCB00E48F55 /* account_not_funded.png */; };
 		837357712E54CBCB00E48F55 /* additional_kyc_data.png in Resources */ = {isa = PBXBuildFile; fileRef = 8373572C2E54CBCB00E48F55 /* additional_kyc_data.png */; };
@@ -121,7 +120,6 @@
 		836E660C2E3F4BA200D68F6A /* InteractiveWebView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InteractiveWebView.swift; sourceTree = "<group>"; };
 		836E660E2E3F7DB400D68F6A /* Sep12KycFormSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sep12KycFormSheet.swift; sourceTree = "<group>"; };
 		837357252E54CBCB00E48F55 /* path_payment_demo.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = path_payment_demo.gif; sourceTree = "<group>"; };
-		837357262E54CBCB00E48F55 /* sep_6_deposit.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = sep_6_deposit.mov; sourceTree = "<group>"; };
 		837357292E54CBCB00E48F55 /* account_funded.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = account_funded.png; sourceTree = "<group>"; };
 		8373572A2E54CBCB00E48F55 /* account_not_funded.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = account_not_funded.png; sourceTree = "<group>"; };
 		8373572C2E54CBCB00E48F55 /* additional_kyc_data.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = additional_kyc_data.png; sourceTree = "<group>"; };
@@ -242,7 +240,6 @@
 			isa = PBXGroup;
 			children = (
 				837357252E54CBCB00E48F55 /* path_payment_demo.gif */,
-				837357262E54CBCB00E48F55 /* sep_6_deposit.mov */,
 			);
 			path = animated_gifs;
 			sourceTree = "<group>";
@@ -601,7 +598,6 @@
 				8373579F2E54CBCB00E48F55 /* signin.png in Resources */,
 				837357792E54CBCB00E48F55 /* sep_6_deposit_received.png in Resources */,
 				837357972E54CBCB00E48F55 /* recent_payments_strict_send.png in Resources */,
-				8373576E2E54CBCB00E48F55 /* sep_6_deposit.mov in Resources */,
 				837357AA2E54CBCB00E48F55 /* README.md in Resources */,
 				837357932E54CBCB00E48F55 /* path_payment_mode.png in Resources */,
 				8373576D2E54CBCB00E48F55 /* path_payment_demo.gif in Resources */,
