@@ -41,12 +41,12 @@ struct NewTransferView: View {
         ScrollView {
             VStack(spacing: 24) {
                 // Transfer options
-                if sep6Info != nil {
-                    sep6TransferCard
-                }
-                
                 if sep24Info != nil {
                     sep24TransferCard
+                }
+                
+                if sep6Info != nil {
+                    sep6TransferCard
                 }
                 
                 if sep6Info == nil && sep24Info == nil {

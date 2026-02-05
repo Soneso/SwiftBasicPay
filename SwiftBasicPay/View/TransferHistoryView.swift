@@ -22,8 +22,8 @@ class TransferHistoryViewModel {
     
     // State
     enum HistoryMode: Int, CaseIterable {
-        case sep6 = 1
-        case sep24 = 2
+        case sep24 = 1
+        case sep6 = 2
         
         var title: String {
             switch self {
@@ -33,7 +33,7 @@ class TransferHistoryViewModel {
         }
     }
     
-    var mode: HistoryMode = .sep6
+    var mode: HistoryMode = .sep24
     var isLoadingTransfers = false
     var isUpdatingSep12Data = false
     var isGettingRequiredSep12Data = false
@@ -285,10 +285,10 @@ struct TransferHistoryView: View {
                     // Content based on mode
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            if vm.mode == .sep6 {
-                                sep6Content
-                            } else {
+                            if vm.mode == .sep24 {
                                 sep24Content
+                            } else {
+                                sep6Content
                             }
                         }
                         .padding(.top)
