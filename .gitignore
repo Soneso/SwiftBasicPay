@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific files
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Build output
+build/
+DerivedData/
+
+# Swift Package Manager
+# Package.resolved is intentionally tracked so the app builds against pinned versions.
+.swiftpm/
+.build/
+Packages/

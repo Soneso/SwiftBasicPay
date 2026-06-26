@@ -4,7 +4,7 @@
 
 Anchors are bridge services that connect the Stellar network to traditional banking systems, enabling users to move value between fiat currencies and digital assets. They act as trusted entities that hold deposits in traditional banking systems and issue corresponding tokens on the Stellar network, or vice versa for withdrawals.
 
-SwiftBasicPay implements a comprehensive anchor integration using the [Stellar Wallet SDK](https://github.com/Soneso/stellar-wallet-sdk-ios), which provides high-level abstractions for complex anchor operations. This tutorial will guide you through the complete implementation, explaining how the wallet SDK simplifies anchor interactions.
+SwiftBasicPay implements a comprehensive anchor integration using the [Stellar Wallet SDK](https://github.com/Soneso/stellar-swift-wallet-sdk), which provides high-level abstractions for complex anchor operations. This tutorial will guide you through the complete implementation, explaining how the wallet SDK simplifies anchor interactions.
 
 ### Key Concepts
 
@@ -1178,6 +1178,6 @@ This completes the SwiftBasicPay tutorial series. You now have a comprehensive u
 - Anchor integrations for fiat on/off-ramps
 
 For more information:
-- [Stellar Wallet SDK Documentation](https://github.com/Soneso/stellar-wallet-sdk-ios)
+- [Stellar Wallet SDK Documentation](https://github.com/Soneso/stellar-swift-wallet-sdk)
 - [Stellar Developer Documentation](https://developers.stellar.org)
 - [SEP Specifications](https://github.com/stellar/stellar-protocol/tree/master/ecosystem)

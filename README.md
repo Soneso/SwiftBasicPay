@@ -1,6 +1,6 @@
 # SwiftBasicPay
 
-SwiftBasicPay is an open-source example iOS payment application that showcases how to integrate Stellar's powerful payment infrastructure into native Swift apps using the using the [Stellar Wallet SDK for Swift](https://github.com/Soneso/stellar-wallet-sdk-ios) and the [Stellar iOS SDK](https://github.com/Soneso/stellar-ios-mac-sdk).
+SwiftBasicPay is an open-source example iOS payment application that showcases how to integrate Stellar's powerful payment infrastructure into native Swift apps using the using the [Stellar Wallet SDK for Swift](https://github.com/Soneso/stellar-swift-wallet-sdk) and the [Stellar iOS SDK](https://github.com/Soneso/stellar-ios-mac-sdk).
 
 
 ## Features
@@ -36,7 +36,7 @@ SwiftBasicPay integrates multiple Stellar Ecosystem Proposals (SEPs) through the
 
 ## SDKs Used
 
-- **[Stellar Wallet SDK](https://github.com/Soneso/stellar-wallet-sdk-ios)**: High-level operations for wallet functionality
+- **[Stellar Wallet SDK](https://github.com/Soneso/stellar-swift-wallet-sdk)**: High-level operations for wallet functionality
 - **[Stellar iOS SDK](https://github.com/Soneso/stellar-ios-mac-sdk)**: Core iOS Stellar SDK
 
 ## Architecture
