@@ -1,5 +1,5 @@
 # Overview
-> **Note:** This tutorial walks through how to build a payment application using the Swift Wallet SDK. It primarily uses the [`stellar-wallet-sdk`](https://developers.stellar.org/docs/building-apps/wallet/overview) (version 0.9.2+) and in some cases also uses the core [`stellar-ios-mac-sdk`](https://github.com/Soneso/stellar-ios-mac-sdk).
+> **Note:** This tutorial walks through how to build a payment application using the Swift Wallet SDK. It primarily uses the [`stellar-wallet-sdk`](https://developers.stellar.org/docs/building-apps/wallet/overview) (version 0.9.3+) and in some cases also uses the core [`stellar-ios-mac-sdk`](https://github.com/Soneso/stellar-ios-mac-sdk).
 
 We'll walk through the steps as we build a sample application called [`SwiftBasicPay`](https://github.com/Soneso/SwiftBasicPay), which showcases various features of the Stellar Swift Wallet SDK.
 
@@ -29,8 +29,8 @@ Build and run using iPhone simulator (iOS 17.5+).
 
 ## SDK Dependencies
 
-- `stellar-wallet-sdk` (0.9.2+): High-level wallet operations
-- `stellar-ios-mac-sdk` (3.6.0+): Core Stellar protocol implementation
+- `stellar-wallet-sdk` (0.9.3+): High-level wallet operations
+- `stellar-ios-mac-sdk` (3.8.1+): Core Stellar protocol implementation
 - `SimpleKeychain` (1.3.0): Secure storage wrapper
 - `CryptoSwift` (1.8.4): Encryption utilities
 
