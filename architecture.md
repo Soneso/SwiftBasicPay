@@ -29,8 +29,8 @@ SwiftBasicPay is a demonstration iOS wallet application built with SwiftUI that 
 ### Key Dependencies
 | Package | Version | Purpose |
 |---------|---------|---------|
-| stellar-wallet-sdk | 0.9.4+ | High-level Stellar wallet operations |
-| stellar-ios-mac-sdk | 3.10.0+ | Core Stellar blockchain SDK |
+| stellar-wallet-sdk | 0.9.8+ | High-level Stellar wallet operations |
+| stellar-ios-mac-sdk | 3.14.0+ | Core Stellar blockchain SDK |
 | SimpleKeychain | 1.3.0 | Secure keychain storage |
 | CryptoSwift | 1.8.4 | Cryptographic operations (AES, PBKDF2) |
 | AlertToast | 1.3.9 | Toast notifications UI |
@@ -373,7 +373,7 @@ enum DemoError: LocalizedError {
 ## Getting Started
 
 ### Prerequisites
-1. Xcode 15+
+1. Xcode 16+
 2. iOS 17.5+ simulator/device
 3. Stellar testnet account (app can create one)
 
